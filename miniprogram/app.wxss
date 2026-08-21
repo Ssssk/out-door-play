@@ -1,0 +1,36 @@
+/**app.wxss**/
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+} 
+
+button {
+  background: initial;
+}
+
+button:focus{
+  outline: 0;
+}
+
+button::after{
+  border: none;
+}
+
+
+page {
+  /* 设计稿「出门溜车」首页背景：青柠绿径向渐变 */
+  background: radial-gradient(circle at 50% 0%, #E1F7A8 0%, #EFF8D7 50%, #F9F6EF 100%);
+  background-attachment: fixed;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+/* 主题色（来自设计稿） */
+:root {
+  --color-primary: #2D2926;     /* 深色主文字/图标 */
+  --color-lime: #E1F7A8;        /* 青柠绿 */
+  --color-bg-end: #F9F6EF;      /* 米白 */
+}

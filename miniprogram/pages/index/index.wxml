@@ -1,0 +1,88 @@
+<!-- 出门溜车 · 首页（按 Ardot 设计稿精确还原） -->
+<view class="page">
+
+  <!-- 自定义导航栏 -->
+  <view class="navbar">
+    <view class="navbar-status" style="height: {{statusBarHeight}}px;"></view>
+    <view class="navbar-bar" style="height: {{navBarHeight}}px;">
+      <view class="brand-wrap">
+        <view class="brand">粗门溜溜</view>
+        <image class="brand-underline" src="../../images/liuche/brand-underline.svg" mode="widthFix" />
+      </view>
+      <view class="city" style="margin-right: {{cityRight}}px;" bindtap="onTapCity">
+        <image class="city-icon" src="../../images/liuche/location.svg" mode="aspectFit" />
+        <text class="city-text">武汉</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Tab 切换 -->
+  <view class="tabs">
+    <view class="tab {{tab === 'drive' ? 'tab--active' : ''}}" data-tab="drive" bindtap="onSwitchTab">
+      <text class="tab-text">粗门溜车</text>
+    </view>
+    <view class="tab {{tab === 'fish' ? 'tab--active' : ''}}" data-tab="fish" bindtap="onSwitchTab">
+      <text class="tab-text">粗门钓鱼</text>
+    </view>
+  </view>
+
+  <!-- 路线卡片列表 -->
+  <view class="cards">
+    <view class="card" wx:for="{{routes}}" wx:key="id" bindtap="onTapRoute" data-id="{{item.id}}">
+      <image class="card-img" src="{{item.cover}}" mode="aspectFill" />
+      <view class="card-mask"></view>
+
+      <!-- 左上 Top 标签 -->
+      <view class="tag-top">
+        <image class="tag-bolt" src="../../images/liuche/lightning.svg" mode="aspectFit" />
+        <text class="tag-text">赛道/跑山热门榜 Top {{item.rank}}</text>
+      </view>
+
+      <!-- 右上 距离 -->
+      <view class="tag-distance">
+        <image class="tag-pin" src="../../images/liuche/pin.svg" mode="aspectFit" />
+        <text class="tag-distance-text">距你 {{item.distance}}</text>
+      </view>
+
+      <!-- 底部标题 + 三列信息 -->
+      <view class="card-bottom">
+        <view class="card-title">{{item.title}}</view>
+        <view class="card-meta">
+          <view class="meta-item">
+            <view class="meta-num">{{item.lengthNum}}</view>
+            <view class="meta-label">路线长度</view>
+          </view>
+          <view class="meta-item">
+            <view class="meta-num">{{item.diffNum}}<text class="meta-unit">M</text></view>
+            <view class="meta-label">路线落差</view>
+          </view>
+          <view class="meta-item">
+            <view class="meta-num meta-num--text">{{item.level}}</view>
+            <view class="meta-label">难度等级</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 占位，给底部 TabBar 留空间 -->
+  <view class="tabbar-spacer"></view>
+
+  <!-- 底部 TabBar -->
+  <view class="tabbar">
+    <view class="tabbar-item {{tabbar === 'drive' ? 'tabbar-item--active' : ''}}" data-key="drive" bindtap="onSwitchTabbar">
+      <view class="tabbar-bg"></view>
+      <image class="tabbar-icon" src="../../images/liuche/tab-car.svg" mode="aspectFit" />
+      <view class="tabbar-text">出车</view>
+    </view>
+    <view class="tabbar-item {{tabbar === 'gas' ? 'tabbar-item--active' : ''}}" data-key="gas" bindtap="onSwitchTabbar">
+      <image class="tabbar-icon" src="../../images/liuche/tab-gas.svg" mode="aspectFit" />
+      <view class="tabbar-text">加油</view>
+    </view>
+    <view class="tabbar-item {{tabbar === 'me' ? 'tabbar-item--active' : ''}}" data-key="me" bindtap="onSwitchTabbar">
+      <image class="tabbar-icon" src="../../images/liuche/tab-me.svg" mode="aspectFit" />
+      <view class="tabbar-text">我的</view>
+    </view>
+  </view>
+
+</view>
