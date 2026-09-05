@@ -51,3 +51,10 @@
 - 证据：`evidence/2026-09-06-test-server-deployment.md`。
 - 敏感信息处理：知识与证据未保存公网账号、密码、私钥、数据库 Secret 或完整业务数据。
 
+## 2026-09-06 微信小程序体验版 GitHub Actions
+
+- 查询词与范围：`uni-app/微信小程序/miniprogram-ci/GitHub Actions/上传私钥/IP 白名单/体验二维码`；范围为移动端构建、现有 CI、部署 Wiki、`ci-quality-gate`、`deploy-verify` 和 `KB-INBOX-011/012`。
+- 采用方式：小程序链路与服务器 Docker 部署解耦；只监听 `main` 移动端相关路径，使用最小 `contents: read` 权限、隔离上传工具目录、Repository Secret 注入私钥、Repository Variables 注入公开配置，并保存当次二维码 Artifact。
+- 安全发现：微信官方 `miniprogram-ci@2.1.31` 的隔离锁文件在 2026-09-06 通过 npm 官方审计端点发现大量历史传递依赖风险；在安全 Owner 明确接受或提供更安全替代前，不把这次依赖审计写成 Security Gate passed。
+- 发布边界：自动化只上传开发版本并生成体验预览二维码，不自动提交审核或发布正式线上版本；当前 HTTP/IP API 也不构成真机体验可用性证据。
+

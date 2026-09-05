@@ -1,0 +1,16 @@
+{
+  "name": "@chumen/miniprogram-ci-runner",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "validate": "node upload.mjs --validate-only",
+    "upload": "node upload.mjs"
+  },
+  "dependencies": {
+    "miniprogram-ci": "2.1.31"
+  }
+}

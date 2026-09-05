@@ -32,6 +32,7 @@
     "security:sbom": "pnpm dlx @cyclonedx/cdxgen@12.8.4 -t js --spec-version 1.6 --output .harness/changes/dependency-security-baseline/evidence/sbom.cdx.json --no-recurse"
   },
   "devDependencies": {
+    "@babel/parser": "7.25.6",
     "@eslint/js": "10.0.1",
     "eslint": "10.9.1",
     "eslint-plugin-security": "4.0.1",
