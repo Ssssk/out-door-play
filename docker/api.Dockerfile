@@ -4,7 +4,13 @@ WORKDIR /app
 
 ENV COREPACK_HOME=/tmp/corepack
 ARG PNPM_REGISTRY=https://registry.npmjs.org
-RUN apt-get update \
+ARG DEBIAN_MIRROR=http://deb.debian.org/debian
+ARG DEBIAN_SECURITY_MIRROR=http://deb.debian.org/debian-security
+RUN sed -i \
+      -e "s|http://deb.debian.org/debian-security|${DEBIAN_SECURITY_MIRROR}|g" \
+      -e "s|http://deb.debian.org/debian|${DEBIAN_MIRROR}|g" \
+      /etc/apt/sources.list.d/debian.sources \
+    && apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates openssl \
     && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@11.19.0 --activate
