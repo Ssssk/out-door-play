@@ -52,6 +52,8 @@ export class AdminAuthController {
   }
 
   private cookieOptions() {
-    return { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/v1/admin' }
+    const configuredSecure = process.env.ADMIN_COOKIE_SECURE?.trim().toLowerCase()
+    const secure = configuredSecure ? configuredSecure === 'true' : process.env.NODE_ENV === 'production'
+    return { httpOnly: true, secure, sameSite: 'lax' as const, path: '/v1/admin' }
   }
 }
