@@ -142,4 +142,4 @@ jobs:
           deploy_port="${DEPLOY_PORT:-22}"
           deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
           printf '%s' "$GHCR_TOKEN" | ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "docker login ghcr.io -u github-actions --password-stdin"
-          ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml pull && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api db:deploy && docker compose --env-file .env.production -f compose.prod.yaml up -d --remove-orphans && sleep 5 && curl --fail --silent --show-error http://127.0.0.1:\${APP_PORT:-8080}/v1/health"
+          ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml pull && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api db:deploy && docker compose --env-file .env.production -f compose.prod.yaml up -d --remove-orphans --wait --wait-timeout 120"

@@ -38,3 +38,5 @@ ADMIN_ALLOWED_ORIGINS=http://服务器IP:8080
 ## 当前 HTTP 试运行
 
 可先将 `APP_PORT` 设为 `8080`，并把 `CORS_ORIGINS`、`ADMIN_ALLOWED_ORIGINS` 都设为 `http://服务器公网IP:8080`，用于验证网页、API 和容器健康状态。当前 API 在生产模式下会给管理员会话设置 `Secure` Cookie，因此 HTTP 下不保证管理员登录会话可用；不要为了临时联调而把它当作安全的生产方案。
+
+服务器宿主机只需 SSH、Docker Engine 和 Docker Compose。Node.js、MySQL 与 Nginx 均在镜像/容器内运行；工作流使用 Compose `--wait` 等待服务健康，不依赖宿主机安装这些运行时。
