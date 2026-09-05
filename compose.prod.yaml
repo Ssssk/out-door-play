@@ -26,6 +26,7 @@ services:
       NODE_ENV: production
       PORT: 3100
       DATABASE_URL: mysql://${MYSQL_USER:-chumen}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE:-chumen}
+      SHADOW_DATABASE_URL: mysql://${MYSQL_USER:-chumen}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE:-chumen}_shadow
       DATABASE_ALLOW_PUBLIC_KEY_RETRIEVAL: "false"
       IDENTITY_SUBJECT_HMAC_KEY: ${IDENTITY_SUBJECT_HMAC_KEY:?IDENTITY_SUBJECT_HMAC_KEY is required}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
