@@ -75,7 +75,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     needs: build-images
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     environment: production
     steps:
       - name: Check out source
@@ -129,18 +129,40 @@ jobs:
           env_payload="$(printf '%s\nAPI_IMAGE=%s\nWEB_IMAGE=%s\n' "$DEPLOY_ENV_FILE" "$API_IMAGE" "$WEB_IMAGE" | base64 -w0)"
           printf '%s' "$env_payload" | ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "base64 -d > '$deploy_dir/.env.production' && chmod 600 '$deploy_dir/.env.production'"
 
-      - name: Pull images, migrate and restart
+      - name: Log in to GHCR on runner
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Transfer deployment images over SSH
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          API_IMAGE: ${{ needs.build-images.outputs.api_image }}
+          WEB_IMAGE: ${{ needs.build-images.outputs.web_image }}
+        run: |
+          set -euo pipefail
+          deploy_port="${DEPLOY_PORT:-22}"
+          docker pull "$API_IMAGE"
+          docker pull "$WEB_IMAGE"
+          docker pull mysql:8.4
+          docker save "$API_IMAGE" "$WEB_IMAGE" mysql:8.4 \
+            | gzip -1 \
+            | ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "gzip -d | docker load"
+
+      - name: Migrate and restart
         shell: bash
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
-          GHCR_USER: ${{ github.actor }}
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           deploy_port="${DEPLOY_PORT:-22}"
           deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
-          printf '%s' "$GHCR_TOKEN" | ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "docker login ghcr.io -u '$GHCR_USER' --password-stdin"
-          ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml pull && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api db:deploy && docker compose --env-file .env.production -f compose.prod.yaml up -d --remove-orphans --wait --wait-timeout 120"
+          ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api db:deploy && docker compose --env-file .env.production -f compose.prod.yaml up -d --remove-orphans --wait --wait-timeout 120"
