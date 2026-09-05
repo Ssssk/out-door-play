@@ -1,0 +1,27 @@
+{
+  "change_id": "CHG-OUTDOOR-V110-001",
+  "decisions": {
+    "requirements": {
+      "status": "passed",
+      "approver": "用户（项目负责人）",
+      "decided_at": "2026-08-30T09:14:50Z",
+      "reason": "用户明确批准推荐需求基线：17 份业务需求、H5+微信首批范围、隐藏用户/UGC入口和稳定 AC 映射。",
+      "evidence": ["approvals/2026-08-30-requirements-design.md", "02-requirements.md", "03-acceptance-criteria.md"]
+    },
+    "design": {
+      "status": "passed",
+      "approver": "用户（项目负责人）",
+      "decided_at": "2026-08-30T09:14:50Z",
+      "reason": "用户明确批准候选架构方向：保留 Prisma、Redis/MQ 按需、模块化单体和垂直 Change 渐进交付。",
+      "evidence": ["approvals/2026-08-30-requirements-design.md", "04-impact-analysis.md", "05-design.md"]
+    },
+    "implementation": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "verification": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "security": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "uat": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "operations": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "release": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "completion": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] }
+  }
+}
+

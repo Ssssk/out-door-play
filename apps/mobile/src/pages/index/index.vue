@@ -1,0 +1,78 @@
+<template>
+  <AppShell>
+    <view class="page-content discovery-page">
+      <BrandHeader
+        :cities="availableCities"
+        :cities-loading="citiesLoading"
+        :cities-fallback="citiesFallback"
+        @change="loadRoutes()"
+        @retry-cities="loadCities"
+      />
+      <SceneTabs :model-value="scene" @update:model-value="changeScene" />
+
+      <view v-if="loading && routes.length === 0" class="loading-state">
+        <wd-loading color="#1a1a1a" />
+        <text>正在寻找附近好去处…</text>
+      </view>
+
+      <view v-else-if="status === 'empty'" class="result-state" role="status">
+        <text class="state-title">这个城市暂时没有推荐</text>
+        <text>可以换个城市或场景再看看</text>
+        <button @click="loadRoutes()">重新加载</button>
+      </view>
+
+      <view v-else-if="status === 'error'" class="result-state" role="alert">
+        <text class="state-title">推荐加载失败</text>
+        <text>请检查网络后重试</text>
+        <button @click="loadRoutes()">重试</button>
+      </view>
+
+      <view v-else class="route-list">
+        <view v-if="status === 'fallback'" class="fallback-notice" role="status">
+          <text>网络不太稳定，正在显示本地推荐</text>
+          <button @click="loadRoutes()">重试</button>
+        </view>
+        <DiscoveryCard v-for="route in routes" :key="route.id" :item="route" @click="openDetail" />
+      </view>
+    </view>
+  </AppShell>
+</template>
+
+<script setup lang="ts">
+import AppShell from '@/components/AppShell.vue'
+import BrandHeader from '@/components/BrandHeader.vue'
+import DiscoveryCard from '@/components/DiscoveryCard.vue'
+import SceneTabs from '@/components/SceneTabs.vue'
+import { navigate } from '@/common/router'
+import type { RouteCard } from '@/types/domain'
+import { useDiscovery } from './useDiscovery'
+
+const {
+  scene,
+  routes,
+  availableCities,
+  loading,
+  citiesLoading,
+  citiesFallback,
+  status,
+  loadCities,
+  loadRoutes,
+  changeScene,
+} = useDiscovery()
+
+function openDetail(item: RouteCard) {
+  const path = item.scene === 'fish' ? '/pages/fishing-detail/index' : '/pages/route-detail/index'
+  void navigate(path, item.scene === 'fish' ? { spotId: item.id } : { routeId: item.id })
+}
+</script>
+
+<style scoped lang="scss">
+.discovery-page { padding-bottom: 56rpx; }
+.loading-state { display: flex; flex-direction: column; align-items: center; padding: 160rpx 0; color: var(--chumen-muted); font-size: 26rpx; }
+.loading-state text { margin-top: 18rpx; }
+.result-state { display: flex; flex-direction: column; align-items: center; padding: 150rpx 32rpx; color: var(--chumen-muted); font-size: 24rpx; text-align: center; }
+.result-state .state-title { margin-bottom: 12rpx; color: var(--chumen-ink); font-size: 32rpx; font-weight: 900; }
+.result-state button,.fallback-notice button { min-height: 60rpx; margin-top: 24rpx; padding: 0 28rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 23rpx; line-height: 60rpx; }
+.fallback-notice { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22rpx; padding: 18rpx 22rpx; border-radius: 22rpx; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 22rpx; }
+.fallback-notice button { min-height: 52rpx; margin: 0 0 0 20rpx; line-height: 52rpx; }
+</style>

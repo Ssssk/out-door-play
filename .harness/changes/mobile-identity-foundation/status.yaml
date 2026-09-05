@@ -1,0 +1,50 @@
+id: "CHG-MOBILE-IDENTITY-001"
+name: "mobile-identity-foundation"
+change_type: "feature"
+state: "implementing"
+risk_level: "high"
+owner: "用户（产品与架构 Owner）"
+created_at: "2026-08-30"
+updated_at: "2026-09-05"
+
+scope:
+  frontend: true
+  backend: true
+  api: true
+  database: true
+  redis: false
+  messaging: false
+  security: true
+  deployment: false
+  ux: true
+  performance: false
+  operations: false
+  compliance: true
+
+gates:
+  requirements: "passed"
+  design: "passed"
+  implementation: "pending"
+  verification: "pending"
+  security: "pending"
+  uat: "pending"
+  operations: "pending"
+  release: "pending"
+  completion: "pending"
+
+approvals:
+  product_owner: "用户"
+  architecture_owner: "用户"
+  ux_owner: "pending"
+  security_owner: "pending"
+  operations_owner: "pending"
+  product_acceptance_owner: "pending"
+  reviewer: "pending"
+  release_owner: "pending"
+
+blocking_risks:
+  - "IDENTITY-P1-001: 正式微信 AppID/AppSecret 与真机环境未提供，生产 code2Session 和微信真机验收保持 pending。"
+  - "IDENTITY-P1-002: H5 正式身份提供方不在已批准 PRD 范围，本轮只允许本地开发适配器。"
+  - "IDENTITY-P1-003: 本地 MySQL migration/integration/API E2E/H5 开发闭环已通过；GitHub CI 空库容器运行尚无远端 run 证据。"
+  - "IDENTITY-P1-004: 供应链审计仍有 uni-app 精确锁定 Vite 5.2.8 的 2 个 high，Security Gate 保持 pending/failed。"
+

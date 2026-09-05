@@ -1,0 +1,15 @@
+{
+  "change_id": "CHG-ADMIN-FOUNDATION-001",
+  "decisions": {
+    "requirements": { "status": "passed", "approver": "用户", "decided_at": "2026-08-30T09:32:00Z", "reason": "用户批准管理端独立认证、RBAC、CSRF、会话与审计范围。", "evidence": ["approvals/2026-08-30-requirements-design.md", "02-requirements.md", "03-acceptance-criteria.md"] },
+    "design": { "status": "passed", "approver": "用户", "decided_at": "2026-08-30T09:32:00Z", "reason": "用户批准 MySQL 不透明 Cookie 会话与推荐角色/时长/同站策略。", "evidence": ["approvals/2026-08-30-requirements-design.md", "04-impact-analysis.md", "05-design.md"] },
+    "implementation": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "verification": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "security": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "uat": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "operations": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "release": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "completion": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] }
+  }
+}
+

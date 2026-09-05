@@ -1,0 +1,3 @@
+schemaVersion: 1
+events: []
+# 每个事件至少声明 eventType、producer、routingKey、payloadSchema、幂等键、兼容策略。

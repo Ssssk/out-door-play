@@ -1,0 +1,49 @@
+name: Harness Contract
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DATABASE_URL: mysql://chumen:chumen_ci_password@127.0.0.1:3306/chumen_ci
+      DATABASE_ALLOW_PUBLIC_KEY_RETRIEVAL: "true"
+      NODE_ENV: test
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: chumen_ci
+          MYSQL_USER: chumen
+          MYSQL_PASSWORD: chumen_ci_password
+          MYSQL_ROOT_PASSWORD: root_ci_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -proot_ci_password --silent"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - name: Validate harness contract
+        run: node .harness/scripts/validate-harness.mjs
+
+      - name: Test harness validator fail-closed behavior
+        run: node .harness/scripts/test-validator.mjs
+
+      - name: Run application quality gates
+        run: node .harness/scripts/run-project-quality.mjs

@@ -1,0 +1,103 @@
+schema_version: 1
+name: "harness-uniapp-nest"
+language: "zh-CN"
+contract_type: "repository-native-fullstack-engineering"
+distribution_mode: "project"
+
+agent_entrypoints:
+  canonical: "AGENTS.md"
+  adapters:
+    claude: "CLAUDE.md"
+    cursor: ".cursor/rules/harness.mdc"
+    github_copilot: ".github/copilot-instructions.md"
+  adapter_policy: "thin-routing-no-duplicated-rules"
+
+stack:
+  frontend:
+    framework: "uni-app"
+    view: "Vue 3 Composition API"
+    language: "TypeScript"
+    state: "Pinia"
+    ui: "Wot Design Uni"
+    build: "Vite"
+  backend:
+    framework: "NestJS"
+    language: "TypeScript"
+    architecture: "modular-monolith"
+    orm: "Prisma"
+    database: "MySQL/InnoDB"
+    cache: "not-adopted; Redis requires an approved use case"
+    messaging: "not-adopted; RabbitMQ requires an approved use case"
+
+authority_order:
+  - "external-system-and-user-instructions"
+  - "scoped-agents-instruction-chain"
+  - "rules"
+  - "approved-change-contract"
+  - "wiki-current-facts"
+  - "skills-procedures"
+  - "agent-role-preferences"
+
+required_change_files:
+  - "status.yaml"
+  - "source-baseline.json"
+  - "gate-decisions.json"
+  - "00-request.md"
+  - "01-clarification.md"
+  - "02-requirements.md"
+  - "03-acceptance-criteria.md"
+  - "04-impact-analysis.md"
+  - "05-design.md"
+  - "06-tasks.md"
+  - "07-knowledge.md"
+  - "verification/test-plan.md"
+  - "verification/traceability-matrix.md"
+  - "release/release-plan.md"
+  - "release/rollback-plan.md"
+  - "frontend/ui-ux-review.md"
+  - "verification/accessibility-test.md"
+  - "verification/performance-test.md"
+  - "verification/product-uat.md"
+  - "security/supply-chain-review.md"
+  - "operations/operational-readiness.md"
+  - "operations/slo.yaml"
+  - "operations/disaster-recovery.md"
+  - "operations/incident-plan.md"
+  - "completion.md"
+
+states:
+  - "draft"
+  - "clarifying"
+  - "requirements_ready"
+  - "design_ready"
+  - "approved"
+  - "implementing"
+  - "verifying"
+  - "ready_for_release"
+  - "released"
+  - "completed"
+  - "archived"
+  - "cancelled"
+
+completion_policy:
+  default_fail: true
+  fresh_context_review: true
+  reviewer_write_access: false
+  require_traceability: true
+  require_release_evidence: true
+  unresolved_blocking_risk_levels: ["P0", "P1"]
+  require_source_baseline: true
+  require_gate_decisions: true
+  require_product_acceptance: true
+  require_operational_readiness: true
+
+validation:
+  command: "node .harness/scripts/validate-harness.mjs"
+  ci_required: true
+
+knowledge_policy:
+  retrieval_before_work: true
+  capture_on_completion: true
+  verified_status_required_for_reuse_without_exception: true
+  allowed_statuses: ["draft", "verified", "deprecated", "rejected"]
+  sensitive_data_forbidden: true

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/harness/evidence.schema.json",
+  "title": "Execution evidence",
+  "type": "object",
+  "required": ["changeId", "requirementIds", "acceptanceIds", "type", "status", "commit", "environment", "startedAt", "finishedAt", "command", "exitCode", "summary", "runner"],
+  "properties": {
+    "changeId": { "type": "string", "pattern": "^CHG-[A-Z0-9-]+$" },
+    "requirementIds": { "type": "array", "items": { "type": "string" } },
+    "acceptanceIds": { "type": "array", "items": { "type": "string" } },
+    "type": { "enum": ["static", "unit", "integration", "contract", "e2e", "security", "performance", "migration", "deployment", "uat", "accessibility", "supply-chain", "operational-readiness", "backup-restore"] },
+    "status": { "enum": ["passed", "failed", "not-run", "blocked"] },
+    "commit": { "type": "string", "minLength": 7 },
+    "environment": { "type": "string", "minLength": 1 },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "finishedAt": { "type": "string", "format": "date-time" },
+    "command": { "type": "string", "minLength": 1 },
+    "exitCode": { "type": "integer" },
+    "summary": { "type": "string", "minLength": 1 },
+    "artifacts": { "type": "array", "items": { "type": "string" } },
+    "requestId": { "type": "string" },
+    "runner": { "type": "string", "minLength": 1 },
+    "artifactsSha256": { "type": "object", "additionalProperties": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" } }
+  }
+}

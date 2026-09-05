@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/harness/gate-decisions.schema.json",
+  "title": "Gate decisions",
+  "type": "object",
+  "required": ["change_id", "decisions"],
+  "properties": {
+    "change_id": { "type": "string", "pattern": "^CHG-[A-Z0-9-]+$" },
+    "decisions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["status", "approver", "decided_at", "reason", "evidence"],
+        "properties": {
+          "status": { "enum": ["pending", "passed", "failed", "not-required"] },
+          "approver": { "type": ["string", "null"] },
+          "decided_at": { "type": ["string", "null"], "format": "date-time" },
+          "reason": { "type": ["string", "null"] },
+          "evidence": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

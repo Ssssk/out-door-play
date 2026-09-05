@@ -1,0 +1,16 @@
+{
+  "change_id": "CHG-SEC-DEPS-001",
+  "verification_status": "verified",
+  "verified_by": "用户",
+  "verified_at": "2026-08-30T09:32:00Z",
+  "sources": [
+    {"id":"SRC-PARENT-001","kind":"approved-parent-change","title":"CHG-OUTDOOR-V110-001 安全基线","location":"../prd-v1-1-rebuild/verification/security-review.md","version":"2026-08-30","sha256":null,"captured_at":"2026-08-30T09:23:05Z"},
+    {"id":"SRC-SCA-001","kind":"security-scan","title":"官方 npm Registry pnpm audit 结果","location":"../prd-v1-1-rebuild/evidence/004-security-audit.evidence.json","version":"npm advisory database queried 2026-08-30","sha256":null,"captured_at":"2026-08-30T09:23:05Z"},
+    {"id":"SRC-LOCK-001","kind":"lockfile","title":"pnpm dependency lock baseline","location":"../../../pnpm-lock.yaml","version":"HEAD a2a56a7 + worktree","sha256":"356690557616e642319d16374a831c5884e4fb75b4d780589d3c00c8f8549650","captured_at":"2026-08-30T09:25:00Z"}
+  ],
+  "requirement_mappings": [
+    {"requirement_id":"FR-SCA-001","source_id":"SRC-SCA-001","anchor":"35 vulnerabilities / 11 high"},
+    {"requirement_id":"FR-REMEDIATE-001","source_id":"SRC-LOCK-001","anchor":"locked vulnerable versions and dependency paths"},
+    {"requirement_id":"NFR-SUPPLY-001","source_id":"SRC-PARENT-001","anchor":"SEC-P1-002 blocks Security Gate"}
+  ]
+}

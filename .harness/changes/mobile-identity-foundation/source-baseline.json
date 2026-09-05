@@ -1,0 +1,42 @@
+{
+  "change_id": "CHG-MOBILE-IDENTITY-001",
+  "verification_status": "verified",
+  "verified_by": "Codex（文件哈希）+ 用户（实现指令）",
+  "verified_at": "2026-08-30T14:45:00Z",
+  "sources": [
+    {
+      "id": "SRC-001",
+      "kind": "user-request",
+      "title": "先实现剩余主要工作第一项：普通用户登录及写接口授权",
+      "location": "approvals/2026-08-30-requirements-source.md",
+      "version": "2026-08-30",
+      "sha256": null,
+      "captured_at": "2026-08-30T00:00:00Z"
+    },
+    {
+      "id": "SRC-PRD-MINE",
+      "kind": "prd",
+      "title": "mobile-mine / edit / favorite / route-detail requirements",
+      "location": "C:/Users/Admin/Desktop/chumen-liuliu-prd(1)/chumen-liuliu-prd/v1.1.0/requirements",
+      "version": "v1.1.0",
+      "sha256": "57D888DF7C8925E10511EE8A98E9F111B7CA708D8C31CD062C349D3C2A99E775;0AFE467A1E8E1EEC4672A00E00A8FDF55D695C207E1C83248734DFF248DA264A;B44761B3B06A414BE1B8DD23CE29D453BDA27AE379786F648F08E19601E023E8;50B8A4D546B6B476828993A102BA36C5277F6D27DCE578663F7CEF4A2B0008B7",
+      "captured_at": "2026-08-30T14:45:00Z"
+    },
+    {
+      "id": "SRC-PARENT-APPROVAL",
+      "kind": "approval",
+      "title": "CHG-OUTDOOR-V110-001 Requirements / Design Gate 人工批准",
+      "location": ".harness/changes/prd-v1-1-rebuild/approvals/2026-08-30-requirements-design.md",
+      "version": "2026-08-30",
+      "sha256": null,
+      "captured_at": "2026-08-30T14:45:00Z"
+    }
+  ],
+  "requirement_mappings": [
+    { "requirement_id": "FR-IDENTITY-001", "source_id": "SRC-PARENT-APPROVAL", "anchor": "批准范围 5-6" },
+    { "requirement_id": "FR-PROFILE-001", "source_id": "SRC-PRD-MINE", "anchor": "mobile-mine-edit 核心功能/数据需求" },
+    { "requirement_id": "FR-FAVORITE-001", "source_id": "SRC-PRD-MINE", "anchor": "mobile-mine-favorite 核心功能及 route-detail 收藏" },
+    { "requirement_id": "NFR-IDENTITY-SEC-001", "source_id": "SRC-001", "anchor": "普通用户登录及写接口授权" }
+  ]
+}
+

@@ -1,0 +1,15 @@
+service: "unset"
+owner: "unset"
+measurement_window: "30d"
+slis:
+  availability:
+    query: "unset"
+    target: "unset"
+  latency:
+    query: "unset"
+    target: "unset"
+  correctness:
+    query: "unset"
+    target: "unset"
+error_budget_policy: "unset"
+alert_routes: []

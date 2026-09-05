@@ -1,0 +1,45 @@
+id: "{{CHANGE_ID}}"
+name: "{{CHANGE_NAME}}"
+change_type: "feature"
+state: "draft"
+risk_level: "unset"
+owner: "unset"
+created_at: "{{CREATED_AT}}"
+updated_at: "{{CREATED_AT}}"
+
+scope:
+  frontend: false
+  backend: false
+  api: false
+  database: false
+  redis: false
+  messaging: false
+  security: false
+  deployment: false
+  ux: false
+  performance: false
+  operations: false
+  compliance: false
+
+gates:
+  requirements: "pending"
+  design: "pending"
+  implementation: "pending"
+  verification: "pending"
+  security: "pending"
+  uat: "pending"
+  operations: "pending"
+  release: "pending"
+  completion: "pending"
+
+approvals:
+  product_owner: "pending"
+  architecture_owner: "pending"
+  ux_owner: "pending"
+  security_owner: "pending"
+  operations_owner: "pending"
+  product_acceptance_owner: "pending"
+  reviewer: "pending"
+  release_owner: "pending"
+
+blocking_risks: []

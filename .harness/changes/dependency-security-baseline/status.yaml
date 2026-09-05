@@ -1,0 +1,48 @@
+id: "CHG-SEC-DEPS-001"
+name: "dependency-security-baseline"
+change_type: "dependency"
+state: "implementing"
+risk_level: "high"
+owner: "用户（产品、架构与安全 Owner）"
+created_at: "2026-08-30"
+updated_at: "2026-09-05"
+
+scope:
+  frontend: true
+  backend: true
+  api: false
+  database: false
+  redis: false
+  messaging: false
+  security: true
+  deployment: true
+  ux: false
+  performance: false
+  operations: false
+  compliance: false
+
+gates:
+  requirements: "passed"
+  design: "passed"
+  implementation: "pending"
+  verification: "pending"
+  security: "pending"
+  uat: "pending"
+  operations: "pending"
+  release: "pending"
+  completion: "pending"
+
+approvals:
+  product_owner: "用户"
+  architecture_owner: "用户"
+  ux_owner: "pending"
+  security_owner: "用户"
+  operations_owner: "pending"
+  product_acceptance_owner: "pending"
+  reviewer: "pending"
+  release_owner: "pending"
+
+blocking_risks:
+  - "DEP-P1-001: 官方 npm Registry 扫描剩余 2 个 high，均来自 DCloud 精确 peer 的 Vite 5.2.8；Security Gate 仍失败。"
+  - "DEP-P1-002: Vite 修复版本跨越 uni-app 当前精确兼容基线；已将开发服务器默认限制为 127.0.0.1，例外尚待安全 Owner 批准且 2026-09-15 到期。"
+

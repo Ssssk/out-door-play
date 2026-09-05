@@ -1,11 +1,20 @@
 # 小程序私有配置
 project.private.config.json
+private.*.key
 
 # 开发工具/本地缓存
 .codebuddy/
 node_modules/
 .DS_Store
 *.log
+dist/
+.pnpm-store/
+.env
+.env.development
+.env.local
+.env.*.local
+coverage/
+apps/api/src/generated/
 
 # 临时生成文件
 tmp/

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/harness/source-baseline.schema.json",
+  "title": "Requirement source baseline",
+  "type": "object",
+  "required": ["change_id", "verification_status", "sources", "requirement_mappings"],
+  "properties": {
+    "change_id": { "type": "string", "pattern": "^CHG-[A-Z0-9-]+$" },
+    "verification_status": { "enum": ["pending", "verified", "not-applicable"] },
+    "verified_by": { "type": ["string", "null"] },
+    "verified_at": { "type": ["string", "null"], "format": "date-time" },
+    "sources": { "type": "array", "minItems": 1 },
+    "requirement_mappings": { "type": "array" }
+  }
+}

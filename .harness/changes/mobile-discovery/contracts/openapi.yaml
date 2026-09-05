@@ -1,0 +1,45 @@
+openapi: 3.0.3
+info:
+  title: "mobile-discovery API delta"
+  version: "1.0.0"
+paths:
+  /v1/cities:
+    get:
+      operationId: listEnabledCities
+      security: []
+      responses:
+        '200': { description: 已启用城市列表 }
+  /v1/routes:
+    get:
+      operationId: listDiscoveries
+      security: []
+      parameters:
+        - { in: query, name: city, schema: { type: string, pattern: '^[0-9]{6}$' } }
+        - { in: query, name: scene, schema: { type: string, enum: [drive, fish], default: drive } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 20, default: 10 } }
+      responses:
+        '200': { description: 稳定排序的公开发现卡片 }
+        '422': { description: 参数校验失败 }
+  /v1/routes/{id}:
+    get:
+      operationId: getRouteDetail
+      security: []
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, pattern: '^[a-z0-9-]{1,64}$' } }
+      responses:
+        '200': { description: 公开路线详情 }
+        '404': { description: 路线不存在或不可见 }
+        '422': { description: ID 校验失败 }
+  /v1/spots/{id}:
+    get:
+      operationId: getFishingSpotDetail
+      security: []
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, pattern: '^[a-z0-9-]{1,64}$' } }
+      responses:
+        '200': { description: 公开钓点详情 }
+        '404': { description: 钓点不存在或不可见 }
+        '422': { description: ID 校验失败 }
+components:
+  schemas: {}
+

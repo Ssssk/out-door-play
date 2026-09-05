@@ -1,0 +1,17 @@
+{
+  "mode": "active",
+  "package_manager": "pnpm",
+  "working_directory": ".",
+  "commands": {
+    "install": "pnpm install --frozen-lockfile",
+    "format_check": "pnpm format:check",
+    "lint": "pnpm lint",
+    "typecheck": "pnpm type-check",
+    "unit": "pnpm test",
+    "build": "pnpm build",
+    "contract": "pnpm test:contract",
+    "integration": "pnpm test:integration",
+    "e2e": "pnpm test:e2e",
+    "security": "pnpm security:scan"
+  }
+}

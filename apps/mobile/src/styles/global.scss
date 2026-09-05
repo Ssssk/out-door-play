@@ -1,0 +1,63 @@
+page {
+  min-height: 100%;
+  background: #fff;
+  color: var(--chumen-text);
+  font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+view, text, image, button, input, textarea { box-sizing: border-box; }
+button { margin: 0; border: 0; font: inherit; }
+button::after, uni-button::after, .uni-button::after { border: 0; }
+
+.page-shell {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background: linear-gradient(225deg, rgba(204,255,0,.08) 0, var(--chumen-canvas) 30%);
+}
+
+.page-content {
+  width: 100%;
+  max-width: none;
+  // 微信小程序自定义导航需要避开系统胶囊；其他端回退到原有状态栏间距。
+  padding: calc(var(--chumen-top-inset, var(--status-bar-height, 0px)) + 28rpx) 32rpx 40rpx;
+}
+
+.section-title {
+  display: block;
+  margin: 36rpx 0 22rpx;
+  font-size: 32rpx;
+  line-height: 1.25;
+  font-weight: 800;
+  color: var(--chumen-ink);
+}
+
+.pill-button {
+  min-height: 76rpx;
+  padding: 0 34rpx;
+  border-radius: 999rpx;
+  background: var(--chumen-ink);
+  color: var(--chumen-lime);
+  font-size: 28rpx;
+  font-weight: 700;
+  line-height: 76rpx;
+}
+
+.card-surface {
+  border: 2rpx solid var(--chumen-line);
+  border-radius: 32rpx;
+  background: #fff;
+}
+
+/* H5 保持与 430px 移动端原型同宽，避免内容居中而原生 TabBar 横跨整屏。 */
+uni-tabbar .uni-tabbar {
+  right: 0;
+  left: 0;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+}

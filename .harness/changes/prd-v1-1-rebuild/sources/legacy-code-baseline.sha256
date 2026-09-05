@@ -1,0 +1,11 @@
+# 旧项目现状基线
+# Git HEAD：a2a56a79851bda3ca129f27e63b3cf17b02a8b8b
+# 注意：apps/ 等主要实现当前未提交，以下哈希只固定关键入口，不代表完整工作树。
+
+9f5418b47e6206b8136352d42dbbe740dad8342d990215817794de527c7290c8  package.json
+356690557616e642319d16374a831c5884e4fb75b4d780589d3c00c8f8549650  pnpm-lock.yaml
+931042dc7ef0b471ca5da7145f17df6b1ffc6985b0aa0102ad3cab480aaa165f  apps/mobile/package.json
+34b0e36814fd3c9931c379f0b6a975c8d014207ae3baa050047e870793cc8336  apps/api/package.json
+a77685a552905e9ef95b3dbf68d5618c613774e97e44aa0e8e9b9bc1a228af80  apps/admin/package.json
+5dcfa4027cc6594b331129d0256d39538cd97f6c68ef73831e13f69db302a5ce  apps/api/prisma/schema.prisma
+

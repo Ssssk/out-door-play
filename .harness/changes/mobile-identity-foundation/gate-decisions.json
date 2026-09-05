@@ -1,0 +1,15 @@
+{
+  "change_id": "CHG-MOBILE-IDENTITY-001",
+  "decisions": {
+    "requirements": { "status": "passed", "approver": "用户（产品 Owner）", "decided_at": "2026-08-30T14:45:00Z", "reason": "父 Change 已批准移动端微信登录方向；用户明确要求先实现普通用户登录及写接口授权。", "evidence": ["approvals/2026-08-30-requirements-source.md"] },
+    "design": { "status": "passed", "approver": "用户（架构 Owner）", "decided_at": "2026-08-31T16:53:28Z", "reason": "在收到推荐设计与明确 Design Gate 提示后，用户以剩余工作截图再次要求继续；按当前上下文视为批准先实施普通用户登录及写接口授权。", "evidence": ["approvals/2026-09-01-design-continue.md"] },
+    "implementation": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "verification": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "security": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "uat": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "operations": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "release": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "completion": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] }
+  }
+}
+

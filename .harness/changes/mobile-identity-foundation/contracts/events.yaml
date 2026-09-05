@@ -1,0 +1,4 @@
+schemaVersion: 1
+events: []
+# 本 Change 的登录、资料和收藏均为同步 MySQL 闭环；未采用 RabbitMQ/Outbox，故无事件契约。
+

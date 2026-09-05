@@ -1,0 +1,42 @@
+{
+  "name": "chumen-liuliu",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @chumen/mobile --filter @chumen/admin --filter @chumen/api dev",
+    "dev:mobile": "pnpm --filter @chumen/mobile dev:h5",
+    "dev:admin": "pnpm --filter @chumen/admin dev",
+    "dev:api": "pnpm --filter @chumen/api dev",
+    "db:up": "docker compose up -d mysql",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f mysql",
+    "db:migrate": "pnpm --filter @chumen/api db:migrate",
+    "db:deploy": "pnpm --filter @chumen/api db:deploy",
+    "db:seed": "pnpm --filter @chumen/api db:seed",
+    "db:studio": "pnpm --filter @chumen/api db:studio",
+    "build": "pnpm -r build",
+    "build:h5": "pnpm --filter @chumen/mobile build:h5",
+    "build:mp-weixin": "pnpm --filter @chumen/mobile build:mp-weixin",
+    "format:check": "node scripts/check-format.mjs",
+    "lint": "eslint apps scripts eslint.config.mjs",
+    "type-check": "pnpm -r type-check",
+    "test": "pnpm -r test",
+    "test:contract": "pnpm --filter @chumen/api test:contract",
+    "test:integration": "pnpm --filter @chumen/api db:deploy && pnpm --filter @chumen/api test:integration",
+    "test:e2e": "pnpm --filter @chumen/api test:e2e",
+    "security:secret": "node scripts/secret-scan.mjs",
+    "security:scan": "pnpm security:secret && pnpm lint && pnpm security:sbom && pnpm security:audit",
+    "security:audit": "pnpm audit --registry=https://registry.npmjs.org --prod --audit-level high",
+    "security:sbom": "pnpm dlx @cyclonedx/cdxgen@12.8.4 -t js --spec-version 1.6 --output .harness/changes/dependency-security-baseline/evidence/sbom.cdx.json --no-recurse"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.9.1",
+    "eslint-plugin-security": "4.0.1",
+    "eslint-plugin-vue": "10.10.0",
+    "globals": "17.11.0",
+    "typescript-eslint": "8.68.0",
+    "vue-eslint-parser": "10.4.1"
+  }
+}

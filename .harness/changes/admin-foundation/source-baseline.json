@@ -1,0 +1,17 @@
+{
+  "change_id": "CHG-ADMIN-FOUNDATION-001",
+  "verification_status": "verified",
+  "verified_by": "用户",
+  "verified_at": "2026-08-30T09:32:00Z",
+  "sources": [
+    {"id":"SRC-PARENT-001","kind":"approved-parent-change","title":"CHG-OUTDOOR-V110-001 管理端基础方向","location":"../prd-v1-1-rebuild/approvals/2026-08-30-requirements-design.md","version":"2026-08-30","sha256":null,"captured_at":"2026-08-30T09:14:50Z"},
+    {"id":"SRC-SEC-001","kind":"security-review","title":"未认证 Admin API P1 发现","location":"../prd-v1-1-rebuild/verification/security-review.md","version":"2026-08-30","sha256":null,"captured_at":"2026-08-30T09:23:05Z"},
+    {"id":"SRC-PRD-ADMIN","kind":"prd-set","title":"v1.1 管理端、用户、UGC与系统配置需求","location":"C:/Users/Admin/Desktop/chumen-liuliu-prd(1)/chumen-liuliu-prd/v1.1.0/requirements","version":"v1.1.0","sha256_manifest":"web-admin-system d48439c4; web-users a8ef8bec; web-ugc 1e197933; web-system-config 164b4d08","captured_at":"2026-08-30T09:26:00Z"}
+  ],
+  "requirement_mappings": [
+    {"requirement_id":"FR-AUTH-001","source_id":"SRC-PARENT-001","anchor":"Admin 独立认证 + RBAC"},
+    {"requirement_id":"FR-RBAC-001","source_id":"SRC-SEC-001","anchor":"SEC-P1-001"},
+    {"requirement_id":"FR-AUDIT-001","source_id":"SRC-PRD-ADMIN","anchor":"管理写操作与系统配置"},
+    {"requirement_id":"NFR-SECURITY-001","source_id":"SRC-SEC-001","anchor":"默认拒绝和服务端授权"}
+  ]
+}

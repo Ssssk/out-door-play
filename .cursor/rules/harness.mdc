@@ -1,0 +1,12 @@
+---
+description: 本仓库 Harness AI 工程总契约入口
+alwaysApply: true
+---
+
+# Cursor 工程入口
+
+执行任何仓库工作前，完整读取根目录 `AGENTS.md`，然后按其中的启动协议读取 `.harness/manifest.yaml`、相关 Rules、当前 Change、Wiki、Knowledge 和匹配 Skill。
+
+本文件只做 Cursor 适配，不复制或降低 `AGENTS.md` 和 `.harness/rules/` 的约束。未经相应人工 Gate 和明确权限，不得执行跨模块编码、生产操作、数据修改、破坏性操作或外部写入。
+
+完成前运行 `node .harness/scripts/validate-harness.mjs`，并保存与当前 SHA 和环境绑定的真实证据。未运行项目必须标记 `not-run`。

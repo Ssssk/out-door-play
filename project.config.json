@@ -1,8 +1,8 @@
 {
-  "miniprogramRoot": "miniprogram/",
+  "miniprogramRoot": "apps/mobile/dist/build/mp-weixin/",
   "cloudfunctionRoot": "cloudfunctions/",
   "setting": {
-    "urlCheck": true,
+    "urlCheck": false,
     "es6": true,
     "enhance": true,
     "postcss": true,
@@ -45,8 +45,8 @@
     "disableSWC": true
   },
   "appid": "wxc6c3e9cde3af7cf9",
-  "projectname": "quickstart-wx-cloud",
-  "libVersion": "2.20.1",
+  "projectname": "chumen-liuliu",
+  "libVersion": "3.8.10",
   "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
   "condition": {
     "search": {
@@ -72,7 +72,7 @@
     }
   },
   "compileType": "miniprogram",
-  "srcMiniprogramRoot": "miniprogram/",
+  "srcMiniprogramRoot": "apps/mobile/dist/build/mp-weixin/",
   "packOptions": {
     "ignore": [],
     "include": []

@@ -1,0 +1,75 @@
+{
+  "change_id": "CHG-MOBILE-DISCOVERY-001",
+  "verification_status": "verified",
+  "verified_by": "用户（产品与架构 Owner）",
+  "verified_at": "2026-09-05T08:15:12Z",
+  "sources": [
+    {
+      "id": "SRC-DISCOVERY-USER-001",
+      "kind": "user-request",
+      "title": "继续开发下一条 PRD 垂直切片",
+      "location": "current-conversation",
+      "version": "2026-09-05",
+      "sha256": null,
+      "captured_at": "2026-09-05T03:00:00Z"
+    },
+    {
+      "id": "SRC-DISCOVERY-PRD-HOME",
+      "kind": "prd",
+      "title": "移动端首页需求",
+      "location": "C:/Users/Admin/Desktop/chumen-liuliu-prd(1)/chumen-liuliu-prd/v1.1.0/requirements/mobile-home.md",
+      "version": "v1.1.0 package / document body v1.0.0",
+      "sha256": "4987DE04CF8C591B6DD21FBA3F8E9FCA0940A4D5F61E9561458DF1E607879B12",
+      "captured_at": "2026-09-05T03:00:00Z"
+    },
+    {
+      "id": "SRC-DISCOVERY-PRD-FISH",
+      "kind": "prd",
+      "title": "移动端钓鱼列表需求",
+      "location": "C:/Users/Admin/Desktop/chumen-liuliu-prd(1)/chumen-liuliu-prd/v1.1.0/requirements/mobile-fishing.md",
+      "version": "v1.1.0 / V2 page",
+      "sha256": "F8600E524FFCD6858EFAEF96B4949B7282EC2C54FF7D14694E431402F0E9E2A4",
+      "captured_at": "2026-09-05T03:00:00Z"
+    },
+    {
+      "id": "SRC-DISCOVERY-PRD-ROUTE",
+      "kind": "prd",
+      "title": "移动端路线详情需求",
+      "location": "C:/Users/Admin/Desktop/chumen-liuliu-prd(1)/chumen-liuliu-prd/v1.1.0/requirements/mobile-route-detail.md",
+      "version": "v1.1.0 package / V2 page",
+      "sha256": "50B8A4D546B6B476828993A102BA36C5277F6D27DCE578663F7CEF4A2B0008B7",
+      "captured_at": "2026-09-05T03:00:00Z"
+    },
+    {
+      "id": "SRC-DISCOVERY-PRD-SPOT",
+      "kind": "prd",
+      "title": "移动端钓点详情需求",
+      "location": "C:/Users/Admin/Desktop/chumen-liuliu-prd(1)/chumen-liuliu-prd/v1.1.0/requirements/mobile-fishing-detail.md",
+      "version": "v1.1.0 package / V2 page",
+      "sha256": "E90EAABCD3AD0E275D35FB27A8D9A27EF3FB71DAD00F37356D72BC5B827CE19F",
+      "captured_at": "2026-09-05T03:00:00Z"
+    },
+    {
+      "id": "SRC-DISCOVERY-CODE-001",
+      "kind": "existing-code",
+      "title": "现有 discovery/city 移动端与 API 实现",
+      "location": "apps/mobile + apps/api/src/modules/routes + apps/api/src/modules/cities",
+      "version": "git:a2a56a79851bda3ca129f27e63b3cf17b02a8b8b + uncommitted-worktree",
+      "sha256": null,
+      "captured_at": "2026-09-05T03:00:00Z"
+    }
+  ],
+  "requirement_mappings": [
+    {"requirement_id": "FR-DISCOVERY-CITY-001", "source_id": "SRC-DISCOVERY-PRD-HOME", "anchor": "品牌标题与城市选择"},
+    {"requirement_id": "FR-DISCOVERY-CITY-001", "source_id": "SRC-DISCOVERY-PRD-FISH", "anchor": "城市选择抽屉"},
+    {"requirement_id": "FR-DISCOVERY-LIST-001", "source_id": "SRC-DISCOVERY-PRD-HOME", "anchor": "场景切换与路线推荐卡片列表"},
+    {"requirement_id": "FR-DISCOVERY-LIST-001", "source_id": "SRC-DISCOVERY-PRD-FISH", "anchor": "页面结构与数据接口"},
+    {"requirement_id": "FR-DISCOVERY-DETAIL-001", "source_id": "SRC-DISCOVERY-PRD-ROUTE", "anchor": "页面结构与数据接口"},
+    {"requirement_id": "FR-DISCOVERY-DETAIL-001", "source_id": "SRC-DISCOVERY-PRD-SPOT", "anchor": "页面结构与数据接口"},
+    {"requirement_id": "FR-DISCOVERY-ACTION-001", "source_id": "SRC-DISCOVERY-PRD-ROUTE", "anchor": "底部操作栏与交互"},
+    {"requirement_id": "FR-DISCOVERY-ACTION-001", "source_id": "SRC-DISCOVERY-PRD-SPOT", "anchor": "底部操作栏与交互"},
+    {"requirement_id": "FR-DISCOVERY-STATE-001", "source_id": "SRC-DISCOVERY-CODE-001", "anchor": "现有首页与详情 loading/fallback/竞态实现"},
+    {"requirement_id": "NFR-DISCOVERY-COMPAT-001", "source_id": "SRC-DISCOVERY-USER-001", "anchor": "继续按已批准 H5 + 微信目标开发"}
+  ]
+}
+

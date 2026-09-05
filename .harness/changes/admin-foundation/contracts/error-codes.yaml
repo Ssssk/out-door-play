@@ -1,0 +1,23 @@
+version: 1
+errors:
+  - code: ADMIN_AUTH_FAILED
+    httpStatus: 401
+    meaning: 用户名或密码错误；不得区分账号是否存在
+    clientAction: 显示统一错误，不自动重试
+  - code: ADMIN_SESSION_INVALID
+    httpStatus: 401
+    meaning: 会话缺失、撤销、空闲过期、绝对过期或管理员禁用
+    clientAction: 清理内存态并跳转登录
+  - code: ADMIN_PERMISSION_DENIED
+    httpStatus: 403
+    meaning: 当前主体缺少显式权限
+    clientAction: 显示无权限，不重放请求
+  - code: ADMIN_CSRF_INVALID
+    httpStatus: 403
+    meaning: CSRF token 或 Origin 不合法
+    clientAction: 停止写请求并重新恢复会话
+  - code: ADMIN_LOGIN_THROTTLED
+    httpStatus: 429
+    meaning: 登录尝试超过限制
+    clientAction: 按 Retry-After 延迟重试
+

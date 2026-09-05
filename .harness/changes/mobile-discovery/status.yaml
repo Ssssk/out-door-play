@@ -1,0 +1,50 @@
+id: "CHG-MOBILE-DISCOVERY-001"
+name: "mobile-discovery"
+change_type: "feature"
+state: "implementing"
+risk_level: "high"
+owner: "用户（产品与架构 Owner）"
+created_at: "2026-09-05"
+updated_at: "2026-09-05"
+
+scope:
+  frontend: true
+  backend: true
+  api: true
+  database: false
+  redis: false
+  messaging: false
+  security: true
+  deployment: false
+  ux: true
+  performance: true
+  operations: false
+  compliance: false
+
+gates:
+  requirements: "passed"
+  design: "passed"
+  implementation: "pending"
+  verification: "pending"
+  security: "pending"
+  uat: "pending"
+  operations: "pending"
+  release: "pending"
+  completion: "pending"
+
+approvals:
+  product_owner: "用户（项目负责人）"
+  architecture_owner: "用户（项目负责人）"
+  ux_owner: "pending"
+  security_owner: "pending"
+  operations_owner: "not-required-candidate"
+  product_acceptance_owner: "pending"
+  reviewer: "pending"
+  release_owner: "pending"
+
+blocking_risks:
+  - "DISCOVERY-P1-001: PRD 冲突已按 2026-09-05 推荐口径裁决；若需恢复占位城市页、实时距你或品牌地图，必须重新进入 Design Gate。"
+  - "DISCOVERY-P1-002: 当前工作树未提交；只允许增量修改，不进行覆盖式页面重写。"
+  - "DISCOVERY-P1-003: H5/微信构建不能替代微信真机与产品 UAT。"
+  - "DISCOVERY-P1-004: 供应链审计仍有 uni-app 依赖链 Vite 的 2 个 high（GHSA-c27g-q93r-2cwf、GHSA-fx2h-pf6j-xcff），Security Gate 保持 pending/failed。"
+

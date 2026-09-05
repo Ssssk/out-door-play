@@ -1,0 +1,7 @@
+openapi: 3.0.3
+info:
+  title: "{{CHANGE_NAME}} API delta"
+  version: "1.0.0"
+paths: {}
+components:
+  schemas: {}

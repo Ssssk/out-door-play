@@ -1,0 +1,145 @@
+schema_version: 1
+updated_at: "2026-08-30"
+status_values:
+  - draft
+  - verified
+  - deprecated
+  - rejected
+type_values:
+  - solution
+  - incident
+  - decision
+  - pattern
+  - anti-pattern
+  - runbook
+entries:
+  - id: KB-SOL-001
+    title: Docker 重启后 Prisma 连接 MySQL 8 的 RSA 握手失败
+    type: solution
+    status: verified
+    path: solutions/KB-SOL-001-Prisma-MySQL-RSA握手.md
+    scope: [backend, database, local-development]
+    stack: [nestjs, prisma, mysql, docker]
+    tags: [caching_sha2_password, allowPublicKeyRetrieval, docker-restart, prisma-adapter-mariadb]
+    owner: 用户（项目负责人）
+    last_verified: 2026-08-30
+  - id: ADR-006
+    title: 保留 Prisma 并按用例引入 Redis 与 RabbitMQ
+    type: decision
+    status: verified
+    path: decisions/ADR-006-Prisma与条件基础设施.md
+    scope: [backend, database, cache, messaging, architecture]
+    stack: [nestjs, prisma, mysql, redis, rabbitmq]
+    tags: [ORM, 渐进迁移, 用例驱动, 模块化单体]
+    owner: 用户（项目负责人）
+    last_verified: 2026-08-30
+  - id: KB-INBOX-001
+    title: role-developer 3.0 经验 Skill 吸收与分类清单
+    type: decision
+    status: draft
+    path: inbox/KB-INBOX-001-role-developer经验吸收清单.md
+    scope: [harness-governance, knowledge-assimilation]
+    stack: [uni-app, vue3, wot-design-uni, nestjs, typeorm, mysql, redis, rabbitmq]
+    tags: [经验吸收, 来源治理, skill, provenance]
+    owner: unassigned
+    last_verified: null
+  - id: KB-INBOX-002
+    title: uni-app 多端宿主能力适配与证据矩阵
+    type: pattern
+    status: draft
+    path: inbox/KB-INBOX-002-多端宿主能力适配与证据矩阵.md
+    scope: [frontend, cross-platform, compatibility]
+    stack: [uni-app, vue3, typescript, wot-design-uni]
+    tags: [宿主适配, 能力检测, H5, 小程序, App, 真机]
+    owner: unassigned
+    last_verified: null
+  - id: KB-INBOX-003
+    title: uni-app 冷启动认证与并发 401 竞态治理
+    type: solution
+    status: draft
+    path: inbox/KB-INBOX-003-冷启动认证与并发401竞态.md
+    scope: [frontend, authentication, startup]
+    stack: [uni-app, vue3, pinia, nestjs]
+    tags: [冷启动, onLaunch, onLoad, 401, token-refresh, single-flight]
+    owner: unassigned
+    last_verified: null
+  - id: KB-INBOX-004
+    title: uni-app 页面/组件生命周期隔离与资源清理
+    type: pattern
+    status: draft
+    path: inbox/KB-INBOX-004-页面组件生命周期与资源清理.md
+    scope: [frontend, lifecycle, reliability]
+    stack: [uni-app, vue3, typescript]
+    tags: [onUnload, onUnmounted, websocket, media, timer, cleanup]
+    owner: unassigned
+    last_verified: null
+  - id: KB-INBOX-005
+    title: 离线写请求重放的幂等、冲突与失败归宿
+    type: pattern
+    status: draft
+    path: inbox/KB-INBOX-005-离线写请求重放边界.md
+    scope: [frontend, backend, offline, consistency]
+    stack: [uni-app, vue3, nestjs, mysql]
+    tags: [离线队列, 弱网, 重放, 幂等, 冲突, outbox]
+    owner: unassigned
+    last_verified: null
+  - id: KB-INBOX-006
+    title: 客户端伪安全与“全端兼容”误判反模式
+    type: anti-pattern
+    status: draft
+    path: inbox/KB-INBOX-006-客户端伪安全与兼容性误判.md
+    scope: [frontend, security, compatibility]
+    stack: [uni-app, vue3, wot-design-uni, nestjs]
+    tags: [XOR, Base64, localStorage, 客户端授权, 水印, 真机证据]
+    owner: unassigned
+    last_verified: null
+  - id: KB-INBOX-007
+    title: NestJS 业务一致性、缓存与异步消息边界
+    type: pattern
+    status: draft
+    path: inbox/KB-INBOX-007-NestJS一致性与异步边界.md
+    scope: [backend, consistency, messaging]
+    stack: [nestjs, typeorm, mysql, redis, rabbitmq]
+    tags: [事务, outbox, 幂等, 乐观锁, cache-aside, dlq]
+    owner: unassigned
+    last_verified: null
+  - id: KB-INBOX-008
+    title: OpenAPI 到 uni-app 生成链路的契约指纹与手写代码保护
+    type: pattern
+    status: draft
+    path: inbox/KB-INBOX-008-OpenAPI生成链路与契约指纹.md
+    scope: [api, frontend, backend, codegen]
+    stack: [nestjs, openapi, typescript, uni-app]
+    tags: [codegen, fingerprint, breaking-change, generated-code, contract-test]
+    owner: unassigned
+    last_verified: null
+  - id: KB-INBOX-009
+    title: MySQL 在线 Schema 变更与批量回填安全 Runbook
+    type: runbook
+    status: draft
+    path: inbox/KB-INBOX-009-MySQL在线迁移安全Runbook.md
+    scope: [backend, database, migration]
+    stack: [nestjs, typeorm, mysql]
+    tags: [expand-contract, ddl, backfill, lock, rollback, restore]
+    owner: unassigned
+    last_verified: null
+  - id: KB-INBOX-010
+    title: 日志、指标与 Trace 的关联、基数和隐私边界
+    type: pattern
+    status: draft
+    path: inbox/KB-INBOX-010-可观测信号关联与基数隐私.md
+    scope: [backend, observability, operations]
+    stack: [nestjs, opentelemetry, prometheus, rabbitmq, redis, mysql]
+    tags: [traceId, requestId, metrics, cardinality, redaction, SLO]
+    owner: unassigned
+    last_verified: null
+  - id: KB-INBOX-011
+    title: 高影响自动化的权限、Dry-run、中止阈值与恢复 Owner
+    type: pattern
+    status: draft
+    path: inbox/KB-INBOX-011-高影响自动化四项控制.md
+    scope: [ci, release, migration, testing, operations]
+    stack: [nestjs, mysql, redis, rabbitmq, github-actions]
+    tags: [automation, authority, dry-run, abort-threshold, rollback, blast-radius]
+    owner: unassigned
+    last_verified: null

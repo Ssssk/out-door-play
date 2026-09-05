@@ -1,0 +1,14 @@
+{
+  "change_id": "{{CHANGE_ID}}",
+  "decisions": {
+    "requirements": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "design": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "implementation": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "verification": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "security": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "uat": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "operations": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "release": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "completion": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] }
+  }
+}

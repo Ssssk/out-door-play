@@ -1,0 +1,15 @@
+{
+  "change_id": "CHG-MOBILE-DISCOVERY-001",
+  "decisions": {
+    "requirements": { "status": "passed", "approver": "用户（产品 Owner）", "decided_at": "2026-09-05T08:15:12Z", "reason": "用户在已告知下一条为 mobile discovery 且需冻结需求后连续要求继续开发；随后要求改完运行项目，采用明确告知的六项推荐口径。", "evidence": ["approvals/2026-09-05-continue-development.md"] },
+    "design": { "status": "passed", "approver": "用户（架构 Owner）", "decided_at": "2026-09-05T08:15:12Z", "reason": "用户要求继续实现；方案限制在现有 City/Discovery、公开只读 API 和宿主系统能力，不新增 schema、供应商或基础设施。", "evidence": ["approvals/2026-09-05-continue-development.md"] },
+    "implementation": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "verification": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "security": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "uat": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "operations": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "release": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "completion": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] }
+  }
+}
+

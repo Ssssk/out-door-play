@@ -1,0 +1,6 @@
+version: 1
+errors: []
+# - code: DOMAIN_REASON
+#   httpStatus: 409
+#   meaning: ""
+#   clientAction: ""

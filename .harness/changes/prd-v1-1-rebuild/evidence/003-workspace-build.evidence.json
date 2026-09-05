@@ -1,0 +1,17 @@
+{
+  "changeId": "CHG-OUTDOOR-V110-001",
+  "requirementIds": ["NFR-QUALITY-001", "NFR-COMPAT-001"],
+  "acceptanceIds": ["AC-QUALITY-001"],
+  "type": "static",
+  "status": "passed",
+  "commit": "a2a56a79851bda3ca129f27e63b3cf17b02a8b8b+uncommitted-worktree",
+  "environment": "local Windows, Node 22.22.0, pnpm 11.19.0",
+  "startedAt": "2026-08-30T09:21:30Z",
+  "finishedAt": "2026-08-30T09:22:15Z",
+  "command": "pnpm build",
+  "exitCode": 0,
+  "summary": "NestJS API、Vue Admin、uni-app H5 与微信小程序构建通过；保留 Sass 弃用和 Admin 503.77 kB chunk 警告。构建不代表真机 UAT。",
+  "runner": "Codex local exec",
+  "artifacts": ["apps/api/dist", "apps/admin/dist", "apps/mobile/dist/build/h5", "apps/mobile/dist/build/mp-weixin"],
+  "artifactsSha256": {}
+}

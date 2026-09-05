@@ -1,0 +1,47 @@
+id: "CHG-ADMIN-FOUNDATION-001"
+name: "admin-foundation"
+change_type: "security"
+state: "implementing"
+risk_level: "high"
+owner: "用户（产品、架构与安全 Owner）"
+created_at: "2026-08-30"
+updated_at: "2026-08-30"
+
+scope:
+  frontend: true
+  backend: true
+  api: true
+  database: true
+  redis: false
+  messaging: false
+  security: true
+  deployment: false
+  ux: false
+  performance: false
+  operations: false
+  compliance: true
+
+gates:
+  requirements: "passed"
+  design: "passed"
+  implementation: "pending"
+  verification: "pending"
+  security: "pending"
+  uat: "pending"
+  operations: "pending"
+  release: "pending"
+  completion: "pending"
+
+approvals:
+  product_owner: "用户"
+  architecture_owner: "用户"
+  ux_owner: "pending"
+  security_owner: "用户"
+  operations_owner: "pending"
+  product_acceptance_owner: "pending"
+  reviewer: "pending"
+  release_owner: "pending"
+
+blocking_risks:
+  - "AUTH-P1-003: 独立安全复核、正式管理员交付与 CI 空库验证未完成，禁止进入发布候选。"
+

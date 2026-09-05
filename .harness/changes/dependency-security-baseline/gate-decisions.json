@@ -1,0 +1,15 @@
+{
+  "change_id": "CHG-SEC-DEPS-001",
+  "decisions": {
+    "requirements": { "status": "passed", "approver": "用户", "decided_at": "2026-08-30T09:32:00Z", "reason": "用户批准修复高危依赖并保持 fail-closed。", "evidence": ["approvals/2026-08-30-requirements-design.md", "02-requirements.md", "03-acceptance-criteria.md"] },
+    "design": { "status": "passed", "approver": "用户", "decided_at": "2026-08-30T09:32:00Z", "reason": "用户批准按依赖族分批、受控 override 与完整回归方案。", "evidence": ["approvals/2026-08-30-requirements-design.md", "04-impact-analysis.md", "05-design.md"] },
+    "implementation": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "verification": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "security": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "uat": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "operations": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "release": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "completion": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] }
+  }
+}
+

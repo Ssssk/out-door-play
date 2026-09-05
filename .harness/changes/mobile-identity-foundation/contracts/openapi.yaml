@@ -1,0 +1,325 @@
+openapi: 3.0.3
+info:
+  title: mobile-identity-foundation API delta
+  version: 1.0.0
+paths:
+  /v1/auth/wechat/login:
+    post:
+      operationId: loginWithWechat
+      summary: 用微信一次性 code 建立普通用户会话
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WechatLoginRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/SessionSuccess' }
+        '401': { $ref: '#/components/responses/AuthCodeInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/ProviderUnavailable' }
+  /v1/auth/dev/login:
+    post:
+      operationId: loginWithDevIdentity
+      summary: 非生产环境开发身份登录
+      description: 仅 NODE_ENV 非 production 且 DEV_IDENTITY_ENABLED=true 时可用。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DevLoginRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/SessionSuccess' }
+        '404': { $ref: '#/components/responses/DevLoginDisabled' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /v1/auth/refresh:
+    post:
+      operationId: refreshMobileSession
+      summary: 单次轮换 access/refresh token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/SessionSuccess' }
+        '401': { $ref: '#/components/responses/RefreshInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /v1/auth/logout:
+    post:
+      operationId: logoutMobileSession
+      summary: 撤销当前移动会话
+      responses:
+        '200':
+          description: 当前会话已撤销
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/SuccessEnvelope' }
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/LogoutResult' }
+        '401': { $ref: '#/components/responses/SessionInvalid' }
+  /v1/user/me:
+    get:
+      operationId: getCurrentUserProfile
+      summary: 读取当前普通用户资料
+      responses:
+        '200': { $ref: '#/components/responses/ProfileSuccess' }
+        '401': { $ref: '#/components/responses/SessionInvalid' }
+    patch:
+      operationId: updateCurrentUserProfile
+      summary: 更新当前普通用户资料
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateProfileRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/ProfileSuccess' }
+        '401': { $ref: '#/components/responses/SessionInvalid' }
+        '422': { $ref: '#/components/responses/ProfileInvalid' }
+    post:
+      operationId: updateCurrentUserProfileLegacy
+      deprecated: true
+      summary: 兼容旧客户端的资料更新别名
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateProfileRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/ProfileSuccess' }
+        '401': { $ref: '#/components/responses/SessionInvalid' }
+        '422': { $ref: '#/components/responses/ProfileInvalid' }
+  /v1/user/favorites:
+    get:
+      operationId: listCurrentUserFavorites
+      summary: 按场景读取当前用户收藏
+      parameters:
+        - in: query
+          name: scene
+          required: true
+          schema: { $ref: '#/components/schemas/Scene' }
+      responses:
+        '200':
+          description: 收藏列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/SuccessEnvelope' }
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/FavoriteItem' }
+        '401': { $ref: '#/components/responses/SessionInvalid' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    post:
+      operationId: addCurrentUserFavorite
+      summary: 幂等收藏一个在线 Discovery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddFavoriteRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/FavoriteMutationSuccess' }
+        '401': { $ref: '#/components/responses/SessionInvalid' }
+        '404': { $ref: '#/components/responses/FavoriteDiscoveryNotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /v1/user/favorites/{discoveryId}:
+    delete:
+      operationId: removeCurrentUserFavorite
+      summary: 幂等取消一个当前用户收藏
+      parameters:
+        - in: path
+          name: discoveryId
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 64 }
+      responses:
+        '200': { $ref: '#/components/responses/FavoriteMutationSuccess' }
+        '401': { $ref: '#/components/responses/SessionInvalid' }
+components:
+  securitySchemes:
+    mobileBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+  schemas:
+    Scene:
+      type: string
+      enum: [drive, fish]
+    WechatLoginRequest:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code: { type: string, minLength: 1, maxLength: 256 }
+    DevLoginRequest:
+      type: object
+      additionalProperties: false
+      required: [handle]
+      properties:
+        handle: { type: string, minLength: 1, maxLength: 64, pattern: '^[A-Za-z0-9_-]+$' }
+    RefreshRequest:
+      type: object
+      additionalProperties: false
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string, minLength: 32, maxLength: 256, writeOnly: true }
+    UpdateProfileRequest:
+      type: object
+      additionalProperties: false
+      required: [nickname]
+      properties:
+        nickname: { type: string, minLength: 1, maxLength: 16 }
+        avatarUrl: { type: string, minLength: 1, maxLength: 255, pattern: '^(https://|/static/)' }
+    AddFavoriteRequest:
+      type: object
+      additionalProperties: false
+      required: [discoveryId]
+      properties:
+        discoveryId: { type: string, minLength: 1, maxLength: 64 }
+    TokenPair:
+      type: object
+      additionalProperties: false
+      required: [accessToken, refreshToken, accessExpiresAt, refreshExpiresAt]
+      properties:
+        accessToken: { type: string, writeOnly: true }
+        refreshToken: { type: string, writeOnly: true }
+        accessExpiresAt: { type: string, format: date-time }
+        refreshExpiresAt: { type: string, format: date-time }
+    UserStats:
+      type: object
+      additionalProperties: false
+      required: [mileage, favorites, checkins]
+      properties:
+        mileage: { type: integer, minimum: 0 }
+        favorites: { type: integer, minimum: 0 }
+        checkins: { type: integer, minimum: 0 }
+    UserProfile:
+      type: object
+      additionalProperties: false
+      required: [avatarUrl, nickname, stats]
+      properties:
+        avatarUrl: { type: string, maxLength: 255 }
+        nickname: { type: string, minLength: 1, maxLength: 16 }
+        stats: { $ref: '#/components/schemas/UserStats' }
+    SessionResult:
+      type: object
+      additionalProperties: false
+      required: [tokens, profile]
+      properties:
+        tokens: { $ref: '#/components/schemas/TokenPair' }
+        profile: { $ref: '#/components/schemas/UserProfile' }
+    FavoriteItem:
+      type: object
+      additionalProperties: false
+      required: [id, type, scene, title, subtitle, thumbUrl]
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [route, spot] }
+        scene: { $ref: '#/components/schemas/Scene' }
+        title: { type: string }
+        subtitle: { type: string }
+        thumbUrl: { type: string }
+    FavoriteMutationResult:
+      type: object
+      additionalProperties: false
+      required: [discoveryId, favorited]
+      properties:
+        discoveryId: { type: string }
+        favorited: { type: boolean }
+    LogoutResult:
+      type: object
+      additionalProperties: false
+      required: [revoked]
+      properties:
+        revoked: { type: boolean, enum: [true] }
+    SuccessEnvelope:
+      type: object
+      required: [code, message, data, traceId]
+      properties:
+        code: { type: integer, enum: [0] }
+        message: { type: string, enum: [ok] }
+        data: {}
+        traceId: { type: string }
+    ErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required: [code, message, data, traceId]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        data: { nullable: true }
+        traceId: { type: string }
+  responses:
+    SessionSuccess:
+      description: 新会话或轮换成功
+      content:
+        application/json:
+          schema:
+            allOf:
+              - { $ref: '#/components/schemas/SuccessEnvelope' }
+              - type: object
+                properties:
+                  data: { $ref: '#/components/schemas/SessionResult' }
+    ProfileSuccess:
+      description: 当前用户资料
+      content:
+        application/json:
+          schema:
+            allOf:
+              - { $ref: '#/components/schemas/SuccessEnvelope' }
+              - type: object
+                properties:
+                  data: { $ref: '#/components/schemas/UserProfile' }
+    FavoriteMutationSuccess:
+      description: 收藏确定结果
+      content:
+        application/json:
+          schema:
+            allOf:
+              - { $ref: '#/components/schemas/SuccessEnvelope' }
+              - type: object
+                properties:
+                  data: { $ref: '#/components/schemas/FavoriteMutationResult' }
+    AuthCodeInvalid:
+      description: AUTH_CODE_INVALID
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } }
+    ProviderUnavailable:
+      description: AUTH_PROVIDER_UNAVAILABLE
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } }
+    DevLoginDisabled:
+      description: AUTH_DEV_LOGIN_DISABLED
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } }
+    SessionInvalid:
+      description: AUTH_SESSION_INVALID
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } }
+    RefreshInvalid:
+      description: AUTH_REFRESH_INVALID
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } }
+    RateLimited:
+      description: AUTH_RATE_LIMITED
+      headers:
+        Retry-After: { schema: { type: integer, minimum: 1 } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } }
+    ProfileInvalid:
+      description: USER_PROFILE_INVALID
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } }
+    FavoriteDiscoveryNotFound:
+      description: FAVORITE_DISCOVERY_NOT_FOUND
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } }
+    ValidationFailed:
+      description: COMMON_VALIDATION_FAILED
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } }
+security:
+  - mobileBearer: []

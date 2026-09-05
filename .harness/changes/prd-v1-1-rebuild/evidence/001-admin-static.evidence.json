@@ -1,0 +1,17 @@
+{
+  "changeId": "CHG-OUTDOOR-V110-001",
+  "requirementIds": ["NFR-QUALITY-001"],
+  "acceptanceIds": ["AC-QUALITY-001"],
+  "type": "static",
+  "status": "passed",
+  "commit": "a2a56a79851bda3ca129f27e63b3cf17b02a8b8b+uncommitted-worktree",
+  "environment": "local Windows, Node 22.22.0, pnpm 11.19.0",
+  "startedAt": "2026-08-30T09:20:11Z",
+  "finishedAt": "2026-08-30T09:20:25Z",
+  "command": "pnpm --filter @chumen/admin type-check && pnpm --filter @chumen/admin test && node .harness/scripts/validate-harness.mjs",
+  "exitCode": 0,
+  "summary": "Admin vue-tsc 通过；新增 1 个测试文件、2 个测试通过；Harness 0 warning/0 error。",
+  "runner": "Codex local exec",
+  "artifacts": ["apps/admin/src/api/client.test.ts"],
+  "artifactsSha256": {}
+}

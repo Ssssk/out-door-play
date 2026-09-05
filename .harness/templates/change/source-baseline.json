@@ -1,0 +1,18 @@
+{
+  "change_id": "{{CHANGE_ID}}",
+  "verification_status": "pending",
+  "verified_by": null,
+  "verified_at": null,
+  "sources": [
+    {
+      "id": "SRC-001",
+      "kind": "user-request",
+      "title": "原始需求",
+      "location": "pending",
+      "version": "unversioned",
+      "sha256": null,
+      "captured_at": "{{CREATED_AT}}T00:00:00Z"
+    }
+  ],
+  "requirement_mappings": []
+}

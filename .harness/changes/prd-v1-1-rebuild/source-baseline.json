@@ -1,0 +1,46 @@
+{
+  "change_id": "CHG-OUTDOOR-V110-001",
+  "verification_status": "verified",
+  "verified_by": "用户（项目负责人）",
+  "verified_at": "2026-08-30T09:14:50Z",
+  "sources": [
+    {
+      "id": "SRC-USER-001",
+      "kind": "user-request",
+      "title": "使用 Harness 基于最新 PRD 重建旧项目",
+      "location": "current-conversation",
+      "version": "2026-08-30",
+      "sha256": null,
+      "captured_at": "2026-08-30T09:00:00Z"
+    },
+    {
+      "id": "SRC-PRD-001",
+      "kind": "prd",
+      "title": "出门溜溜 PRD v1.1.0",
+      "location": "C:/Users/Admin/Desktop/chumen-liuliu-prd(1)/chumen-liuliu-prd/v1.1.0",
+      "version": "v1.1.0",
+      "sha256_manifest": "sources/prd-v1.1.0.sha256",
+      "sha256_manifest_sha256": "c0036f0370b21fb92c5613c0750c69f9256f450d69dc4648184449020f60fd9c",
+      "project_spec_sha256": "067c1fa0d25962f7f195dccfdfacfc6f1728e397a12b8c27897b7fc6f1feb6bb",
+      "captured_at": "2026-08-30T09:00:00Z"
+    },
+    {
+      "id": "SRC-CODE-001",
+      "kind": "existing-code",
+      "title": "旧项目部分实现",
+      "location": "E:/code_house/skill2/out-door-play",
+      "version": "git:a2a56a79851bda3ca129f27e63b3cf17b02a8b8b + uncommitted-worktree",
+      "sha256_manifest": "sources/legacy-code-baseline.sha256",
+      "sha256_manifest_sha256": "d4e47bb7eaebcf282966a75eecd0e145a04a0990f6a9acedad8375b2a764e5fe",
+      "captured_at": "2026-08-30T09:00:00Z"
+    }
+  ],
+  "requirement_mappings": [
+    {"requirement_id": "FR-PROGRAM-001", "source_id": "SRC-USER-001", "anchor": "重新开发并使用 Harness"},
+    {"requirement_id": "FR-SOURCE-001", "source_id": "SRC-PRD-001", "anchor": "VERSIONING.md + v1.1.0/project-spec.json + requirements/"},
+    {"requirement_id": "FR-ASIS-001", "source_id": "SRC-CODE-001", "anchor": "现有 apps/mobile、apps/api、apps/admin 与数据库迁移"},
+    {"requirement_id": "FR-PLAN-001", "source_id": "SRC-USER-001", "anchor": "从旧结构重新开发为可交付项目"},
+    {"requirement_id": "NFR-QUALITY-001", "source_id": "SRC-USER-001", "anchor": "使用完整 Harness 工程契约"}
+  ]
+}
+

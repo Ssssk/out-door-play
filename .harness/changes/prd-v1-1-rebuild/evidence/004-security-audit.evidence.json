@@ -1,0 +1,17 @@
+{
+  "changeId": "CHG-OUTDOOR-V110-001",
+  "requirementIds": ["NFR-SEC-001"],
+  "acceptanceIds": ["AC-SEC-001"],
+  "type": "security",
+  "status": "failed",
+  "commit": "a2a56a79851bda3ca129f27e63b3cf17b02a8b8b+uncommitted-worktree",
+  "environment": "local Windows, official npm registry audit endpoint",
+  "startedAt": "2026-08-30T09:23:00Z",
+  "finishedAt": "2026-08-30T09:23:05Z",
+  "command": "pnpm audit --registry=https://registry.npmjs.org --prod --audit-level high",
+  "exitCode": 1,
+  "summary": "发现 35 个漏洞：3 low、21 moderate、11 high；高危主要位于 uni-app 构建链和 Prisma/MariaDB 传递依赖，必须在独立依赖 Change 中处置后复验。",
+  "runner": "Codex local exec",
+  "artifacts": ["security/supply-chain-review.md"],
+  "artifactsSha256": {}
+}

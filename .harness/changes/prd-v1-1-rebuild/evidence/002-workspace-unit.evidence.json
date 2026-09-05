@@ -1,0 +1,17 @@
+{
+  "changeId": "CHG-OUTDOOR-V110-001",
+  "requirementIds": ["NFR-QUALITY-001"],
+  "acceptanceIds": ["AC-QUALITY-001"],
+  "type": "unit",
+  "status": "passed",
+  "commit": "a2a56a79851bda3ca129f27e63b3cf17b02a8b8b+uncommitted-worktree",
+  "environment": "local Windows, Node 22.22.0, pnpm 11.19.0",
+  "startedAt": "2026-08-30T09:21:15Z",
+  "finishedAt": "2026-08-30T09:21:22Z",
+  "command": "pnpm test",
+  "exitCode": 0,
+  "summary": "mobile 2、admin 2、api 2，共 6 个 Vitest 测试通过。",
+  "runner": "Codex local exec",
+  "artifacts": [],
+  "artifactsSha256": {}
+}

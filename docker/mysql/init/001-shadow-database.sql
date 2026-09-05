@@ -1,0 +1,4 @@
+CREATE DATABASE IF NOT EXISTS chumen_shadow CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+GRANT ALL PRIVILEGES ON chumen_shadow.* TO 'chumen'@'%';
+FLUSH PRIVILEGES;
+

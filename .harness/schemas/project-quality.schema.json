@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/harness/project-quality.schema.json",
+  "title": "Project quality commands",
+  "type": "object",
+  "required": ["mode", "package_manager", "working_directory", "commands"],
+  "properties": {
+    "mode": { "enum": ["template", "active"] },
+    "package_manager": { "enum": ["npm", "pnpm", "yarn"] },
+    "working_directory": { "type": "string", "minLength": 1 },
+    "commands": { "type": "object" }
+  }
+}
