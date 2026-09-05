@@ -47,6 +47,6 @@ blocking_risks:
   - "BR-004: 安全、测试、运维、UAT 和发布 Owner 尚未确认。"
   - "BR-006: 管理端认证、RBAC、CSRF 与审计已落地；普通用户身份与写接口授权代码已由 CHG-MOBILE-IDENTITY-001 落地，但隔离 MySQL 集成/E2E 尚未执行。"
   - "BR-007: 油价、地图/定位和内容安全的真实数据供应商尚未确定，相关切片不得宣称生产数据闭环。"
-  - "BR-008: 依赖治理已将 high 漏洞由 11 个降至 2 个；剩余 Vite 5.2.8 受当前 uni-app peer 锁定，安全例外或上游升级完成前阻塞 Security Gate。"
+  - "BR-008: 依赖治理已将 high 漏洞由 11 个降至 2 个；用户已批准剩余两个 Vite 5.2.8 风险至 2026-09-15 的限时例外，但完整 Security Gate 与独立复核仍 pending。"
   - "BR-009: 本地 MySQL 8.4 migration、集成与 API E2E 已通过；GitHub CI 空库容器仍缺远端 run 证据。"
 

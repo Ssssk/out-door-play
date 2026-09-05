@@ -36,13 +36,13 @@ approvals:
   product_owner: "用户"
   architecture_owner: "用户"
   ux_owner: "pending"
-  security_owner: "用户"
+  security_owner: "用户（已批准两个指定 Vite 风险的限时例外；不等同 Security Gate）"
   operations_owner: "pending"
   product_acceptance_owner: "pending"
   reviewer: "pending"
   release_owner: "pending"
 
 blocking_risks:
-  - "DEP-P1-001: 官方 npm Registry 扫描剩余 2 个 high，均来自 DCloud 精确 peer 的 Vite 5.2.8；Security Gate 仍失败。"
-  - "DEP-P1-002: Vite 修复版本跨越 uni-app 当前精确兼容基线；已将开发服务器默认限制为 127.0.0.1，例外尚待安全 Owner 批准且 2026-09-15 到期。"
+  - "DEP-P1-001: 官方 npm Registry 扫描剩余 2 个 high，均来自 DCloud 精确 peer 的 Vite 5.2.8；用户已批准至 2026-09-15 的指定风险例外，新增 high 或例外到期仍立即阻塞。"
+  - "DEP-P1-002: 完整 Security Gate 与独立复核仍 pending；限时例外不等同发布批准。"
 

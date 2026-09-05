@@ -28,9 +28,10 @@
 - `DEP-EX-001`：Vite 5.2.8 暂缓升级，原因是当前 DCloud 插件 peer 精确要求 5.2.8。
 - 临时控制：mobile Vite 默认绑定 `127.0.0.1`；生产只发布静态构建制品；不得在不可信网络公开开发服务器。
 - 例外到期：2026-09-15；Owner：安全 Owner；触发条件：DCloud 兼容版本发布或到期，以先到者为准。
+- 批准状态：用户（安全 Owner）于 2026-09-05 明确批准两个指定 GHSA 的限时例外；证据为 `approvals/2026-09-05-vite-risk-exception.md`。新增 high 不在例外范围内。
 
 ## 证据与结论
 
-- 状态：`conditional-fail`（残余 2 high，未获例外批准）
-- 结论：修复批次和四端回归完成；Security Gate 继续阻塞。
+- 状态：`exception-accepted`（残余 2 high 已获限时例外，原始 npm audit 仍保持非零且发现不隐藏）
+- 结论：修复批次和四端回归完成；两个指定 Vite 风险允许在补偿控制与到期约束下继续开发。完整 Security Gate 仍等待其他安全项与独立复核。
 
