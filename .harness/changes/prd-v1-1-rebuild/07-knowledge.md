@@ -42,3 +42,12 @@
 - Wiki 同步项：已将项目实际技术栈、接口、数据、权限和部署现状写入项目 Wiki。
 - 无需沉淀时的理由：Change 尚未完成。
 
+## 2026-09-06 测试服务器部署、数据同步与 HTTP 登录回跳
+
+- 查询词与范围：Docker Compose、GitHub Actions、Ubuntu、Nginx、Prisma Migration、MySQL data-only dump、逐表对账、管理员 Secure Cookie、HTTP 登录回跳；范围为部署配置、API 管理员认证代码、远端验证结果和历史知识。
+- 新增知识：`KB-SOL-002`（verified），记录 HTTP 测试环境因 Secure Cookie 导致登录后回跳的机制、修复、安全边界和提交 `33de0ec` 验证证据。
+- 新增知识：`KB-INBOX-012`（draft），记录用户决定的后续固定顺序：本地 Docker Gate 通过后再 push/部署，数据同步保持显式手动、备份和逐表精确对账。
+- 状态理由：远端 Docker 部署、空库数据同步和 Cookie 修复已实际执行；新的 local-first 全链路尚未按 Runbook 完整执行，因此不得提前标记 verified。
+- 证据：`evidence/2026-09-06-test-server-deployment.md`。
+- 敏感信息处理：知识与证据未保存公网账号、密码、私钥、数据库 Secret 或完整业务数据。
+

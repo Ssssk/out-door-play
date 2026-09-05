@@ -1,5 +1,5 @@
 schema_version: 1
-updated_at: "2026-08-30"
+updated_at: "2026-09-06"
 status_values:
   - draft
   - verified
@@ -23,6 +23,16 @@ entries:
     tags: [caching_sha2_password, allowPublicKeyRetrieval, docker-restart, prisma-adapter-mariadb]
     owner: 用户（项目负责人）
     last_verified: 2026-08-30
+  - id: KB-SOL-002
+    title: HTTP 测试环境管理端因 Secure Cookie 登录后回跳
+    type: solution
+    status: verified
+    path: solutions/KB-SOL-002-HTTP管理端Secure-Cookie登录回跳.md
+    scope: [backend, authentication, deployment, test-environment]
+    stack: [nestjs, express, docker, nginx, browser]
+    tags: [admin-login, secure-cookie, http, https, redirect-loop, ADMIN_COOKIE_SECURE]
+    owner: 用户（项目负责人）
+    last_verified: 2026-09-06
   - id: ADR-006
     title: 保留 Prisma 并按用例引入 Redis 与 RabbitMQ
     type: decision
@@ -142,4 +152,14 @@ entries:
     stack: [nestjs, mysql, redis, rabbitmq, github-actions]
     tags: [automation, authority, dry-run, abort-threshold, rollback, blast-radius]
     owner: unassigned
+    last_verified: null
+  - id: KB-INBOX-012
+    title: 本地 Docker 验证后同步 GitHub、测试服务器和 MySQL 数据
+    type: runbook
+    status: draft
+    path: inbox/KB-INBOX-012-本地Docker到测试服同步Runbook.md
+    scope: [local-development, ci, deployment, database, test-environment]
+    stack: [github-actions, docker, docker-compose, nestjs, nginx, mysql, prisma, uni-app]
+    tags: [local-first, docker-build, test-server, data-sync, backup, smoke-test, deployment]
+    owner: 用户（项目负责人）
     last_verified: null

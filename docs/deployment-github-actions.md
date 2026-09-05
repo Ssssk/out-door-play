@@ -1,6 +1,10 @@
 # GitHub Actions 部署
 
-仓库中的 `.github/workflows/deploy-production.yml` 仅允许从 `main` 分支手动触发。它会构建 API 和管理端镜像，推送到 GitHub Container Registry，然后通过 SSH 在 Ubuntu 服务器上执行 Prisma migration、启动 Docker Compose，并检查 `/v1/health`。普通代码推送只运行 CI，不会直接修改服务器。
+仓库中的 `.github/workflows/deploy-production.yml` 仅允许从 `main` 分支手动触发。它先在 GitHub Runner 验证 API 和管理端镜像构建，再通过 SSH 上传当前 SHA 源码，由授权测试服务器构建 SHA 镜像、执行 Prisma migration 并启动 Docker Compose。普通代码 push 不会直接修改服务器。
+
+## 新会话快速入口
+
+部署与数据同步统一按 `.harness/knowledge/inbox/KB-INBOX-012-本地Docker到测试服同步Runbook.md` 执行：本地 Docker 构建、迁移、完整栈和冒烟全部通过后，才允许 push 并手动运行远端部署。MySQL 业务数据不随代码部署自动同步；只有在明确授权、备份和逐表对账就绪时才单独导入。
 
 ## GitHub 配置
 
