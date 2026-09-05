@@ -3,10 +3,12 @@ FROM node:22-bookworm-slim
 WORKDIR /app
 
 ENV COREPACK_HOME=/tmp/corepack
+ARG PNPM_REGISTRY=https://registry.npmjs.org
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates openssl \
     && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@11.19.0 --activate
+RUN pnpm config set registry "$PNPM_REGISTRY"
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/package.json

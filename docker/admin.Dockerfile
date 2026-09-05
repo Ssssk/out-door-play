@@ -3,7 +3,9 @@ FROM node:22-bookworm-slim AS build
 WORKDIR /app
 
 ENV COREPACK_HOME=/tmp/corepack
+ARG PNPM_REGISTRY=https://registry.npmjs.org
 RUN corepack enable && corepack prepare pnpm@11.19.0 --activate
+RUN pnpm config set registry "$PNPM_REGISTRY"
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/package.json
