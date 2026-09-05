@@ -26,8 +26,9 @@
     "test:integration": "pnpm --filter @chumen/api db:deploy && pnpm --filter @chumen/api test:integration",
     "test:e2e": "pnpm --filter @chumen/api test:e2e",
     "security:secret": "node scripts/secret-scan.mjs",
-    "security:scan": "pnpm security:secret && pnpm lint && pnpm security:sbom && pnpm security:audit",
-    "security:audit": "pnpm audit --registry=https://registry.npmjs.org --prod --audit-level high",
+    "security:scan": "pnpm security:secret && pnpm lint && pnpm security:sbom && pnpm test:audit-policy && pnpm security:audit",
+    "security:audit": "node scripts/audit-with-exceptions.mjs",
+    "test:audit-policy": "node --test scripts/audit-with-exceptions.test.mjs",
     "security:sbom": "pnpm dlx @cyclonedx/cdxgen@12.8.4 -t js --spec-version 1.6 --output .harness/changes/dependency-security-baseline/evidence/sbom.cdx.json --no-recurse"
   },
   "devDependencies": {

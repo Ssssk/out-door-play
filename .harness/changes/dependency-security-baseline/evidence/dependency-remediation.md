@@ -36,4 +36,12 @@
 
 - `pnpm-lock.yaml`: `5AF1DF5158AE529E65D14870EB7F71AA486C9244F47A56C92797F1CAD9706553`
 - `pnpm-workspace.yaml`: `3742737138828D3C47C684E756A1334C0ADF2E3EB0C4CD2BC1F622CF0812CF1A`
-- `sbom.cdx.json`: `5C87338A1C9E11A6804272E6C6E2F834D1AD8B1165FF3043F3F3C18E1FC13635`
+- `package.json`: `C776598CA4CEDBE292656EA0D416B0CDF2448E4976162306F0A36A250523740C`
+- `sbom.cdx.json`: `EF2A8A791182DC668EFC615B00058F9D07ED7E233AAF13A8E4D23F4435797DE7`
+
+## 2026-09-05 限时例外自动化
+
+- 用户（安全 Owner）批准 `GHSA-c27g-q93r-2cwf` 与 `GHSA-fx2h-pf6j-xcff` 至 2026-09-15 的限时例外。
+- 新增 `scripts/audit-with-exceptions.mjs`：仅允许上述两个 Vite high；新增 high、critical、包/等级不匹配或过期均阻塞。
+- `node --test scripts/audit-with-exceptions.test.mjs`：4/4 通过，覆盖批准项、未知 high、过期和 critical。
+- `pnpm security:audit`：通过，并逐项输出两个已接受例外及到期时间；原始 advisory 未隐藏。

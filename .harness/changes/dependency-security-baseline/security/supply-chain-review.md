@@ -13,7 +13,7 @@
 
 - 官方 npm Registry：2026-09-05 advisory 数据库一度新增 `mysql2 <3.22.0` high；以单点 override 锁定 3.22.0 后复扫为 25（2 high），高危仅剩 Vite 5.2.8 的两条开发服务器公告。
 - 覆盖修复：`@intlify/*`、`adm-zip`、`deepmerge-ts`、`jpeg-js`、`mariadb`、`postcss`、`ws`。
-- `pnpm audit --prod --audit-level high` 当前非零退出，fail-closed 行为正确；不得描述为 Security Gate 通过。
+- 原始 `pnpm audit --prod --audit-level high` 因两个已知 Vite high 非零退出；`scripts/audit-with-exceptions.mjs` 仅接受已批准且未到期的两个指定 GHSA，新增 high、critical、包/等级不匹配或到期均非零退出。
 - CycloneDX SBOM 包含组件许可证字段；发布前仍需独立许可证策略审查。
 
 ## SBOM 与制品来源
@@ -32,6 +32,6 @@
 
 ## 证据与结论
 
-- 状态：`exception-accepted`（残余 2 high 已获限时例外，原始 npm audit 仍保持非零且发现不隐藏）
+- 状态：`exception-accepted`（残余 2 high 已获限时例外，原始发现仍保留；例外策略测试与当前实际审计通过）
 - 结论：修复批次和四端回归完成；两个指定 Vite 风险允许在补偿控制与到期约束下继续开发。完整 Security Gate 仍等待其他安全项与独立复核。
 
