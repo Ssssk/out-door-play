@@ -89,7 +89,7 @@ try {
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error)
   console.error(`微信小程序 CI 失败：${redactSensitiveText(message)}`)
-  process.exitCode = 1
+  process.exit(1)
 }
 
 function requireEnv(name) {
