@@ -64,6 +64,13 @@
 - 经验与修正：首次真实运行发现可复用工作流的 `actions: read` 权限需要由调用工作流显式授予；随后发现 Docker Buildx 默认 driver 不支持 GHA cache，补充 `docker/setup-buildx-action` 后通过。后端 CI 还需非生产 Prisma URL 才能执行 `prisma generate`。
 - 验证状态：verified；真实运行 `34037029052` 中 API CI 2m46s 成功、管理 Web CI 随后 3m19s 成功、小程序构建 46s 后上传 3m24s 成功并生成体验二维码。
 
+## 2026-09-06 微信发布备注中文化
+
+- 查询词与范围：`微信体验版/发布备注/Conventional Commit/中文摘要`；范围为 `tools/miniprogram-ci/describe-change.mjs`、其测试和组件发布工作流。
+- 采用方式：提交类型和已知英文摘要映射为中文；未知英文摘要降级为中文类型；组件范围统一使用中文标签，保留 128 字符上限。
+- 适用边界：这是仓库内发布工具行为，不依赖某个 AI Agent 的 Skill；任何触发同一工作流的提交都会使用该规则。它只影响微信体验版备注，不改变生产部署权限。
+- 验证状态：verified；本地 4 项测试和 Harness/密钥检查通过，真实运行 `34038401292` 验证后端、管理端跳过，小程序构建和上传成功，日志备注为 `发布流程调整：发布备注统一使用中文（发布流程）`。
+
 ## 2026-09-06 微信上传固定出口 Runner
 
 - 查询词与范围：`self-hosted Runner/固定出口/IP 白名单/非 root/systemd hardening/metadata/Secret 清理`；范围为 `ci-quality-gate`、`supply-chain-security`、`operational-readiness`、`deploy-verify`、`KB-INBOX-011`、当前 workflow 与测试服务器运行事实。
