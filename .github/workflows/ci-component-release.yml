@@ -162,6 +162,7 @@ jobs:
       always() &&
       needs.detect-changes.outputs.mobile == 'true' &&
       (needs.detect-changes.outputs.backend != 'true' || needs.backend-ci.result == 'success') &&
-      (needs.detect-changes.outputs.admin != 'true' || needs.admin-ci.result == 'success')
+      (needs.detect-changes.outputs.admin != 'true' || needs.admin-ci.result == 'success') &&
+      !contains(github.event.head_commit.message || '', '[skip-miniprogram-experience]')
     uses: ./.github/workflows/deploy-miniprogram-experience.yml
     secrets: inherit

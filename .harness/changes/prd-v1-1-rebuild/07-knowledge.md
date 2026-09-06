@@ -71,6 +71,13 @@
 - 适用边界：这是仓库内发布工具行为，不依赖某个 AI Agent 的 Skill；任何触发同一工作流的提交都会使用该规则。它只影响微信体验版备注，不改变生产部署权限。
 - 验证状态：verified；本地 4 项测试和 Harness/密钥检查通过，真实运行 `34038401292` 验证后端、管理端跳过，小程序构建和上传成功，日志备注为 `发布流程调整：发布备注统一使用中文（发布流程）`。
 
+## 2026-09-06 本地插件与远程体验版去重边界
+
+- 查询词与范围：`微信开发者工具 CLI/本地插件/GitHub Actions/体验版/重复上传/提交标记`；范围为 `auto-work-tools` 本地发布服务、`.github/workflows/ci-component-release.yml` 和部署 Wiki。
+- 结论：本地插件记录保存在开发机，GitHub Runner 无法读取，因此没有额外约定时，同一份代码先经插件上传、再 push 到 `main` 仍会再次触发远程小程序体验版 Job。
+- 采用方式：提交说明包含 `[skip-miniprogram-experience]` 时，仅跳过本次小程序体验版 Job；后端和管理 Web 仍按组件路径执行。该标记只用于已确认本地插件完成同一份代码上传的场景，默认不改变自动体验版发布。
+- 验证边界：本地工作流静态检查和组件测试可验证条件存在；真实带标记的 GitHub Actions 运行尚未执行，不能把该标记写成已在线验证。
+
 ## 2026-09-06 微信上传固定出口 Runner
 
 - 查询词与范围：`self-hosted Runner/固定出口/IP 白名单/非 root/systemd hardening/metadata/Secret 清理`；范围为 `ci-quality-gate`、`supply-chain-security`、`operational-readiness`、`deploy-verify`、`KB-INBOX-011`、当前 workflow 与测试服务器运行事实。

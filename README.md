@@ -44,6 +44,20 @@ pnpm security:sbom
 
 随后用微信开发者工具打开仓库根目录；`project.config.json` 已指向 `apps/mobile/dist/build/mp-weixin`。
 
+### 手动插件发布与 GitHub Actions
+
+浏览器插件的“上传开发版”是在本机通过微信开发者工具上传开发版本；“体验版”按钮是生成扫码预览二维码。它们都不是微信公众平台的提交审核或线上正式发布。
+
+`main` 分支上的小程序变更默认仍会触发 GitHub Actions，上传另一份受控的体验版本。GitHub Runner 无法读取某台开发机的插件记录，因此不会自动判断“本机刚刚已经上传过”，直接 push 会再次执行体验版 CI。
+
+如果本次代码已经用插件上传并确认不需要远程 CI 再上传一次，请在提交说明中加入标记：
+
+```text
+feat: 调整路线页面 [skip-miniprogram-experience]
+```
+
+该标记只跳过小程序体验版 Job，不影响后端和管理 Web 的 CI；不加标记则保持默认自动发布。`workflow_dispatch` 手动运行不受该提交标记影响。
+
 ## 验证
 
 ```bash
