@@ -126,10 +126,10 @@ jobs:
           WECHAT_MINIPROGRAM_APPID: ${{ vars.WECHAT_MINIPROGRAM_APPID }}
           WECHAT_MINIPROGRAM_ROBOT: ${{ vars.WECHAT_MINIPROGRAM_ROBOT }}
           WECHAT_MINIPROGRAM_PRIVATE_KEY_PATH: ${{ runner.temp }}/wechat-miniprogram-ci/private.key
-          WECHAT_MINIPROGRAM_PROJECT_PATH: runner-payload/apps/mobile/dist/build/mp-weixin
+          WECHAT_MINIPROGRAM_PROJECT_PATH: ${{ github.workspace }}/runner-payload/apps/mobile/dist/build/mp-weixin
           WECHAT_MINIPROGRAM_VERSION: 1.0.${{ github.run_number }}
           WECHAT_MINIPROGRAM_DESC: main-${{ github.sha }}
-          WECHAT_MINIPROGRAM_QR_PATH: runner-payload/artifacts/wechat-preview-qrcode.jpg
+          WECHAT_MINIPROGRAM_QR_PATH: ${{ github.workspace }}/runner-payload/artifacts/wechat-preview-qrcode.jpg
         run: npm --prefix runner-payload/tools/miniprogram-ci run upload
 
       - name: Upload experience QR code artifact
