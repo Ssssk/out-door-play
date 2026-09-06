@@ -62,5 +62,6 @@
 - 采用方式：构建仍留在 GitHub-hosted Runner；固定出口 Runner 仅处理无密钥 payload 与微信上传，避免在应用服务器重跑完整 workspace 构建。Runner 使用专用非 root 账号、不授予 Docker 权限，并通过 systemd 禁止访问应用目录和 link-local metadata。
 - 适用边界：该方案解决微信上传密钥 IP 白名单，不解决小程序 `request` 合法域名、ICP备案或 HTTPS；真实上传仍需管理员维护固定出口白名单并保留失败阻断。
 - 安全发现：微信官方 `miniprogram-ci@2.1.31` 的隔离锁文件在 2026-09-06 通过 npm 官方审计端点发现大量历史传递依赖风险；在安全 Owner 明确接受或提供更安全替代前，不把这次依赖审计写成 Security Gate passed。
+- 运行验证：GitHub Actions run `34034184969` 从固定 Runner 调用微信接口并得到 `invalid ip: 124.223.220.242`，证明固定出口路由生效；失败路径必须显式退出第三方 SDK 遗留的编译子进程，才能及时进入 `always()` 密钥清理步骤。该修复已在同一 run 中验证上传步骤 19 秒失败、清理步骤 1 秒完成，远端无 payload、私钥目录或编译进程残留。
 - 发布边界：自动化只上传开发版本并生成体验预览二维码，不自动提交审核或发布正式线上版本；当前 HTTP/IP API 也不构成真机体验可用性证据。
 
