@@ -66,6 +66,7 @@ try {
   }
 
   console.log(`开始上传微信小程序开发版本：${version}（robot ${robot}）`)
+  console.log(`发布备注：${description}`)
   await ci.upload({
     project,
     version,

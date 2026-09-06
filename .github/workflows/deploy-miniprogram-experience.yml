@@ -36,6 +36,15 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Generate WeChat release description
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tools/miniprogram-ci/describe-change.mjs \
+            --sha "$GITHUB_SHA" \
+            --output wechat-release-description.txt
+          test -s wechat-release-description.txt
+
       - name: Enable pinned pnpm
         shell: bash
         run: |
@@ -65,7 +74,9 @@ jobs:
             apps/mobile/dist/build/mp-weixin
             tools/miniprogram-ci/package.json
             tools/miniprogram-ci/package-lock.json
+            tools/miniprogram-ci/describe-change.mjs
             tools/miniprogram-ci/upload.mjs
+            wechat-release-description.txt
           if-no-files-found: error
           retention-days: 1
 
@@ -120,6 +131,18 @@ jobs:
           printf '%s\n' "$WECHAT_MINIPROGRAM_PRIVATE_KEY" > "$RUNNER_TEMP/wechat-miniprogram-ci/private.key"
           chmod 600 "$RUNNER_TEMP/wechat-miniprogram-ci/private.key"
 
+      - name: Load generated release description
+        shell: bash
+        run: |
+          set -euo pipefail
+          description_file="$GITHUB_WORKSPACE/runner-payload/wechat-release-description.txt"
+          test -s "$description_file"
+          description="$(tr '\r\n' '  ' < "$description_file")"
+          test -n "$description"
+          test "${#description}" -le 128
+          printf 'WECHAT_MINIPROGRAM_DESC=%s\n' "$description" >> "$GITHUB_ENV"
+          printf '发布备注：%s\n' "$description"
+
       - name: Upload development version and create experience QR code
         shell: bash
         env:
@@ -128,7 +151,6 @@ jobs:
           WECHAT_MINIPROGRAM_PRIVATE_KEY_PATH: ${{ runner.temp }}/wechat-miniprogram-ci/private.key
           WECHAT_MINIPROGRAM_PROJECT_PATH: ${{ github.workspace }}/runner-payload/apps/mobile/dist/build/mp-weixin
           WECHAT_MINIPROGRAM_VERSION: 1.0.${{ github.run_number }}
-          WECHAT_MINIPROGRAM_DESC: main-${{ github.sha }}
           WECHAT_MINIPROGRAM_QR_PATH: ${{ github.workspace }}/runner-payload/artifacts/wechat-preview-qrcode.jpg
         run: npm --prefix runner-payload/tools/miniprogram-ci run upload
 
