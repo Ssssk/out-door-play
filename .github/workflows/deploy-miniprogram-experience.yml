@@ -1,17 +1,7 @@
 name: Deploy WeChat Mini Program experience
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - apps/mobile/**
-      - tools/miniprogram-ci/**
-      - package.json
-      - pnpm-lock.yaml
-      - pnpm-workspace.yaml
-      - project.config.json
-      - .github/workflows/deploy-miniprogram-experience.yml
+  workflow_call:
   workflow_dispatch:
 
 concurrency:
