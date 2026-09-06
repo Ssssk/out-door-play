@@ -20,13 +20,13 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
-  upload-experience:
+  build-experience:
     if: github.ref == 'refs/heads/main' && vars.WECHAT_MINIPROGRAM_UPLOAD_ENABLED == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    environment: miniprogram-experience
+    timeout-minutes: 20
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -57,9 +57,52 @@ jobs:
           test -n "$VITE_API_BASE_URL"
           pnpm build:mp-weixin
 
+      - name: Package upload payload
+        uses: actions/upload-artifact@v4
+        with:
+          name: wechat-upload-payload-${{ github.run_id }}
+          path: |
+            apps/mobile/dist/build/mp-weixin
+            tools/miniprogram-ci/package.json
+            tools/miniprogram-ci/package-lock.json
+            tools/miniprogram-ci/upload.mjs
+          if-no-files-found: error
+          retention-days: 1
+
+  upload-experience:
+    needs: build-experience
+    if: needs.build-experience.result == 'success'
+    runs-on: [self-hosted, linux, x64, wechat-uploader]
+    timeout-minutes: 15
+    environment: miniprogram-experience
+    steps:
+      - name: Prepare isolated upload workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$GITHUB_WORKSPACE"
+          test -n "$RUNNER_TEMP"
+          case "$GITHUB_WORKSPACE" in
+            /opt/actions-runner/_work/*) ;;
+            *) echo "Unexpected self-hosted workspace" >&2; exit 1 ;;
+          esac
+          rm -rf -- "$GITHUB_WORKSPACE/runner-payload"
+          rm -rf -- "$RUNNER_TEMP/wechat-miniprogram-ci"
+
+      - name: Download upload payload
+        uses: actions/download-artifact@v4
+        with:
+          name: wechat-upload-payload-${{ github.run_id }}
+          path: runner-payload
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Install isolated WeChat uploader
         shell: bash
-        run: npm ci --prefix tools/miniprogram-ci --ignore-scripts --no-audit
+        run: npm ci --prefix runner-payload/tools/miniprogram-ci --ignore-scripts --no-audit
 
       - name: Materialize upload key
         shell: bash
@@ -78,16 +121,31 @@ jobs:
           WECHAT_MINIPROGRAM_APPID: ${{ vars.WECHAT_MINIPROGRAM_APPID }}
           WECHAT_MINIPROGRAM_ROBOT: ${{ vars.WECHAT_MINIPROGRAM_ROBOT }}
           WECHAT_MINIPROGRAM_PRIVATE_KEY_PATH: ${{ runner.temp }}/wechat-miniprogram-ci/private.key
-          WECHAT_MINIPROGRAM_PROJECT_PATH: apps/mobile/dist/build/mp-weixin
+          WECHAT_MINIPROGRAM_PROJECT_PATH: runner-payload/apps/mobile/dist/build/mp-weixin
           WECHAT_MINIPROGRAM_VERSION: 1.0.${{ github.run_number }}
           WECHAT_MINIPROGRAM_DESC: main-${{ github.sha }}
-          WECHAT_MINIPROGRAM_QR_PATH: artifacts/wechat-preview-qrcode.jpg
-        run: npm --prefix tools/miniprogram-ci run upload
+          WECHAT_MINIPROGRAM_QR_PATH: runner-payload/artifacts/wechat-preview-qrcode.jpg
+        run: npm --prefix runner-payload/tools/miniprogram-ci run upload
 
       - name: Upload experience QR code artifact
         uses: actions/upload-artifact@v4
         with:
           name: wechat-experience-qrcode-${{ github.run_number }}
-          path: artifacts/wechat-preview-qrcode.jpg
+          path: runner-payload/artifacts/wechat-preview-qrcode.jpg
           if-no-files-found: error
           retention-days: 7
+
+      - name: Clean upload key and workspace
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$GITHUB_WORKSPACE"
+          test -n "$RUNNER_TEMP"
+          case "$GITHUB_WORKSPACE" in
+            /opt/actions-runner/_work/*) ;;
+            *) echo "Unexpected self-hosted workspace" >&2; exit 1 ;;
+          esac
+          rm -f -- "$RUNNER_TEMP/wechat-miniprogram-ci/private.key"
+          rm -rf -- "$RUNNER_TEMP/wechat-miniprogram-ci"
+          rm -rf -- "$GITHUB_WORKSPACE/runner-payload"

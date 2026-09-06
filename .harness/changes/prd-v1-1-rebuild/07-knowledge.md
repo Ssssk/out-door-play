@@ -55,6 +55,12 @@
 
 - 查询词与范围：`uni-app/微信小程序/miniprogram-ci/GitHub Actions/上传私钥/IP 白名单/体验二维码`；范围为移动端构建、现有 CI、部署 Wiki、`ci-quality-gate`、`deploy-verify` 和 `KB-INBOX-011/012`。
 - 采用方式：小程序链路与服务器 Docker 部署解耦；只监听 `main` 移动端相关路径，使用最小 `contents: read` 权限、隔离上传工具目录、Repository Secret 注入私钥、Repository Variables 注入公开配置，并保存当次二维码 Artifact。
+
+## 2026-09-06 微信上传固定出口 Runner
+
+- 查询词与范围：`self-hosted Runner/固定出口/IP 白名单/非 root/systemd hardening/metadata/Secret 清理`；范围为 `ci-quality-gate`、`supply-chain-security`、`operational-readiness`、`deploy-verify`、`KB-INBOX-011`、当前 workflow 与测试服务器运行事实。
+- 采用方式：构建仍留在 GitHub-hosted Runner；固定出口 Runner 仅处理无密钥 payload 与微信上传，避免在应用服务器重跑完整 workspace 构建。Runner 使用专用非 root 账号、不授予 Docker 权限，并通过 systemd 禁止访问应用目录和 link-local metadata。
+- 适用边界：该方案解决微信上传密钥 IP 白名单，不解决小程序 `request` 合法域名、ICP备案或 HTTPS；真实上传仍需管理员维护固定出口白名单并保留失败阻断。
 - 安全发现：微信官方 `miniprogram-ci@2.1.31` 的隔离锁文件在 2026-09-06 通过 npm 官方审计端点发现大量历史传递依赖风险；在安全 Owner 明确接受或提供更安全替代前，不把这次依赖审计写成 Security Gate passed。
 - 发布边界：自动化只上传开发版本并生成体验预览二维码，不自动提交审核或发布正式线上版本；当前 HTTP/IP API 也不构成真机体验可用性证据。
 

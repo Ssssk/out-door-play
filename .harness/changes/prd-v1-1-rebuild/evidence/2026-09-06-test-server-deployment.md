@@ -41,7 +41,8 @@
 
 ## 未完成与边界
 
-- 当前仍无域名和 TLS，不是正式生产发布证据。
+- 2026-09-06 已在腾讯云 DNSPod 新增根记录 `@ / A / 默认线路 / TTL 600`，目标为项目 Owner 提供的测试服务器公网地址；DNSPod 显示“添加成功”，Cloudflare DoH 与 Google DoH 均返回该目标地址。
+- 腾讯云 ICP 备案控制台对 `chumenliuliu.cloud` 显示“未备案”。依据腾讯云中国大陆云资源接入要求，当前未继续配置 80/443、证书或微信 request 合法域名；现有 HTTP `:8080` 测试入口保持不变。
+- HTTPS TLS 尚未形成可用的域名 API 入口，因此本记录仍不是正式生产发布证据。完成 ICP 备案后，需按已批准的 TLS 设计接入 80/443、恢复 `ADMIN_COOKIE_SECURE=true`，并重新执行域名/API 冒烟验证。
 - 微信小程序未由服务器 Docker 流程上传或发布。
 - 新约定“完整本地 Docker Gate 后再远端部署”尚待下一次按 Runbook 全链路执行并取证。
-
