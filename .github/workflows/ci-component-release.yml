@@ -26,6 +26,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   detect-changes:
