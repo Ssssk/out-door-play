@@ -94,6 +94,9 @@ jobs:
           pnpm --filter @chumen/api test:contract
           pnpm --filter @chumen/api build
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Verify backend container build
         uses: docker/build-push-action@v6
         with:
@@ -139,6 +142,9 @@ jobs:
           pnpm --filter @chumen/admin type-check
           pnpm --filter @chumen/admin test
           pnpm --filter @chumen/admin build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Verify admin container build
         uses: docker/build-push-action@v6
