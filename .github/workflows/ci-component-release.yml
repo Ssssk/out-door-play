@@ -62,6 +62,9 @@ jobs:
     if: needs.detect-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      DATABASE_URL: mysql://ci:ci@127.0.0.1:3306/chumen_ci
+      SHADOW_DATABASE_URL: mysql://ci:ci@127.0.0.1:3306/chumen_ci_shadow
     steps:
       - name: Check out source
         uses: actions/checkout@v4
