@@ -95,10 +95,15 @@ jobs:
           name: wechat-upload-payload-${{ github.run_id }}
           path: runner-payload
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+      - name: Activate provisioned Node.js
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x /opt/node-v22.23.2/bin/node
+          test -x /opt/node-v22.23.2/bin/npm
+          echo "/opt/node-v22.23.2/bin" >> "$GITHUB_PATH"
+          /opt/node-v22.23.2/bin/node --version
+          env PATH="/opt/node-v22.23.2/bin:$PATH" /opt/node-v22.23.2/bin/npm --version
 
       - name: Install isolated WeChat uploader
         shell: bash
