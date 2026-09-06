@@ -80,7 +80,7 @@ mobile uni-app + admin Vue
 
 ## 应用 CI、供应链、SBOM 与制品
 
-先修复 typecheck 与零测试，再激活项目质量门禁；构建制品绑定 commit/digest。
+先修复 typecheck 与零测试，再激活项目质量门禁；构建制品绑定 commit/digest。`ci-component-release.yml` 使用提交路径检测器输出 `backend/admin/mobile` 三个布尔值：API CI 完成后才允许管理 Web CI，管理 Web CI 完成后才允许小程序 CI；未受影响的 Job 跳过，前置失败阻断后置 Job。共享锁文件、Compose 和编排工作流变更按全组件处理。小程序 Job 复用体验版上传工作流，生产服务器部署仍保持独立手动工作流。
 
 ## 发布、迁移和回滚
 

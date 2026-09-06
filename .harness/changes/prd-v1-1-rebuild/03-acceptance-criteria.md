@@ -72,3 +72,21 @@
 - **AND** 文档和 Evidence 不输出其内容
 - **验证方式**：git ls-files/check-ignore + Secret scan
 
+## AC-CI-COMPONENT-001 组件 CI 按变更范围执行
+
+- **关联需求**：FR-CI-001
+- **GIVEN** 提交只修改 API、管理 Web、小程序中的一个组件
+- **WHEN** `Component CI release` 在 `main` 上触发
+- **THEN** 仅对应组件 Job 执行，其余组件 Job 跳过
+- **AND** 共享依赖、Compose 或编排工作流变化触发全部组件
+- **验证方式**：组件判定单测 + GitHub Actions 真实运行图
+
+## AC-CI-ORDER-001 多组件 CI 串行
+
+- **关联需求**：FR-CI-001
+- **GIVEN** 同一提交同时修改多个组件
+- **WHEN** 组件 CI 开始执行
+- **THEN** 按 API → 管理 Web → 小程序顺序执行
+- **AND** 前置组件失败时后置组件不执行
+- **验证方式**：GitHub Actions run `34037029052` 作业开始/完成时间与结果
+

@@ -56,6 +56,14 @@
 - 查询词与范围：`uni-app/微信小程序/miniprogram-ci/GitHub Actions/上传私钥/IP 白名单/体验二维码`；范围为移动端构建、现有 CI、部署 Wiki、`ci-quality-gate`、`deploy-verify` 和 `KB-INBOX-011/012`。
 - 采用方式：小程序链路与服务器 Docker 部署解耦；只监听 `main` 移动端相关路径，使用最小 `contents: read` 权限、隔离上传工具目录、Repository Secret 注入私钥、Repository Variables 注入公开配置，并保存当次二维码 Artifact。
 
+## 2026-09-06 按组件串行执行发布 CI
+
+- 查询词与范围：`GitHub Actions/path filter/reusable workflow/needs/组件 CI 顺序`；范围为新增 `ci-component-release.yml`、`tools/ci/changed-components.mjs`、小程序可复用工作流和现有生产部署工作流。
+- 采用方式：提交路径检测器将 API、管理 Web、小程序和共享文件映射为布尔输出；Job 使用显式 `needs` 和 `always()` 条件处理被跳过的前置 Job，顺序固定为 API → 管理 Web → 小程序。共享依赖、Compose 与编排工作流变更按全组件运行。
+- 适用边界：自动工作流执行组件质量门禁和小程序体验版上传，不自动执行生产服务器部署；生产部署仍需要独立手动工作流、发布 Gate 和回滚条件。
+- 经验与修正：首次真实运行发现可复用工作流的 `actions: read` 权限需要由调用工作流显式授予；随后发现 Docker Buildx 默认 driver 不支持 GHA cache，补充 `docker/setup-buildx-action` 后通过。后端 CI 还需非生产 Prisma URL 才能执行 `prisma generate`。
+- 验证状态：verified；真实运行 `34037029052` 中 API CI 2m46s 成功、管理 Web CI 随后 3m19s 成功、小程序构建 46s 后上传 3m24s 成功并生成体验二维码。
+
 ## 2026-09-06 微信上传固定出口 Runner
 
 - 查询词与范围：`self-hosted Runner/固定出口/IP 白名单/非 root/systemd hardening/metadata/Secret 清理`；范围为 `ci-quality-gate`、`supply-chain-security`、`operational-readiness`、`deploy-verify`、`KB-INBOX-011`、当前 workflow 与测试服务器运行事实。

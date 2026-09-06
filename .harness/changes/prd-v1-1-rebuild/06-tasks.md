@@ -14,6 +14,7 @@
 - [ ] TASK-010 `[NFR-SEC-001][AC-SEC-001]` 完成 Secret/SAST/SCA/SBOM 基线（命令与 SBOM 已接入；剩余 2 个 uni-app/Vite high，Security Gate 仍失败）
 - [x] TASK-011 完成 Requirements/Design Gate 人工批准
 - [x] TASK-012 在已批准的首个垂直 Change 中开始业务实现（Admin foundation 与 Mobile identity 均已进入实现）
+- [x] TASK-013 `[FR-CI-001][AC-CI-COMPONENT-001][AC-CI-ORDER-001]` 建立按提交路径选择组件、按 API → 管理 Web → 小程序串行执行的 CI，并完成真实 GitHub Actions 验证
 
 ## 依赖顺序
 
@@ -38,4 +39,5 @@ TASK-005/006/Owner 确认 → Requirements Gate → Design Gate → TASK-007/008
 | TASK-005 | 产品 Owner | 测试 Owner | requirements | 决策与来源映射 |
 | TASK-006 | 架构 Owner | 安全/运维 Owner | design | ADR/设计 |
 | TASK-007~010 | 工程角色 | 独立 Reviewer | implementation/security | 自动化 Evidence |
+| TASK-013 | 工程角色 | 独立 Reviewer | implementation/verification | evidence/2026-09-06-component-ci-release.md |
 

@@ -54,6 +54,14 @@
 - 业务规则：每个 Change 只包含一个可独立验收的主目标；依赖关系明确。
 - 失败行为：无法独立验收/回滚的切片必须继续拆分。
 
+### FR-CI-001 按变更组件执行发布 CI
+
+- 描述：根据提交实际变更路径，仅执行受影响的 API、管理 Web 或微信小程序 CI；多个组件同时变更时按 API → 管理 Web → 小程序的顺序执行。
+- 来源 ID/锚点：SRC-USER-002 / 2026-09-06 用户发布需求。
+- 业务规则：只改一个组件时其他组件 Job 必须跳过；前置组件失败时不得继续后置组件；共享依赖、Compose 或工作流编排变化按全组件处理。
+- 权限：CI 只执行构建、测试和已批准的小程序体验版上传；生产服务器部署仍由独立的手动发布工作流和发布 Gate 控制。
+- 失败行为：组件识别失败、前置 Job 失败或必要配置缺失时，流水线失败并阻断后续组件。
+
 ## 非功能需求
 
 ### NFR-QUALITY-001 真实质量门禁
@@ -102,6 +110,7 @@
 | FR-ASIS-001 | SRC-CODE-001 | 旧项目工作树 | HEAD + uncommitted | pending |
 | FR-ARCH-001 | SRC-USER-001/SRC-CODE-001 | 使用 Harness + ORM/基础设施现状 | current | pending |
 | FR-PLAN-001 | SRC-USER-001 | 重新开发成品 | 2026-08-30 | pending |
+| FR-CI-001 | SRC-USER-002 | 组件感知 CI 与 API → 管理 Web → 小程序顺序 | 2026-09-06 | pending |
 | NFR-QUALITY-001 | SRC-USER-001 | Harness 工程化 | current | pending |
 | NFR-TRACE-001 | SRC-USER-001 | Harness 工程化 | current | pending |
 | NFR-SEC-001 | SRC-CODE-001 | 当前接口与 Secret 边界 | current | pending |
