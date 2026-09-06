@@ -12,7 +12,23 @@ test('builds a scoped description from the commit subject and changed paths', ()
         '.github/workflows/deploy-miniprogram-experience.yml',
       ],
     }),
-    'feat: update route cards（小程序、发布流程）',
+    '新增功能：更新路线卡片（小程序、发布流程）',
+  )
+})
+
+test('keeps release remarks in Chinese for an unknown English subject', () => {
+  const description = buildDescription({
+    subject: 'fix: update an-untranslated-component',
+    paths: ['apps/api/src/main.ts'],
+  })
+  assert.equal(description, '修复问题（后端）')
+  assert.equal(/[a-z]/i.test(description), false)
+})
+
+test('preserves a Chinese commit subject', () => {
+  assert.equal(
+    buildDescription({ subject: '修复路线卡片显示', paths: ['apps/mobile/src/pages/routes/index.vue'] }),
+    '修复路线卡片显示（小程序）',
   )
 })
 
