@@ -82,6 +82,8 @@ mobile uni-app + admin Vue
 
 先修复 typecheck 与零测试，再激活项目质量门禁；构建制品绑定 commit/digest。`ci-component-release.yml` 使用提交路径检测器输出 `backend/admin/mobile` 三个布尔值：API CI 完成后才允许管理 Web CI，管理 Web CI 完成后才允许小程序 CI；未受影响的 Job 跳过，前置失败阻断后置 Job。共享锁文件、Compose 和编排工作流变更按全组件处理。小程序 Job 复用体验版上传工作流，生产服务器部署仍保持独立手动工作流。
 
+本地浏览器插件读取仓库根目录 `.mini-publisher.json`，提供普通 push 与“本地上传小程序后 push”两种交付方式。执行前先 fetch 并检查远程目标分支必须是本地 HEAD 的祖先；插件统一提交当前未提交改动，但不执行 pull、rebase、force push。组合模式根据配置的 `mobilePaths` 判断完整待推送范围：命中时先生成带去重标记的提交快照，再编译和上传；只有微信上传成功且 HEAD/工作区未变化才 push。不命中时不添加标记并按普通 push 处理。
+
 ## 发布、迁移和回滚
 
 后续 Change 小步灰度。ORM 迁移若批准，采用双轨兼容/数据校验方案，不在单次发布中破坏现有表。

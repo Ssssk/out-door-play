@@ -78,6 +78,13 @@
 - 采用方式：提交说明包含 `[skip-miniprogram-experience]` 时，仅跳过本次小程序体验版 Job；后端和管理 Web 仍按组件路径执行。该标记只用于已确认本地插件完成同一份代码上传的场景，默认不改变自动体验版发布。
 - 验证边界：本地工作流静态检查和组件测试可验证条件存在；真实带标记的 GitHub Actions 运行尚未执行，不能把该标记写成已在线验证。
 
+## 2026-09-08 本地插件双交付流程
+
+- 查询词与范围：`浏览器插件/Git push/组件 CI/小程序路径/体验版去重/提交快照`；范围为 `auto-work-tools` v1.12.0、仓库 `.mini-publisher.json`、中央组件工作流和既有去重标记约定。
+- 采用方式：插件提供普通 push 与“本地上传后 push”两个主入口；先 fetch 并检查快进关系，再计算远程基线至 HEAD 加工作区的完整待推送文件。只有组合模式命中 `mobilePaths` 时才给提交附加去重标记，并要求本地上传成功以及上传后 HEAD/工作区未变化后才能 push。
+- 安全边界：插件会对当前仓库执行 `git add --all` 和 `git commit`，因此确认框必须明确“全部未提交改动”；禁止自动 pull、rebase 和 force push。上传失败后可能留下未推送的本地提交，重试时继续以远程基线判断，不伪装成已交付。
+- 验证状态：verified（本地逻辑）；`auto-work-tools` 25 项测试通过，其中两项使用临时 bare Git 远程分别验证普通推送和“小程序上传成功 → 带标记非强制 push”的完整顺序。真实项目 push、GitHub Actions run 和用户插件 UI 验收尚未执行。
+
 ## 2026-09-06 微信上传固定出口 Runner
 
 - 查询词与范围：`self-hosted Runner/固定出口/IP 白名单/非 root/systemd hardening/metadata/Secret 清理`；范围为 `ci-quality-gate`、`supply-chain-security`、`operational-readiness`、`deploy-verify`、`KB-INBOX-011`、当前 workflow 与测试服务器运行事实。

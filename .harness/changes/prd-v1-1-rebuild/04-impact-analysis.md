@@ -14,7 +14,7 @@
 | 旧客户端/消费者 | 是 | H5/微信构建；其他端只有构建入口 | 明确首批目标端和兼容窗口 | 误宣称全端支持 | 目标端矩阵与真机证据 |
 | UI/UX、文案、可访问性 | 是 | 已有高对比设计与 HTML 原型 | 以 v1.1 原型和 Wot/Element Token 实现 | 原型版本与代码不一致 | 截图比对、键盘/焦点/对比度 |
 | 产品 UAT、目标端可获得性 | 是 | 原 PRD 标 READY，但无 Harness UAT | 每个垂直 Change 冻结候选制品后验收 | 产品范围尚未裁决 | UAT 签收和设备信息 |
-| CI、依赖、SBOM、供应链 | 是 | type/test/build 已转绿；project-quality 仍 template；SCA 有 11 high；Sass/大 chunk 警告 | 补 format/lint/contract/integration/e2e/security、依赖整改与 SBOM | Security Gate 当前失败 | CI 失败注入、锁文件、SCA/SBOM 与制品证据 |
+| CI、依赖、SBOM、供应链 | 是 | type/test/build 已转绿；组件 CI 与本地小程序插件已存在；project-quality 仍 template；SCA 有遗留风险 | 补 format/lint/contract/integration/e2e/security，并让插件按项目配置执行普通 push 或“本地体验版成功后再 push” | 误加跳过标记会漏发体验版；自动 Git 操作可能覆盖历史 | 临时 bare 远程端到端测试、上传成功/失败阻断、非强制 push、锁文件、SCA/SBOM |
 | SLO、容量、告警、Runbook | 是 | 未建立 | 按业务切片量化 | 无法判断发布是否健康 | SLO/告警演练 |
 | 备份恢复、灾备、Incident | 是 | 本地 Docker volume；无恢复演练 | 生产方案确定后设计 RPO/RTO | 数据不可恢复风险 | restore drill + Incident tabletop |
 

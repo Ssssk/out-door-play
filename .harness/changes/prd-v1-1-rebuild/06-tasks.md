@@ -15,6 +15,7 @@
 - [x] TASK-011 完成 Requirements/Design Gate 人工批准
 - [x] TASK-012 在已批准的首个垂直 Change 中开始业务实现（Admin foundation 与 Mobile identity 均已进入实现）
 - [x] TASK-013 `[FR-CI-001][AC-CI-COMPONENT-001][AC-CI-ORDER-001]` 建立按提交路径选择组件、按 API → 管理 Web → 小程序串行执行的 CI，并完成真实 GitHub Actions 验证
+- [x] TASK-014 `[FR-CI-002][AC-CI-PLUGIN-001]` 将本地插件改为“仅推送代码 / 推送并发布体验版”双流程，增加项目级路径与去重标记配置，并用临时 Git 远程验证普通推送和体验版去重顺序
 
 ## 依赖顺序
 

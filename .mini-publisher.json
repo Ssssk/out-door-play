@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "delivery": {
+    "gitRemote": "origin",
+    "skipExperienceMarker": "[skip-miniprogram-experience]",
+    "mobilePaths": [
+      "apps/mobile/",
+      "tools/miniprogram-ci/",
+      "project.config.json",
+      ".github/workflows/deploy-miniprogram-experience.yml",
+      "package.json",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml",
+      "compose.prod.yaml",
+      "docker/nginx/",
+      ".github/workflows/ci-component-release.yml",
+      ".github/workflows/deploy-production.yml"
+    ]
+  }
+}
