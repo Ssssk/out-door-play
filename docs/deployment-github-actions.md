@@ -19,15 +19,19 @@
 - `DEPLOY_ENV_FILE`：生产环境变量文本，不要提交到 Git。至少包含：
 
 ```dotenv
-APP_PORT=8080
+APP_HTTP_PORT=80
+APP_HTTPS_PORT=443
 MYSQL_DATABASE=chumen
 MYSQL_USER=chumen
 MYSQL_PASSWORD=使用随机生成的字母数字密码
 MYSQL_ROOT_PASSWORD=使用随机生成的字母数字密码
 IDENTITY_SUBJECT_HMAC_KEY=至少32个随机字符
-CORS_ORIGINS=http://服务器IP:8080
-ADMIN_ALLOWED_ORIGINS=http://服务器IP:8080
+CORS_ORIGINS=https://www.chumenliuliu.cloud,https://chumenliuliu.cloud
+ADMIN_ALLOWED_ORIGINS=https://www.chumenliuliu.cloud,https://chumenliuliu.cloud
 ADMIN_COOKIE_SECURE=true
+WEB_NGINX_CONFIG=/opt/chumen/nginx/production.conf
+TLS_CERT_DIR=/opt/chumen/certs
+ACME_WEBROOT=/opt/chumen/certbot-webroot
 ```
 
 工作流会自动把当前提交 SHA 对应的 `API_IMAGE` 和 `WEB_IMAGE` 写入该文件。不要把宝塔面板密码或 SSH 私钥放入仓库变量、`.env` 文件或日志。
@@ -36,12 +40,13 @@ ADMIN_COOKIE_SECURE=true
 
 1. 确认服务器 SSH 用户的公钥已写入 `~/.ssh/authorized_keys`，并先手动验证该用户可以登录。
 2. 给服务器部署用户授予 Docker 权限：`sudo usermod -aG docker <用户>`，重新登录后执行 `docker compose version`。
-3. 为云厂商安全组放行 `APP_PORT`；不要放行 MySQL 端口。
-4. 当前服务器没有域名和 HTTPS，工作流只提供 HTTP 部署能力。微信小程序正式请求、生产管理员登录和安全 Cookie 仍需要域名与 TLS，完成前不能视为生产发布。测试环境若暂时使用 HTTP，可显式设置 `ADMIN_COOKIE_SECURE=false`。
-5. 配置好 Secrets 后，从 `Actions -> Deploy production -> Run workflow` 手动触发一次，并检查 Environment 审批。
+3. 为云厂商安全组放行对外 HTTP/HTTPS 端口；不要放行 MySQL 端口。Web 容器内 Nginx 监听 80/443，官网根路径由 `website/dist` 提供，管理后台位于 `/admin/`，API 位于 `/v1/`。
+4. 将证书复制到 `TLS_CERT_DIR`，把证书续期后的复制和 Nginx reload 配置为 Certbot deploy hook；`docker/nginx/production.conf` 负责 HTTP 跳转、ACME challenge、HTTPS 和同域 API 代理。
+5. 在微信公众平台将 `www.chumenliuliu.cloud` 加入 request 合法域名；体验版构建已固定使用 `https://www.chumenliuliu.cloud/v1`。
+6. 配置好 Secrets 后，从 `Actions -> Deploy production -> Run workflow` 手动触发一次，并检查 Environment 审批。
 
 ## 当前 HTTP 试运行
 
-可先将 `APP_PORT` 设为 `8080`，并把 `CORS_ORIGINS`、`ADMIN_ALLOWED_ORIGINS` 都设为 `http://服务器公网IP:8080`，同时将 `ADMIN_COOKIE_SECURE=false`，用于测试网页、API 和容器健康状态。该开关只适用于临时 HTTP 测试；正式环境必须恢复为 `true` 并使用 HTTPS。
+可先将 `APP_PORT` 设为 `8080`，并把 `CORS_ORIGINS`、`ADMIN_ALLOWED_ORIGINS` 都设为 `http://服务器公网IP:8080`，同时将 `ADMIN_COOKIE_SECURE=false`，用于临时测试网页、API 和容器健康状态。正式域名接入后必须恢复为 `https://www.chumenliuliu.cloud` 与 `ADMIN_COOKIE_SECURE=true`；当前远程服务器已经使用 80/443 和 HTTPS，不应再用该临时端口配置。
 
-服务器宿主机只需 SSH、Docker Engine 和 Docker Compose。Node.js、MySQL 与 Nginx 均在镜像/容器内运行；工作流使用 Compose `--wait` 等待服务健康，不依赖宿主机安装这些运行时。
+服务器宿主机只需 SSH、Docker Engine、Docker Compose 和证书续期工具。Node.js、MySQL 与 Nginx 均在镜像/容器内运行；工作流使用 Compose `--wait` 等待服务健康，不依赖宿主机安装 Node.js 或 MySQL。

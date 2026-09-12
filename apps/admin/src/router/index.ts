@@ -4,7 +4,7 @@ import { useAuthStore } from '../stores/auth'
 import { pinia } from '../stores/pinia'
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/admin/'),
   routes: [
     { path: '/login', name: 'Login', component: () => import('../views/LoginView.vue'), meta: { title: '管理员登录', public: true } },
     { path: '/forbidden', name: 'Forbidden', component: () => import('../views/ForbiddenView.vue'), meta: { title: '无权访问' } },

@@ -14,11 +14,13 @@ COPY apps/mobile/package.json apps/mobile/package.json
 RUN pnpm install --frozen-lockfile
 
 COPY apps/admin apps/admin
+COPY website website
 RUN pnpm --filter @chumen/admin build
 
 FROM nginx:1.27-alpine
 
-COPY --from=build /app/apps/admin/dist /usr/share/nginx/html
+COPY --from=build /app/website/dist /usr/share/nginx/html
+COPY --from=build /app/apps/admin/dist /usr/share/nginx/html/admin
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

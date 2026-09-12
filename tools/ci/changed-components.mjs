@@ -47,6 +47,7 @@ export function detectComponents(paths) {
       'apps/admin/',
       'docker/admin.Dockerfile',
       'docker/nginx/',
+      'website/',
     ])),
     mobile: all || paths.some((path) => startsWithAny(path, [
       'apps/mobile/',

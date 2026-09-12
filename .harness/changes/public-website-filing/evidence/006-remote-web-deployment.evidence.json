@@ -1,0 +1,47 @@
+{
+  "evidenceId": "EVD-WEB-006",
+  "changeId": "CHG-OUTDOOR-WEB-001",
+  "requirementIds": ["FR-WEB-004", "FR-WEB-005"],
+  "acceptanceIds": ["AC-WEB-005", "AC-WEB-006"],
+  "type": "integration",
+  "status": "passed",
+  "commit": "uncommitted-worktree; remote image sha256:0c28d417b60087859cbd32ea97e570c0e779425b9b7674290517f8a7b85fbbbd",
+  "environment": "Windows local exec with user-authorized root SSH to Ubuntu 24.04 server 124.223.220.242",
+  "startedAt": "2026-09-12T14:19:47+08:00",
+  "finishedAt": "2026-09-12T14:28:30+08:00",
+  "command": "SSH backup/upload; docker load; docker compose config/up; certbot certonly/reconfigure; curl HTTP/HTTPS homepage/admin/health; openssl s_client; certbot renew --dry-run",
+  "exitCode": 0,
+  "summary": "Remote Web container replaced and verified on ports 80/443. HTTP redirects to HTTPS; website homepage, admin SPA fallback, API health, certificate SAN/expiry and Certbot renewal dry-run all passed.",
+  "runner": "Codex local exec",
+  "artifacts": ["docker/nginx/production.conf", "compose.prod.yaml", "deploy/certbot/chumen-copy.sh", "website/dist/index.html", "apps/admin/dist/index.html"],
+  "artifactsSha256": {},
+  "executor": "Codex with user-authorized root SSH session",
+  "environment": {
+    "host": "124.223.220.242",
+    "os": "Ubuntu Server 24.04 LTS",
+    "webContainer": "chumen-web-prod",
+    "webImage": "chumen-web:domain-final",
+    "webImageId": "sha256:0c28d417b60087859cbd32ea97e570c0e779425b9b7674290517f8a7b85fbbbd",
+    "apiImage": "chumen-api:33de0ec"
+  },
+  "actions": [
+    "Backed up /opt/chumen/compose.prod.yaml and /opt/chumen/.env.production under /opt/chumen/backups.",
+    "Loaded the verified Web image and mounted production Nginx configuration, ACME webroot, and certificate directory.",
+    "Updated production CORS origins and ADMIN_ALLOWED_ORIGINS to the HTTPS root and www domains.",
+    "Configured Certbot renewal with webroot validation and a deploy hook that copies the renewed certificate and reloads the Web container."
+  ],
+  "checks": [
+    {"request": "http://www.chumenliuliu.cloud/", "expected": "301 to HTTPS", "observed": "301"},
+    {"request": "https://www.chumenliuliu.cloud/", "expected": "200 and website title", "observed": "200; 17005 bytes; 个人生活感悟记录"},
+    {"request": "https://www.chumenliuliu.cloud/admin/", "expected": "200", "observed": "200"},
+    {"request": "https://www.chumenliuliu.cloud/admin/login", "expected": "200 SPA fallback", "observed": "200"},
+    {"request": "https://www.chumenliuliu.cloud/v1/health", "expected": "200 JSON health", "observed": "200; database connected"},
+    {"request": "TLS SNI www.chumenliuliu.cloud", "expected": "SAN contains root and www", "observed": "Let's Encrypt YE1; SAN chumenliuliu.cloud, www.chumenliuliu.cloud; expires 2026-12-11"},
+    {"request": "certbot renew --dry-run --cert-name chumenliuliu.cloud", "expected": "success", "observed": "all simulated renewals succeeded"}
+  ],
+  "limitations": [
+    "Tencent Cloud certificate aj6vgrTi is signed but its CVM deployment page says one-click deployment is unsupported; the deployed certificate is a same-domain Let's Encrypt free certificate.",
+    "WeChat request legal domain and real-device request verification remain pending platform-side actions.",
+    "Public ICP and公安备案 status are not inferred from the HTTPS response."
+  ]
+}

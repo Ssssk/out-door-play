@@ -25,10 +25,12 @@ MySQL 容器名为 `chumen-mysql`，宿主机端口为 `3307`，数据保存在 
 默认地址：
 
 - H5：终端中 Vite 输出的地址（通常为 `http://localhost:5173`）
-- Web 管理后台：`http://localhost:5174`
+- Web 管理后台：`http://localhost:5174/admin/`
 - API：`http://127.0.0.1:3100/v1`
 - Swagger：`http://127.0.0.1:3100/v1/docs`
 - 健康检查：`http://127.0.0.1:3100/v1/health`
+
+生产域名：官网首页为 `https://www.chumenliuliu.cloud/`，运营后台为 `https://www.chumenliuliu.cloud/admin/`，小程序生产 API 为 `https://www.chumenliuliu.cloud/v1`。本地开发地址保持不变。
 
 首次创建后台超级管理员前，在不提交的 `apps/api/.env` 临时设置 `ADMIN_BOOTSTRAP_USERNAME`、`ADMIN_BOOTSTRAP_PASSWORD`（至少 12 位）和 `ADMIN_BOOTSTRAP_DISPLAY_NAME`，运行上述 bootstrap 命令后立即删除这三项。已有 `super_admin` 时命令会拒绝重复创建，密码不会输出到日志。
 

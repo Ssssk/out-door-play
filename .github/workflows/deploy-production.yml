@@ -131,7 +131,7 @@ jobs:
           deploy_port="${DEPLOY_PORT:-22}"
           deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
           release_dir="$deploy_dir/releases/$GITHUB_SHA"
-          tar -czf - .dockerignore package.json pnpm-lock.yaml pnpm-workspace.yaml apps/api apps/admin apps/mobile/package.json docker \
+          tar -czf - .dockerignore package.json pnpm-lock.yaml pnpm-workspace.yaml apps/api apps/admin apps/mobile/package.json docker website \
             | ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$release_dir' && tar -xzf - -C '$release_dir'"
 
       - name: Build images on test server

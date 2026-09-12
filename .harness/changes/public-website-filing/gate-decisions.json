@@ -1,0 +1,15 @@
+{
+  "change_id": "CHG-OUTDOOR-WEB-001",
+  "decisions": {
+    "requirements": { "status": "passed", "approver": "用户（项目负责人）", "decided_at": "2026-09-12", "reason": "用户后续明确要求把官网域名、Nginx 路由和小程序生产 API 地址统一纳入实现；真实备案与外部发布仍保留为待执行项。", "evidence": ["00-request.md", "02-requirements.md"] },
+    "design": { "status": "passed", "approver": "用户（项目负责人）", "decided_at": "2026-09-12", "reason": "采用官网根路径、管理后台 `/admin/`、API `/v1/` 的同域路由，并让小程序生产构建使用同域 HTTPS API。", "evidence": ["05-design.md"] },
+    "implementation": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "verification": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "security": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "uat": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "operations": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "release": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "completion": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] }
+  }
+}
+

@@ -51,7 +51,7 @@ jobs:
       - name: Build WeChat Mini Program
         shell: bash
         env:
-          VITE_API_BASE_URL: ${{ vars.WECHAT_MINIPROGRAM_API_BASE_URL }}
+          VITE_API_BASE_URL: https://www.chumenliuliu.cloud/v1
           VITE_DEV_IDENTITY_ENABLED: 'false'
         run: |
           set -euo pipefail

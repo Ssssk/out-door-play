@@ -8,6 +8,8 @@ node_modules/
 .DS_Store
 *.log
 dist/
+!website/dist/
+!website/dist/**
 .pnpm-store/
 .env
 .env.development

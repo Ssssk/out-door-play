@@ -1,0 +1,17 @@
+{
+  "changeId": "CHG-OUTDOOR-WEB-001",
+  "requirementIds": ["FR-WEB-004", "FR-WEB-005"],
+  "acceptanceIds": ["AC-WEB-005", "AC-WEB-006"],
+  "type": "static",
+  "status": "passed",
+  "commit": "uncommitted-worktree",
+  "environment": "local Windows, Node 22, pnpm 11.19.0",
+  "startedAt": "2026-09-12T01:32:00+08:00",
+  "finishedAt": "2026-09-12T01:45:00+08:00",
+  "command": "pnpm --filter @chumen/admin type-check; pnpm --filter @chumen/admin test; pnpm --filter @chumen/admin build; pnpm --filter @chumen/mobile type-check; pnpm --filter @chumen/mobile build:mp-weixin; domain integration static checks; node .harness/scripts/validate-harness.mjs; pnpm security:secret; git diff --check",
+  "exitCode": 0,
+  "summary": "Nginx、Docker 路径与生产地址静态检查通过；后台类型检查/测试/构建和微信小程序构建通过。首次后台构建因 Element Plus 引用未声明的 @vue/shared 失败，补充已锁定版本的依赖与解析路径后通过。首次 Docker 构建因 daemon 未启动失败，后续结果见 004；远程部署尚未执行。首次新增本证据后 Harness 因 type 字段无效失败，修正为 static 后通过。",
+  "runner": "Codex local exec",
+  "artifacts": ["docker/nginx/default.conf", "docker/admin.Dockerfile", "apps/admin/dist/index.html", "apps/mobile/.env.production", ".github/workflows/deploy-miniprogram-experience.yml"],
+  "artifactsSha256": {}
+}

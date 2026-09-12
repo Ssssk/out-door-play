@@ -1,0 +1,17 @@
+{
+  "changeId": "CHG-OUTDOOR-WEB-001",
+  "requirementIds": ["FR-WEB-003"],
+  "acceptanceIds": ["AC-WEB-004"],
+  "type": "deployment",
+  "status": "passed",
+  "commit": "uncommitted-worktree",
+  "environment": "Tencent Cloud DNSPod console in the logged-in in-app browser; local Windows CUA",
+  "startedAt": "2026-09-11T17:12:00Z",
+  "finishedAt": "2026-09-11T17:17:09Z",
+  "command": "DNSPod UI: open chumenliuliu.cloud records; add host www, type A, value 124.223.220.242, TTL 600; save; verify success toast and record list; Resolve-DnsName/nslookup read-only check",
+  "exitCode": 0,
+  "summary": "DNSPod displayed 添加成功 and listed www A 124.223.220.242 with TTL 600. Existing @ A 124.223.220.242 remained unchanged. Public recursive DNS queries are subject to the environment's resolver/cache and are not treated as propagation proof.",
+  "runner": "Codex CUA browser",
+  "artifacts": ["https://console.cloud.tencent.com/cns/detail/chumenliuliu.cloud/records"],
+  "artifactsSha256": {}
+}

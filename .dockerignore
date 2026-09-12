@@ -6,6 +6,9 @@ node_modules
 **/node_modules
 dist
 **/dist
+!website/
+!website/dist/
+!website/dist/**
 coverage
 *.log
 .env

@@ -1,0 +1,71 @@
+{
+  "change_id": "CHG-OUTDOOR-WEB-001",
+  "verification_status": "verified",
+  "verified_by": "用户（项目负责人）与实现者",
+  "verified_at": "2026-09-11T17:17:09Z",
+  "sources": [
+    {
+      "id": "SRC-USER-20260912-001",
+      "kind": "user-request",
+      "title": "用户当前对话请求",
+      "location": "conversation:2026-09-12",
+      "version": "2026-09-12",
+      "sha256": null,
+      "captured_at": "2026-09-12T00:00:00Z"
+    },
+    {
+      "id": "SRC-SCREENSHOT-20260912-001",
+      "kind": "user-attachment",
+      "title": "备案要求截图",
+      "location": "C:/Users/Admin/AppData/Local/Temp/codex-clipboard-d4dbe926-d371-4584-b430-9bac76205335.png",
+      "version": "captured-2026-09-12",
+      "sha256": "E99FA4342704C4520BF786761B79C0584F8ABC391320A22F5E78B407B136A578",
+      "captured_at": "2026-09-12T00:00:00Z"
+    },
+    {
+      "id": "SRC-CODE-001",
+      "kind": "repository-state",
+      "title": "出门溜溜现有产品能力",
+      "location": "apps/mobile/src",
+      "version": "working-tree-2026-09-12",
+      "sha256": null,
+      "captured_at": "2026-09-12T00:00:00Z"
+    },
+    {
+      "id": "SRC-USER-20260912-002",
+      "kind": "user-message",
+      "title": "用户提供 ICP 备案号、官网域名并授权腾讯云 DNS 配置",
+      "location": "conversation:2026-09-12-follow-up",
+      "version": "2026-09-12",
+      "sha256": null,
+      "captured_at": "2026-09-12T01:05:00+08:00"
+    },
+    {
+      "id": "SRC-USER-20260912-003",
+      "kind": "user-message",
+      "title": "用户要求配置腾讯云域名解析",
+      "location": "conversation:2026-09-12-dns-follow-up",
+      "version": "2026-09-12",
+      "sha256": null,
+      "captured_at": "2026-09-12T01:13:00+08:00"
+    },
+    {
+      "id": "SRC-USER-20260912-004",
+      "kind": "user-message",
+      "title": "用户要求域名接入后同步远程 Nginx 与小程序访问地址",
+      "location": "conversation:2026-09-12-domain-integration-follow-up",
+      "version": "2026-09-12",
+      "sha256": null,
+      "captured_at": "2026-09-12T02:00:00+08:00"
+    }
+  ],
+  "requirement_mappings": [
+    { "requirement_id": "FR-WEB-001", "source_ids": ["SRC-USER-20260912-001", "SRC-CODE-001"] },
+    { "requirement_id": "FR-WEB-002", "source_ids": ["SRC-USER-20260912-001", "SRC-SCREENSHOT-20260912-001", "SRC-USER-20260912-002"] },
+    { "requirement_id": "FR-WEB-003", "source_ids": ["SRC-USER-20260912-003"] },
+    { "requirement_id": "FR-WEB-004", "source_ids": ["SRC-USER-20260912-004", "SRC-CODE-001"] },
+    { "requirement_id": "FR-WEB-005", "source_ids": ["SRC-USER-20260912-004"] },
+    { "requirement_id": "NFR-WEB-001", "source_ids": ["SRC-USER-20260912-001"] }
+  ]
+}
+

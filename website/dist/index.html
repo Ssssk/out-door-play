@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="个人生活感悟记录，整理日常想法、知识、图片、文章和日志。">
+    <meta name="theme-color" content="#10120f">
+    <link rel="canonical" href="https://www.chumenliuliu.cloud/">
+    <title>个人生活感悟记录</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23d8ff3e'/%3E%3Cpath d='M17 17h30v30H17z' fill='none' stroke='%2310120f' stroke-width='4'/%3E%3Cpath d='M24 27h16M24 36h11' stroke='%2310120f' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+    <style>
+      :root {
+        --ink: #10120f;
+        --ink-soft: #1b1f19;
+        --lime: #d8ff3e;
+        --paper: #f5f6ef;
+        --muted: #adb6a4;
+        --line: rgba(216, 255, 62, .2);
+        --max: 1160px;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        color: var(--paper);
+        background: var(--ink);
+        font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+        line-height: 1.6;
+      }
+      a { color: inherit; }
+      a:focus-visible, button:focus-visible { outline: 3px solid var(--lime); outline-offset: 4px; }
+      .skip-link { position: absolute; left: 1rem; top: -5rem; z-index: 10; padding: .7rem 1rem; color: var(--ink); background: var(--lime); border-radius: 999px; }
+      .skip-link:focus { top: 1rem; }
+      .shell { width: min(var(--max), calc(100% - 48px)); margin: 0 auto; }
+      .site-header { position: sticky; top: 0; z-index: 5; border-bottom: 1px solid rgba(245, 246, 239, .09); background: rgba(16, 18, 15, .9); backdrop-filter: blur(16px); }
+      .nav { display: flex; align-items: center; justify-content: space-between; min-height: 76px; }
+      .brand { display: inline-flex; align-items: center; gap: .7rem; color: var(--paper); text-decoration: none; font-weight: 800; letter-spacing: -.03em; }
+      .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; color: var(--ink); background: var(--lime); border-radius: 11px; font-size: 1.1rem; transform: rotate(-8deg); }
+      .brand-mark span { transform: rotate(8deg); }
+      .brand-name { font-size: 1.05rem; }
+      .nav-links { display: flex; align-items: center; gap: 1.6rem; color: var(--muted); font-size: .9rem; }
+      .nav-links a { text-decoration: none; }
+      .nav-links a:hover { color: var(--lime); }
+      .nav-cta { padding: .65rem 1rem; color: var(--ink) !important; background: var(--lime); border-radius: 999px; font-weight: 800; }
+      .menu-toggle { display: none; border: 1px solid rgba(245, 246, 239, .25); padding: .55rem .75rem; color: var(--paper); background: transparent; border-radius: 10px; font-size: 1.2rem; cursor: pointer; }
+
+      .hero { position: relative; overflow: hidden; padding: clamp(76px, 12vw, 146px) 0 98px; }
+      .hero::before { content: ""; position: absolute; width: 680px; height: 680px; right: -260px; top: -360px; border: 1px solid var(--line); border-radius: 50%; box-shadow: 0 0 0 40px rgba(216, 255, 62, .025), 0 0 0 120px rgba(216, 255, 62, .02); pointer-events: none; }
+      .hero-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(360px, .95fr); align-items: center; gap: clamp(48px, 8vw, 110px); }
+      .eyebrow { display: inline-flex; align-items: center; gap: .55rem; margin-bottom: 1.3rem; color: var(--lime); font-size: .84rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+      .eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--lime); }
+      h1 { max-width: 680px; margin: 0; font-size: clamp(3.2rem, 8vw, 6.6rem); line-height: .98; letter-spacing: -.075em; }
+      .hero-copy { max-width: 540px; margin: 1.8rem 0 0; color: var(--muted); font-size: clamp(1.05rem, 2vw, 1.2rem); }
+      .hero-actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; }
+      .button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 1.2rem; border: 1px solid transparent; border-radius: 999px; font-weight: 800; text-decoration: none; }
+      .button-primary { color: var(--ink); background: var(--lime); }
+      .button-secondary { color: var(--paper); border-color: rgba(245, 246, 239, .24); }
+      .button-secondary:hover { border-color: var(--lime); color: var(--lime); }
+      .hero-note { margin-top: 1.2rem; color: #778272; font-size: .82rem; }
+
+      .note-card { position: relative; min-height: 480px; padding: 1.25rem; border: 1px solid rgba(245, 246, 239, .16); background: linear-gradient(145deg, #242a21, #121510 72%); border-radius: 32px; box-shadow: 22px 22px 0 rgba(216, 255, 62, .1); }
+      .note-top { display: flex; justify-content: space-between; color: var(--muted); font-size: .78rem; }
+      .note-top strong { color: var(--lime); font-size: .88rem; }
+      .note-preview { position: relative; height: 265px; margin: 1.1rem 0; overflow: hidden; padding: 2rem; border: 1px solid rgba(216, 255, 62, .13); background: #192019; border-radius: 22px; }
+      .note-preview::before { content: ""; position: absolute; inset: 1rem; border: 1px solid rgba(245, 246, 239, .09); border-radius: 14px; }
+      .note-preview::after { content: "今天也值得被记住"; position: absolute; left: 2rem; bottom: 2rem; color: var(--lime); font-size: .95rem; letter-spacing: .05em; }
+      .note-lines { position: relative; z-index: 1; display: grid; gap: 1rem; margin-top: 1rem; }
+      .note-lines span { display: block; height: 1px; background: rgba(245, 246, 239, .28); }
+      .note-lines span:nth-child(1) { width: 72%; } .note-lines span:nth-child(2) { width: 88%; } .note-lines span:nth-child(3) { width: 58%; }
+      .note-info { display: flex; align-items: end; justify-content: space-between; gap: 1rem; }
+      .note-info h2 { margin: 0; font-size: 1.4rem; letter-spacing: -.04em; }
+      .note-info p { margin: .25rem 0 0; color: var(--muted); font-size: .84rem; }
+      .note-mark { color: var(--lime); font-size: 2.5rem; font-weight: 900; line-height: 1; letter-spacing: -.08em; }
+      .note-mark small { display: block; margin-top: .35rem; color: var(--muted); font-size: .68rem; font-weight: 600; letter-spacing: 0; text-align: right; }
+
+      .stats { border-top: 1px solid rgba(245, 246, 239, .12); border-bottom: 1px solid rgba(245, 246, 239, .12); }
+      .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+      .stat { padding: 1.35rem 1rem; text-align: center; }
+      .stat + .stat { border-left: 1px solid rgba(245, 246, 239, .12); }
+      .stat strong { display: block; color: var(--lime); font-size: 1.85rem; line-height: 1.1; letter-spacing: -.06em; }
+      .stat span { color: var(--muted); font-size: .85rem; }
+
+      section { padding: 106px 0; }
+      .section-head { display: flex; align-items: end; justify-content: space-between; gap: 2rem; margin-bottom: 2.6rem; }
+      .section-kicker { margin: 0 0 .55rem; color: var(--lime); font-size: .78rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+      h2 { margin: 0; font-size: clamp(2.2rem, 5vw, 4rem); line-height: 1.02; letter-spacing: -.065em; }
+      .section-intro { max-width: 370px; margin: 0; color: var(--muted); }
+      .feature-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+      .feature { min-height: 280px; padding: 1.5rem; border: 1px solid rgba(245, 246, 239, .13); background: var(--ink-soft); border-radius: 22px; }
+      .feature:nth-child(2) { background: #212820; }
+      .feature-icon { display: grid; width: 48px; height: 48px; margin-bottom: 4rem; place-items: center; color: var(--ink); background: var(--lime); border-radius: 14px; font-size: 1.3rem; }
+      .feature h3 { margin: 0; font-size: 1.35rem; letter-spacing: -.04em; }
+      .feature p { margin: .55rem 0 0; color: var(--muted); font-size: .94rem; }
+      .feature-link { display: inline-flex; margin-top: 1rem; color: var(--lime); font-size: .85rem; font-weight: 800; text-decoration: none; }
+
+      .about { background: var(--paper); color: var(--ink); }
+      .about .section-kicker { color: #577300; }
+      .about .section-intro { color: #5c6659; }
+      .about-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: 5rem; align-items: start; }
+      .about h2 { max-width: 440px; }
+      .about-copy { margin: 0; color: #4d574d; font-size: 1.08rem; }
+      .principles { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem; }
+      .principle { padding: 1.2rem 0; border-top: 1px solid rgba(16, 18, 15, .18); }
+      .principle strong { display: block; font-size: 1.05rem; }
+      .principle span { display: block; margin-top: .35rem; color: #697467; font-size: .9rem; }
+
+      footer { padding: 1.4rem 0 2rem; border-top: 1px solid rgba(245, 246, 239, .1); color: #808b7e; font-size: .8rem; }
+      .footer-main { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+      .footer-links { display: flex; flex-wrap: wrap; gap: 1rem; }
+      .footer-links a { color: #b4c0ac; text-decoration: none; }
+      .footer-links a:hover { color: var(--lime); }
+      .footer-note { margin: 1rem 0 0; color: #657061; font-size: .74rem; }
+
+      @media (max-width: 820px) {
+        .shell { width: min(var(--max), calc(100% - 32px)); }
+        .menu-toggle { display: block; }
+        .nav-links { position: absolute; top: 76px; right: 16px; left: 16px; display: none; flex-direction: column; align-items: stretch; gap: 0; padding: .5rem; border: 1px solid rgba(245, 246, 239, .13); background: #1a1e18; border-radius: 16px; }
+        .nav-links.is-open { display: flex; }
+        .nav-links a { padding: .8rem 1rem; }
+        .nav-cta { text-align: center; }
+        .hero-grid, .about-grid { grid-template-columns: 1fr; gap: 3rem; }
+        .note-card { min-height: 420px; }
+        .about-grid { gap: 2rem; }
+        .feature-grid { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 520px) {
+        .hero { padding-top: 70px; }
+        h1 { font-size: clamp(3rem, 18vw, 5rem); }
+        .note-card { padding: 1rem; border-radius: 24px; }
+        .note-preview { height: 220px; }
+        .stats-grid { grid-template-columns: 1fr; }
+        .stat + .stat { border-top: 1px solid rgba(245, 246, 239, .12); border-left: 0; }
+        section { padding: 78px 0; }
+        .section-head { display: block; }
+        .section-intro { margin-top: 1rem; }
+        .principles { grid-template-columns: 1fr; }
+        .footer-main { align-items: flex-start; flex-direction: column; }
+      }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳到主要内容</a>
+    <header class="site-header">
+      <div class="shell nav">
+        <a class="brand" href="#top" aria-label="个人生活感悟记录首页"><span class="brand-mark" aria-hidden="true"><span>✎</span></span><span class="brand-name">个人生活感悟记录</span></a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="nav-links" aria-label="打开导航">☰</button>
+        <nav id="nav-links" class="nav-links" aria-label="主导航">
+          <a href="#records">最近记录</a>
+          <a href="#about">关于本站</a>
+          <a class="nav-cta" href="#records">浏览内容</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section id="top" class="hero">
+        <div class="shell hero-grid">
+          <div>
+            <div class="eyebrow">个人生活感悟记录</div>
+            <h1>把生活记下来，<br>也把自己理清楚。</h1>
+            <p class="hero-copy">这里放下日常的感受、读过的内容、拍下的照片和那些值得回看的小事。</p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#records">看看最近记录 <span aria-hidden="true">↗</span></a>
+              <a class="button button-secondary" href="#about">关于本站</a>
+            </div>
+            <p class="hero-note">不追求完整，只把当下认真留住。</p>
+          </div>
+          <div class="note-card" aria-label="今日记录卡片">
+            <div class="note-top"><span>今日记录</span><strong>2026.09.12</strong></div>
+            <div class="note-preview" aria-hidden="true"><div class="note-lines"><span></span><span></span><span></span></div></div>
+            <div class="note-info"><div><h2>慢一点，也没关系</h2><p>随笔 · 生活片段</p></div><div class="note-mark">01<small>篇记录</small></div></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="stats" aria-label="本站内容概览"><div class="shell stats-grid"><div class="stat"><strong>随手记</strong><span>生活片段和感受</span></div><div class="stat"><strong>知识库</strong><span>读书与方法整理</span></div><div class="stat"><strong>慢慢来</strong><span>持续更新的记录</span></div></div></div>
+
+      <section id="records">
+        <div class="shell">
+          <div class="section-head"><div><p class="section-kicker">记录正在发生</p><h2>想到什么，<br>就先写下来。</h2></div><p class="section-intro">生活、阅读、照片和工作之外的那些想法，都可以在这里找到一个位置。</p></div>
+          <div class="feature-grid">
+            <article class="feature"><div class="feature-icon" aria-hidden="true">✎</div><h3>文章与随笔</h3><p>记录生活里的感受，也写下那些慢慢想明白的事情。</p><a class="feature-link" href="#about">读一点想法 →</a></article>
+            <article class="feature"><div class="feature-icon" aria-hidden="true">⌘</div><h3>知识整理</h3><p>把读过的书、学到的方法和零散灵感，整理成自己的知识库。</p><a class="feature-link" href="#about">翻翻知识库 →</a></article>
+            <article class="feature"><div class="feature-icon" aria-hidden="true">▧</div><h3>图片记录</h3><p>留住那些当时觉得好看的光线、风景和生活片段。</p><a class="feature-link" href="#about">看看图片 →</a></article>
+            <article class="feature"><div class="feature-icon" aria-hidden="true">◷</div><h3>日常日志</h3><p>给每一天留一个小标记，回头看时知道自己走了多远。</p><a class="feature-link" href="#about">查看日志 →</a></article>
+          </div>
+        </div>
+      </section>
+
+      <section id="about" class="about">
+        <div class="shell about-grid">
+          <div><p class="section-kicker">关于本站</p><h2>给生活留一点可以回看的地方。</h2></div>
+          <div><p class="about-copy">这是一个普通的个人记录站。没有固定主题，也不追求每天更新，只把值得留下的文章、照片、知识和日常想法放在一起。</p><div class="principles"><div class="principle"><strong>保持好奇</strong><span>对正在发生的生活保持一点兴趣。</span></div><div class="principle"><strong>认真记录</strong><span>把当下的感受写下来，不替未来总结。</span></div><div class="principle"><strong>慢慢整理</strong><span>让零散的知识变成以后还能用的东西。</span></div><div class="principle"><strong>持续积累</strong><span>每次留下的一点点，最后都会成为自己的样子。</span></div></div></div>
+        </div>
+      </section>
+
+    </main>
+
+    <footer>
+      <div class="shell">
+        <div class="footer-main"><span>© <span id="year">2026</span> 个人生活感悟记录</span><div class="footer-links"><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">鄂ICP备2023015599号-4</a></div></div>
+        <p class="footer-note">记录生活，也整理自己。</p>
+      </div>
+    </footer>
+
+    <script>
+      const menu = document.querySelector('.menu-toggle');
+      const links = document.querySelector('#nav-links');
+      menu?.addEventListener('click', () => {
+        const open = links.classList.toggle('is-open');
+        menu.setAttribute('aria-expanded', String(open));
+        menu.setAttribute('aria-label', open ? '关闭导航' : '打开导航');
+      });
+      links?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
+        links.classList.remove('is-open');
+        menu?.setAttribute('aria-expanded', 'false');
+        menu?.setAttribute('aria-label', '打开导航');
+      }));
+      document.querySelector('#year').textContent = String(new Date().getFullYear());
+    </script>
+  </body>
+</html>

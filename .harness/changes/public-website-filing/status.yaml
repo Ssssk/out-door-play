@@ -1,0 +1,46 @@
+id: "CHG-OUTDOOR-WEB-001"
+name: "public-website-filing"
+change_type: "feature"
+state: "implementing"
+risk_level: "medium"
+owner: "用户（项目负责人）"
+created_at: "2026-09-12"
+updated_at: "2026-09-12"
+
+scope:
+  frontend: true
+  backend: false
+  api: false
+  database: false
+  redis: false
+  messaging: false
+  security: true
+  deployment: true
+  ux: true
+  performance: false
+  operations: false
+  compliance: true
+
+gates:
+  requirements: "passed"
+  design: "passed"
+  implementation: "pending"
+  verification: "pending"
+  security: "pending"
+  uat: "pending"
+  operations: "pending"
+  release: "pending"
+  completion: "pending"
+
+approvals:
+  product_owner: "用户（项目负责人）"
+  architecture_owner: "用户（项目负责人）"
+  ux_owner: "not-required"
+  security_owner: "not-required"
+  operations_owner: "not-required"
+  product_acceptance_owner: "pending"
+  reviewer: "pending"
+  release_owner: "pending"
+
+blocking_risks: []
+

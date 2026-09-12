@@ -1,0 +1,18 @@
+{
+  "changeId": "CHG-OUTDOOR-WEB-001",
+  "requirementIds": ["FR-WEB-004", "FR-WEB-005"],
+  "acceptanceIds": ["AC-WEB-005", "AC-WEB-006"],
+  "type": "integration",
+  "status": "passed",
+  "commit": "6d5b79303597597f3c3afd5711c76bac91f73cc4 + uncommitted domain changes",
+  "environment": "Windows Docker Desktop 27.2.0; local test port 18081; remote root SSH read-only",
+  "startedAt": "2026-09-12T02:26:51+08:00",
+  "finishedAt": "2026-09-12T02:30:19+08:00",
+  "command": "docker build -f docker/admin.Dockerfile -t chumen-web:domain-check .; docker run local isolated web; nginx -t; fetch / /admin /admin/ /admin/login; SSH docker ps and Nginx config read; remote curl /v1/health; YAML parse; CI tests; Harness validation; Secret scan",
+  "exitCode": 0,
+  "summary": "Web image built successfully. Local nginx -t passed; homepage and admin deep link returned 200; /admin returned 301 with relative Location /admin/ after fixing absolute_redirect. Isolated container has no API upstream: /v1/health returned expected 502 and is NOT an API integration pass. Existing remote API /v1/health returned 200. Remote web still runs chumen-web:33de0ec on 8080 with original Nginx; ports 80/443 not listening; no /etc/letsencrypt/live certificate found. SSH root access confirmed using existing key without reading its contents. Remote writes, TLS activation and mini-program platform validation remain not-run. Seven CI tests, workflow YAML parse, Harness and Secret scan passed. Earlier Docker daemon failure resolved by starting Docker Desktop.",
+  "runner": "Codex local exec",
+  "artifacts": ["docker/nginx/default.conf", "docker/admin.Dockerfile", "apps/mobile/dist/build/mp-weixin/common/request.js"],
+  "artifactsSha256": {},
+  "imageDigest": "sha256:7defca6f29e9dd4d0ba01d54be6342e8acc72b76d781e7e7562146e6b1516191"
+}
