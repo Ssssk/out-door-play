@@ -2,7 +2,7 @@
   <view class="detail-hero">
     <image :src="item.coverImageUrl" mode="aspectFill" />
     <view class="shade" />
-    <view class="hero-top"><view class="rank"><image src="/static/icons/bolt.svg" mode="aspectFit" /><text>{{ item.rankTag }} Top {{ item.rank }}</text></view><view class="distance"><image src="/static/icons/pin-light.svg" mode="aspectFit" /><text>参考 {{ item.distanceKm.toFixed(1) }}km</text></view></view>
+    <view class="hero-top"><view class="rank"><image src="/static/icons/bolt.svg" mode="aspectFit" /><text>{{ item.rankTag }} Top {{ item.rank }}</text></view><view class="distance"><image src="/static/icons/pin-light.svg" mode="aspectFit" /><text>距你 {{ item.distanceKm.toFixed(1) }}km</text></view></view>
     <view class="hero-content">
       <text class="title">{{ item.title }}</text>
       <view class="hero-metrics">

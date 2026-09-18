@@ -19,10 +19,10 @@ describe('DiscoveryCard', () => {
     }
     const wrapper = mount(DiscoveryCard, { props: { item } })
 
-    expect(wrapper.text()).toContain('参考 6.2km')
+    expect(wrapper.text()).toContain('距你 6.2km')
     expect(wrapper.text()).toContain('8M')
     expect(wrapper.text()).toContain('平均水深')
-    expect(wrapper.get('[role="button"]').attributes('aria-label')).toContain('参考距离')
+    expect(wrapper.get('[role="button"]').attributes('aria-label')).toContain('距你')
 
     await wrapper.get('[role="button"]').trigger('keyup', { key: 'Enter' })
     expect(wrapper.emitted('click')).toEqual([[item]])

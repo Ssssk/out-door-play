@@ -1,10 +1,10 @@
 <template>
-  <view class="discovery-card" role="button" tabindex="0" :aria-label="`${item.title}，参考距离${item.distanceKm}公里`" @click="activate" @keyup.enter="activate" @keyup.space="activate">
+  <view class="discovery-card" role="button" tabindex="0" :aria-label="`${item.title}，距你${item.distanceKm}公里`" @click="activate" @keyup.enter="activate" @keyup.space="activate">
     <image class="cover" :src="item.coverImageUrl" mode="aspectFill" />
     <view class="overlay" />
     <view class="card-top">
       <view class="rank"><image src="/static/icons/bolt.svg" mode="aspectFit" /><text>{{ item.rankTag }} Top {{ item.rank }}</text></view>
-      <view class="distance"><image src="/static/icons/pin-light.svg" mode="aspectFit" /><text>参考 {{ item.distanceKm.toFixed(1) }}km</text></view>
+      <view class="distance"><image src="/static/icons/pin-light.svg" mode="aspectFit" /><text>距你 {{ item.distanceKm.toFixed(1) }}km</text></view>
     </view>
     <view class="card-bottom">
       <text class="card-title">{{ item.title }}</text>
