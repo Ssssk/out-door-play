@@ -22,5 +22,6 @@ declare module 'vue' {
     WdIcon: typeof import('wot-design-uni/components/wd-icon/wd-icon.vue')['WdIcon']
     WdLoading: typeof import('wot-design-uni/components/wd-loading/wd-loading.vue')['WdLoading']
     WdPopup: typeof import('wot-design-uni/components/wd-popup/wd-popup.vue')['WdPopup']
+    WeatherBanner: typeof import('./../components/WeatherBanner.vue')['default']
   }
 }

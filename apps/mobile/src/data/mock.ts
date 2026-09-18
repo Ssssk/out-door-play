@@ -1,4 +1,4 @@
-import type { City, FavoriteItem, FishingSpot, FuelPrice, FuelStation, RouteDetail, UserProfile } from '@/types/domain'
+import type { City, FavoriteItem, FishingSpot, FuelPrice, FuelStation, RouteDetail, UserProfile, Weather } from '@/types/domain'
 
 export const cities: City[] = [
   { code: '420100', name: '武汉' }, { code: '110000', name: '北京' },
@@ -6,6 +6,20 @@ export const cities: City[] = [
   { code: '440300', name: '深圳' }, { code: '510100', name: '成都' },
   { code: '330100', name: '杭州' }, { code: '320100', name: '南京' },
   { code: '430100', name: '长沙' }, { code: '500000', name: '重庆' },
+]
+
+/** 各城市的兜底天气数据，接口不可用时用于保证「今日天气」仍有内容可读 */
+export const weather: Weather[] = [
+  { cityCode: '420100', temp: 28, desc: '晴朗', wind: '微风 3 级', air: '空气优', tip: '适宜出行', icon: 'weather-sun.svg' },
+  { cityCode: '110000', temp: 22, desc: '多云', wind: '西北风 3 级', air: '空气良', tip: '注意添衣', icon: 'weather-cloudy.svg' },
+  { cityCode: '310000', temp: 26, desc: '阴', wind: '东风 2 级', air: '空气良', tip: '适宜出行', icon: 'weather-overcast.svg' },
+  { cityCode: '440100', temp: 31, desc: '雨', wind: '南风 2 级', air: '空气优', tip: '记得带伞', icon: 'weather-rain.svg' },
+  { cityCode: '440300', temp: 30, desc: '多云', wind: '东南风 3 级', air: '空气优', tip: '注意防晒', icon: 'weather-cloudy.svg' },
+  { cityCode: '510100', temp: 21, desc: '雾', wind: '静风 1 级', air: '空气良', tip: '减速慢行', icon: 'weather-fog.svg' },
+  { cityCode: '330100', temp: 25, desc: '晴朗', wind: '北风 2 级', air: '空气优', tip: '适宜出行', icon: 'weather-sun.svg' },
+  { cityCode: '320100', temp: 24, desc: '阴', wind: '东北风 2 级', air: '空气良', tip: '适宜出行', icon: 'weather-overcast.svg' },
+  { cityCode: '430100', temp: 27, desc: '多云', wind: '南风 3 级', air: '空气良', tip: '注意防晒', icon: 'weather-cloudy.svg' },
+  { cityCode: '500000', temp: 23, desc: '雾', wind: '静风 1 级', air: '空气良', tip: '减速慢行', icon: 'weather-fog.svg' },
 ]
 
 export const driveRoutes: RouteDetail[] = [

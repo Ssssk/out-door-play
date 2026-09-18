@@ -80,3 +80,27 @@ export interface FavoriteItem {
   subtitle: string
   thumbUrl: string
 }
+
+/** 天气图标文件名，取值来自 `static/icons/` 下的同名资源 */
+export type WeatherIconName =
+  | 'weather-sun.svg'
+  | 'weather-cloudy.svg'
+  | 'weather-overcast.svg'
+  | 'weather-rain.svg'
+  | 'weather-snow.svg'
+  | 'weather-fog.svg'
+
+export interface Weather {
+  cityCode: string
+  /** 当前温度，单位为摄氏度 */
+  temp: number
+  /** 天气描述，如「晴朗 / 多云 / 阴 / 雨 / 雪 / 雾」 */
+  desc: string
+  /** 风力，如「微风 3 级」 */
+  wind: string
+  /** 空气质量，如「空气优」 */
+  air: string
+  /** 出行建议，如「适宜出行」 */
+  tip: string
+  icon: WeatherIconName
+}

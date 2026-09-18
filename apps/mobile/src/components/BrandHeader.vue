@@ -4,6 +4,7 @@
       <text class="brand-title">{{ title }}</text>
       <image class="brand-underline" src="/static/icons/brand-underline.svg" mode="scaleToFill" />
     </view>
+    <WeatherBanner :city-name="appStore.city.name" :weather="weather" />
     <button class="city-chip" :aria-label="`选择城市，当前已选${appStore.city.name}`" @click="showPicker = true">
       <image src="/static/icons/location.svg" mode="aspectFit" />
       <text>{{ appStore.city.name }}</text>
@@ -27,15 +28,17 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import WeatherBanner from '@/components/WeatherBanner.vue'
 import { cities as localCities } from '@/data/mock'
 import { useAppStore } from '@/stores/app'
-import type { City } from '@/types/domain'
+import type { City, Weather } from '@/types/domain'
 
-withDefaults(defineProps<{ title?: string; cities?: City[]; citiesLoading?: boolean; citiesFallback?: boolean }>(), {
+withDefaults(defineProps<{ title?: string; cities?: City[]; citiesLoading?: boolean; citiesFallback?: boolean; weather?: Weather | null }>(), {
   title: '粗门溜溜',
   cities: () => localCities,
   citiesLoading: false,
   citiesFallback: false,
+  weather: null,
 })
 const emit = defineEmits<{ change: [city: City]; 'retry-cities': [] }>()
 const appStore = useAppStore()
@@ -50,8 +53,8 @@ function selectCity(city: City) {
 </script>
 
 <style scoped lang="scss">
-.brand-header { display: flex; align-items: center; justify-content: space-between; width: 100%; padding-top: 16rpx; }
-.brand-lockup { position: relative; display: inline-flex; min-width: 0; flex-direction: column; }
+.brand-header { display: flex; align-items: center; width: 100%; padding-top: 16rpx; }
+.brand-lockup { position: relative; display: inline-flex; min-width: 0; margin-right: auto; flex-direction: column; }
 .brand-title { position: relative; z-index: 1; font-size: 48rpx; line-height: 1.15; font-weight: 900; letter-spacing: -2rpx; color: var(--chumen-ink); white-space: nowrap; }
 .brand-underline { width: 210rpx; height: 18rpx; margin-top: -2rpx; }
 .city-chip { display: flex; align-items: center; min-height: 58rpx; flex-shrink: 0; padding: 0 24rpx; margin: 0 0 0 24rpx; border: 2rpx solid var(--chumen-line); border-radius: 999rpx; background: rgba(255,255,255,.8); color: var(--chumen-text); font-size: 24rpx; line-height: 58rpx; white-space: nowrap; }

@@ -1,8 +1,9 @@
 import { request } from '@/common/request'
-import type { City, FavoriteItem, FishingSpot, FuelPrice, FuelStation, RouteCard, RouteDetail, UserProfile } from '@/types/domain'
+import type { City, FavoriteItem, FishingSpot, FuelPrice, FuelStation, RouteCard, RouteDetail, UserProfile, Weather } from '@/types/domain'
 
 export const outdoorApi = {
   cities: () => request<City[]>('/cities'),
+  weather: (cityCode: string) => request<Weather>(`/weather/current?cityCode=${encodeURIComponent(cityCode)}`),
   routes: (cityCode: string, scene: 'drive' | 'fish') =>
     request<RouteCard[]>(`/routes?city=${encodeURIComponent(cityCode)}&scene=${encodeURIComponent(scene)}&limit=10`),
   route: (id: string) => request<RouteDetail>(`/routes/${encodeURIComponent(id)}`),
