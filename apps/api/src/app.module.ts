@@ -4,6 +4,7 @@ import { HealthModule } from './modules/health/health.module'
 import { CitiesModule } from './modules/cities/cities.module'
 import { RoutesModule } from './modules/routes/routes.module'
 import { FuelModule } from './modules/fuel/fuel.module'
+import { WeatherModule } from './modules/weather/weather.module'
 import { UserModule } from './modules/user/user.module'
 import { ConfigModule } from '@nestjs/config'
 import { DatabaseModule } from './database/database.module'
@@ -22,6 +23,7 @@ import { IdentityModule } from './modules/identity/identity.module'
     CitiesModule,
     RoutesModule,
     FuelModule,
+    WeatherModule,
     UserModule,
     AdminModule,
   ],
