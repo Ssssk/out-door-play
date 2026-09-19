@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer'
-import { IsBoolean, IsIn, IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator'
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator'
 
 export class RouteActionDto {
   @IsString() @MinLength(8) @MaxLength(64) actionId!: string
@@ -21,11 +21,6 @@ export class UpdateRankingDto {
 export class ToggleCityDto { @IsBoolean() enabled!: boolean }
 export class UpdateUserStatusDto { @IsIn(['normal', 'banned']) status!: 'normal' | 'banned' }
 export class UpdateFeedStatusDto { @IsIn(['pending', 'published', 'offline']) status!: 'pending' | 'published' | 'offline' }
-
-export class UpdateFuelPriceDto {
-  @Type(() => Number) @IsNumber() @Min(0) @Max(30) price!: number
-  @Type(() => Number) @IsNumber() @Min(-10) @Max(10) change!: number
-}
 
 export class UpdateFuelStationDto {
   @IsOptional() @IsBoolean() enabled?: boolean

@@ -6,7 +6,6 @@ import type {
   CreateReportDto,
   RouteActionDto,
   UpdateFeedStatusDto,
-  UpdateFuelPriceDto,
   UpdateFuelStationDto,
   UpdateRankingDto,
   UpdateRouteDto,
@@ -114,7 +113,6 @@ export class AdminService {
     const records = await this.prisma.city.findMany({
       include: {
         _count: { select: { discoveries: true, fuelStations: true } },
-        fuelPrices: { select: { publishedAt: true }, orderBy: { publishedAt: 'desc' }, take: 1 },
       },
       orderBy: { code: 'asc' },
     })
@@ -125,7 +123,6 @@ export class AdminService {
       scenes: Array.isArray(city.scenes) ? city.scenes : [],
       routeCount: city._count.discoveries,
       stationCount: city._count.fuelStations,
-      oilUpdatedAt: city.fuelPrices[0]?.publishedAt || null,
     }))
   }
 
@@ -203,18 +200,20 @@ export class AdminService {
     return { id }
   }
 
+  /**
+   * 加油站台账。**不返回挂牌价**：油价由省级官方源按省统一下发、
+   * 在 `FuelService.stations()` 读取时覆盖，后台不再维护价格。
+   */
   async fuel() {
-    const [prices, stations] = await Promise.all([
-      this.prisma.fuelPrice.findMany({ include: { city: { select: { name: true } } }, orderBy: [{ cityCode: 'asc' }, { grade: 'asc' }] }),
-      this.prisma.fuelStation.findMany({ include: { city: { select: { name: true } } }, orderBy: { distanceKm: 'asc' } }),
-    ])
-    return { prices, stations }
-  }
-
-  async updateFuelPrice(id: string, input: UpdateFuelPriceDto) {
-    const found = await this.prisma.fuelPrice.findUnique({ where: { id } })
-    if (!found) throw new NotFoundException('油价记录不存在')
-    return this.prisma.fuelPrice.update({ where: { id }, data: { ...input, publishedAt: new Date() } })
+    const stations = await this.prisma.fuelStation.findMany({
+      select: {
+        id: true, name: true, brand: true, cityCode: true, address: true,
+        openingHours: true, enabled: true, distanceKm: true,
+        city: { select: { name: true } },
+      },
+      orderBy: { distanceKm: 'asc' },
+    })
+    return { stations }
   }
 
   async updateFuelStation(id: string, input: UpdateFuelStationDto) {

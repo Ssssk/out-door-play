@@ -73,7 +73,6 @@ model City {
   code         String        @id @db.VarChar(6)
   name         String        @db.VarChar(32)
   discoveries  Discovery[]
-  fuelPrices   FuelPrice[]
   fuelStations FuelStation[]
   users        User[]
   rankings     Ranking[]
@@ -125,22 +124,6 @@ model Discovery {
 
   @@index([cityCode, scene])
   @@map("discoveries")
-}
-
-model FuelPrice {
-  id          String   @id @db.VarChar(64)
-  cityCode    String   @map("city_code") @db.VarChar(6)
-  grade       String   @db.VarChar(32)
-  price       Float
-  change      Float
-  publishedAt DateTime @map("published_at")
-  city        City     @relation(fields: [cityCode], references: [code], onDelete: Restrict)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@unique([cityCode, grade])
-  @@index([cityCode, publishedAt])
-  @@map("fuel_prices")
 }
 
 model FuelStation {

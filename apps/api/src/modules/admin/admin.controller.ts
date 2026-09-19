@@ -8,7 +8,6 @@ import {
   RouteActionDto,
   ToggleCityDto,
   UpdateFeedStatusDto,
-  UpdateFuelPriceDto,
   UpdateFuelStationDto,
   UpdateRankingDto,
   UpdateRouteDto,
@@ -37,6 +36,5 @@ export class AdminController {
   @RequireAdminPermissions('report:write') @Post('reports') createReport(@Body() input: CreateReportDto, @CurrentAdmin() actor: AdminActor) { return this.admin.createReport(input, actor) }
   @RequireAdminPermissions('report:write') @Delete('reports/:id') deleteReport(@Param('id') id: string) { return this.admin.deleteReport(id) }
   @RequireAdminPermissions('fuel:read') @Get('fuel') fuel() { return this.admin.fuel() }
-  @RequireAdminPermissions('fuel:write') @Patch('fuel/prices/:id') updateFuelPrice(@Param('id') id: string, @Body() input: UpdateFuelPriceDto) { return this.admin.updateFuelPrice(id, input) }
   @RequireAdminPermissions('fuel:write') @Patch('fuel/stations/:id') updateFuelStation(@Param('id') id: string, @Body() input: UpdateFuelStationDto) { return this.admin.updateFuelStation(id, input) }
 }

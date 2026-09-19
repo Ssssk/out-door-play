@@ -21,7 +21,7 @@ export interface RankingItem {
 
 export interface CityItem {
   code: string; name: string; enabled: boolean; scenes: string[]; routeCount: number
-  stationCount: number; oilUpdatedAt: string | null
+  stationCount: number
 }
 
 export interface UserItem {
@@ -46,8 +46,11 @@ export interface ReportItem {
   dimension: string; creator: string; status: 'done' | 'processing' | 'failed'; createdAt: string
 }
 
+/** 后台只维护加油站台账；油价由省级官方源下发，不在此维护 */
 export interface FuelData {
-  prices: Array<{ id: string; grade: string; price: number; change: number; publishedAt: string; city: { name: string } }>
-  stations: Array<{ id: string; name: string; brand: string; address: string; openingHours: string; enabled: boolean; price92: number; price95: number; city: { name: string } }>
+  stations: Array<{
+    id: string; name: string; brand: string; cityCode: string; address: string
+    openingHours: string; enabled: boolean; distanceKm: number; city: { name: string }
+  }>
 }
 
