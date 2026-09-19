@@ -2,9 +2,10 @@
   <AppShell>
     <view class="page-content fuel-page">
       <BrandHeader title="今日油价" @change="loadFuel" />
-      <text class="updated-at">数据更新于 {{ updatedAt }}</text>
+      <text class="updated-at">数据更新于 {{ updatedAt || '—' }}{{ priceSource === 'official' ? ' · 全国平均参考价' : '' }}</text>
 
-      <view class="price-grid">
+      <view v-if="prices.length === 0" class="price-empty" role="status">这个城市暂时没有油价数据</view>
+      <view v-else class="price-grid">
         <view v-for="price in prices" :key="price.grade" class="price-card">
           <text class="grade">{{ price.grade }}</text>
           <view><text class="price">{{ price.price.toFixed(2) }}</text><text class="unit">元/升</text></view>
@@ -35,7 +36,7 @@ import { openNavigation } from '@/common/mapNavigation'
 import type { FuelStation } from '@/types/domain'
 import { useFuel } from './useFuel'
 
-const { prices, stations, updatedAt, loadFuel } = useFuel()
+const { prices, stations, updatedAt, priceSource, loadFuel } = useFuel()
 async function navigateToStation(station: FuelStation) {
   try { await openNavigation({ latitude: station.latitude, longitude: station.longitude, name: station.name, address: station.address }) }
   catch { uni.showToast({ title: '当前环境无法唤起地图', icon: 'none' }) }
@@ -46,6 +47,7 @@ async function navigateToStation(station: FuelStation) {
 .fuel-page { padding-bottom: 50rpx; }
 .updated-at { display: block; margin: 34rpx 0 20rpx; color: var(--chumen-muted); font-size: 22rpx; text-align: right; }
 .price-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20rpx; row-gap: 20rpx; }
+.price-empty { padding: 60rpx 0; border: 2rpx solid var(--chumen-line); border-radius: 34rpx; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 24rpx; text-align: center; }
 .price-card { padding: 28rpx 30rpx; border: 2rpx solid var(--chumen-line); border-radius: 34rpx; background: var(--chumen-soft); }
 .grade, .change { display: block; color: var(--chumen-muted); font-size: 24rpx; }
 .price { margin-right: 8rpx; color: var(--chumen-ink); font-size: 46rpx; font-weight: 900; }

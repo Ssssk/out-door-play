@@ -1,6 +1,6 @@
 import type { GeoPoint } from '@/common/location'
 import { request } from '@/common/request'
-import type { City, FavoriteItem, FishingSpot, FuelPrice, FuelStation, RouteCard, RouteDetail, UserProfile, Weather } from '@/types/domain'
+import type { City, FavoriteItem, FishingSpot, FuelPrice, FuelPriceSource, FuelStation, RouteCard, RouteDetail, UserProfile, Weather } from '@/types/domain'
 
 export const outdoorApi = {
   cities: () => request<City[]>('/cities'),
@@ -9,7 +9,8 @@ export const outdoorApi = {
     request<RouteCard[]>(`/routes?city=${encodeURIComponent(cityCode)}&scene=${encodeURIComponent(scene)}&limit=10`),
   route: (id: string) => request<RouteDetail>(`/routes/${encodeURIComponent(id)}`),
   spot: (id: string) => request<FishingSpot>(`/spots/${encodeURIComponent(id)}`),
-  fuelPrices: (cityCode: string) => request<{ items: FuelPrice[]; updatedAt: string }>(`/fuel/prices?cityCode=${cityCode}`),
+  fuelPrices: (cityCode: string) =>
+    request<{ items: FuelPrice[]; updatedAt: string; source: FuelPriceSource }>(`/fuel/prices?cityCode=${cityCode}`),
   // 传入设备定位坐标时，服务端按真实位置计算距离并按距离排序
   fuelStations: (point?: GeoPoint | null) =>
     request<FuelStation[]>(`/fuel/stations?${point ? `lat=${point.latitude}&lng=${point.longitude}&` : ''}radius=10000`),
