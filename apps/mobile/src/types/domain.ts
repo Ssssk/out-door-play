@@ -59,6 +59,15 @@ export interface FuelPrice {
 /** 油价数据来源：省级官方参考价 / 暂无（成品油按省定价，无城市级数据源） */
 export type FuelPriceSource = 'province' | 'empty'
 
+/** 附近加油站分页结果：服务端已按「距你」由近到远排好序 */
+export interface FuelStationPage {
+  items: FuelStation[]
+  total: number
+  page: number
+  pageSize: number
+  hasMore: boolean
+}
+
 export interface FuelStation {
   id: string
   name: string

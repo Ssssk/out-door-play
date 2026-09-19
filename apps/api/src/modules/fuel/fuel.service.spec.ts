@@ -9,6 +9,17 @@ const rows = [
   { id: 'b', cityCode: '420100', distanceKm: 9.9, latitude: 30.41, longitude: 114.31, price92: 7.85, price95: 8.42 },
 ]
 
+/** 用于分页断言：65 条，库内距离依次递增 */
+const many = Array.from({ length: 65 }, (_, index) => ({
+  id: `s${String(index + 1).padStart(2, '0')}`,
+  cityCode: '420100',
+  distanceKm: index + 1,
+  latitude: 30.5,
+  longitude: 114.4,
+  price92: 7.8,
+  price95: 8.4,
+}))
+
 const provincePrice: ProvinceFuelPrice = {
   region: '湖北',
   regionLabel: '湖北省',
@@ -30,36 +41,39 @@ function createService(provinceResult: ProvinceFuelPrice | null = null, stations
 }
 
 describe('FuelService.stations', () => {
-  it('keeps the stored distances when no coordinates are given', async () => {
-    const stations = await createService().service.stations(null)
+  it('keeps the stored distances and order when no coordinates are given', async () => {
+    const result = await createService().service.stations(null)
 
-    expect(stations.map((station) => station.id)).toEqual(['a', 'b'])
-    expect(stations[0].distanceKm).toBe(1)
+    expect(result.items.map((station) => station.id)).toEqual(['a', 'b'])
+    expect(result.items[0].distanceKm).toBe(1)
+    expect(result.total).toBe(2)
+    expect(result.page).toBe(1)
+    expect(result.hasMore).toBe(false)
   })
 
   it('recomputes distances from the device location and sorts by them', async () => {
-    const stations = await createService().service.stations({ latitude: 30.4, longitude: 114.3 })
+    const result = await createService().service.stations({ latitude: 30.4, longitude: 114.3 })
 
-    expect(stations.map((station) => station.id)).toEqual(['b', 'a'])
-    expect(stations[0].distanceKm).toBeLessThan(stations[1].distanceKm)
+    expect(result.items.map((station) => station.id)).toEqual(['b', 'a'])
+    expect(result.items[0].distanceKm).toBeLessThan(result.items[1].distanceKm)
     // 距离口径保留 1 位小数
-    expect(stations[0].distanceKm).toBe(Math.round(stations[0].distanceKm * 10) / 10)
-    expect(stations[0].latitude).toBe(30.41)
+    expect(result.items[0].distanceKm).toBe(Math.round(result.items[0].distanceKm * 10) / 10)
+    expect(result.items[0].latitude).toBe(30.41)
   })
 
   it('overrides station prices with the province guidance price', async () => {
-    const stations = await createService(provincePrice).service.stations(null)
+    const result = await createService(provincePrice).service.stations(null)
 
     // 站点价随省级指导价自动更新，不再使用库内的旧值
-    expect(stations.map((station) => station.price92)).toEqual([8.31, 8.31])
-    expect(stations.map((station) => station.price95)).toEqual([8.89, 8.89])
+    expect(result.items.map((station) => station.price92)).toEqual([8.31, 8.31])
+    expect(result.items.map((station) => station.price95)).toEqual([8.89, 8.89])
   })
 
   it('keeps the stored station prices when the province source is unavailable', async () => {
-    const stations = await createService(null).service.stations(null)
+    const result = await createService(null).service.stations(null)
 
-    expect(stations.map((station) => station.price92)).toEqual([7.82, 7.85])
-    expect(stations.map((station) => station.price95)).toEqual([8.39, 8.42])
+    expect(result.items.map((station) => station.price92)).toEqual([7.82, 7.85])
+    expect(result.items.map((station) => station.price95)).toEqual([8.39, 8.42])
   })
 
   it('queries each province only once regardless of how many stations share it', async () => {
@@ -72,6 +86,53 @@ describe('FuelService.stations', () => {
     await service.stations(null)
 
     expect(fetchByRegion.mock.calls.map((call) => call[0]).sort()).toEqual(['北京', '湖北'])
+  })
+})
+
+describe('FuelService.stations pagination', () => {
+  it('returns 30 per page by default and reports whether more pages exist', async () => {
+    const { service } = createService(provincePrice, many)
+
+    const first = await service.stations(null)
+    expect(first.items).toHaveLength(30)
+    expect(first.total).toBe(65)
+    expect(first.page).toBe(1)
+    expect(first.pageSize).toBe(30)
+    expect(first.hasMore).toBe(true)
+
+    const second = await service.stations(null, 2)
+    expect(second.items).toHaveLength(30)
+    expect(second.hasMore).toBe(true)
+
+    const third = await service.stations(null, 3)
+    expect(third.items).toHaveLength(5)
+    expect(third.hasMore).toBe(false)
+  })
+
+  it('sorts by distance before paginating so pages never overlap', async () => {
+    const { service } = createService(provincePrice, many)
+
+    const first = await service.stations(null, 1)
+    const second = await service.stations(null, 2)
+
+    expect(new Set([...first.items, ...second.items].map((station) => station.id)).size).toBe(60)
+    // 下一页的首条一定不比上一页的末条更近
+    expect(first.items.at(-1)!.distanceKm).toBeLessThanOrEqual(second.items[0].distanceKm)
+  })
+
+  it('caps the page size at 30 even when a larger one is requested', async () => {
+    const result = await createService(provincePrice, many).service.stations(null, 1, 200)
+
+    expect(result.pageSize).toBe(30)
+    expect(result.items).toHaveLength(30)
+  })
+
+  it('treats a page beyond the end as an empty final page', async () => {
+    const result = await createService(provincePrice, many).service.stations(null, 99)
+
+    expect(result.items).toEqual([])
+    expect(result.hasMore).toBe(false)
+    expect(result.total).toBe(65)
   })
 })
 

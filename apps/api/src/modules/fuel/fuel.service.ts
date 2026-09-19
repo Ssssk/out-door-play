@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../../database/prisma.service'
 import { distanceInKm, roundDistanceKm } from '../../common/geo'
 import { FUEL_GRADES, gradePrice, ProvinceFuelPriceProvider, regionFromCityCode } from './province-price.provider'
+import { STATION_PAGE_SIZE, STATION_PAGE_SIZE_MAX } from './fuel.dto'
 import type { GeoPoint } from '../../common/geo'
 import type { ProvinceFuelPrice } from './province-price.provider'
 
@@ -29,20 +30,40 @@ export class FuelService {
     }
   }
 
-  async stations(point?: GeoPoint | null) {
-    const stations = await this.prisma.fuelStation.findMany({
-      where: { enabled: true },
-      orderBy: { distanceKm: 'asc' },
-    })
-    const priced = await this.withOfficialPrices(stations)
-    if (!point) return priced
+  /**
+   * 附近加油站：**按距离由近到远**排序后分页返回。
+   *
+   * 站点数据由 `StationSyncService` 定时从腾讯地点搜索同步落库（见该文件说明），
+   * 这里只读自己的库，因此**不消耗腾讯额度**，与用户量无关。
+   * 有设备定位时用真实坐标算距离，否则用同步时记录的「到城市中心」的距离。
+   * 因为排序键依赖用户坐标，无法交给数据库，所以取出后在内存中排序再切片；
+   * 站点量级较大时应改为数据库侧的空间索引分页。
+   */
+  async stations(point?: GeoPoint | null, page = 1, pageSize = STATION_PAGE_SIZE) {
+    const currentPage = Math.max(1, Math.trunc(page) || 1)
+    const size = Math.min(Math.max(1, Math.trunc(pageSize) || STATION_PAGE_SIZE), STATION_PAGE_SIZE_MAX)
 
-    return priced
-      .map((station) => ({
-        ...station,
-        distanceKm: roundDistanceKm(distanceInKm(point, { latitude: station.latitude, longitude: station.longitude })),
-      }))
-      .sort((left, right) => left.distanceKm - right.distanceKm)
+    const stations = await this.prisma.fuelStation.findMany({ where: { enabled: true } })
+    const located = (await this.withOfficialPrices(stations)).map((station) => ({
+      ...station,
+      distanceKm: point
+        ? roundDistanceKm(distanceInKm(point, { latitude: station.latitude, longitude: station.longitude }))
+        : station.distanceKm,
+    }))
+
+    // 距离相同则按 id 兜底，保证翻页之间顺序稳定、不漏不重
+    located.sort((left, right) => left.distanceKm - right.distanceKm || left.id.localeCompare(right.id))
+
+    const start = (currentPage - 1) * size
+    const items = located.slice(start, start + size)
+    return {
+      items,
+      total: located.length,
+      page: currentPage,
+      pageSize: size,
+      // 前端据此决定是否继续上拉加载
+      hasMore: start + items.length < located.length,
+    }
   }
 
   private async fetchProvincePrice(cityCode: string): Promise<ProvinceFuelPrice | null> {

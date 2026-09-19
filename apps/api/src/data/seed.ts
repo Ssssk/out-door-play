@@ -53,12 +53,46 @@ export const cityRecords = [
  */
 
 /**
- * 加油站台账。挂牌价正常由 `FuelService.stations()` 按省级指导价（零售价上限）在读取时覆盖，
- * 因此这里只是省级源不可用时的回落值，与湖北指导价（92# 8.31 / 95# 8.89）保持一致。
+ * 加油站台账（武汉，**演示数据**，用于验证「附近加油站」的按距离排序与分页）。
+ * 挂牌价不在此处：正常由 `FuelService.stations()` 按省级指导价（零售价上限）在读取时覆盖，
+ * 库内值仅作省级源不可用时的回落，由 `prisma/seed.ts` 统一注入。
+ * `distanceKm` 只在拿不到设备定位、无法按真实坐标计算时用作排序依据。
  */
 export const fuelStationRecords = [
-  { id: 'station-1', name: '中石化光谷大道加油站', brand: '中石化', distanceKm: 1.2, openingHours: '24h 营业', price92: 8.31, price95: 8.89, latitude: 30.47, longitude: 114.41, address: '光谷大道 88 号' },
-  { id: 'station-2', name: '中石油珞喻路加油气站', brand: '中石油', distanceKm: 2.6, openingHours: '24h 营业', price92: 8.31, price95: 8.89, latitude: 30.51, longitude: 114.39, address: '珞喻路 610 号' },
-  { id: 'station-3', name: '壳牌武汉关山大道站', brand: 'Shell', distanceKm: 3.4, openingHours: '06:00-23:00', price92: 8.31, price95: 8.89, latitude: 30.48, longitude: 114.42, address: '关山大道 120 号' },
-  { id: 'station-4', name: '道达尔高新二路站', brand: '道达尔', distanceKm: 4.8, openingHours: '24h 营业', price92: 8.31, price95: 8.89, latitude: 30.45, longitude: 114.44, address: '高新二路 39 号' },
+  { id: 'station-1', name: '中石化光谷大道加油站', brand: '中石化', distanceKm: 1.2, openingHours: '24h 营业', latitude: 30.47, longitude: 114.41, address: '光谷大道 88 号' },
+  { id: 'station-2', name: '中石油珞喻路加油气站', brand: '中石油', distanceKm: 2.6, openingHours: '24h 营业', latitude: 30.51, longitude: 114.39, address: '珞喻路 610 号' },
+  { id: 'station-3', name: '壳牌武汉关山大道站', brand: 'Shell', distanceKm: 3.4, openingHours: '06:00-23:00', latitude: 30.48, longitude: 114.42, address: '关山大道 120 号' },
+  { id: 'station-4', name: '道达尔高新二路站', brand: '道达尔', distanceKm: 4.8, openingHours: '24h 营业', latitude: 30.45, longitude: 114.44, address: '高新二路 39 号' },
+  { id: 'station-5', name: '中石化雄楚大道加油站', brand: '中石化', distanceKm: 5.6, openingHours: '24h 营业', latitude: 30.5, longitude: 114.35, address: '雄楚大道 233 号' },
+  { id: 'station-6', name: '中石油光谷一路加油站', brand: '中石油', distanceKm: 6.3, openingHours: '07:00-23:00', latitude: 30.46, longitude: 114.46, address: '光谷一路 15 号' },
+  { id: 'station-7', name: '中海油关山二路站', brand: '中海油', distanceKm: 7.1, openingHours: '24h 营业', latitude: 30.49, longitude: 114.44, address: '关山二路 66 号' },
+  { id: 'station-8', name: '中石化南湖大道加油站', brand: '中石化', distanceKm: 8, openingHours: '24h 营业', latitude: 30.5, longitude: 114.32, address: '南湖大道 501 号' },
+  { id: 'station-9', name: '九峰便民加油站', brand: '民营', distanceKm: 8.9, openingHours: '06:30-22:30', latitude: 30.52, longitude: 114.47, address: '九峰街道 12 号' },
+  { id: 'station-10', name: '中石油鲁磨路加油站', brand: '中石油', distanceKm: 9.6, openingHours: '24h 营业', latitude: 30.54, longitude: 114.38, address: '鲁磨路 118 号' },
+  { id: 'station-11', name: '中石化徐东大街加油站', brand: '中石化', distanceKm: 10.8, openingHours: '24h 营业', latitude: 30.58, longitude: 114.35, address: '徐东大街 99 号' },
+  { id: 'station-12', name: '壳牌中北路站', brand: 'Shell', distanceKm: 11.5, openingHours: '06:00-23:00', latitude: 30.56, longitude: 114.34, address: '中北路 168 号' },
+  { id: 'station-13', name: '中石油友谊大道加油站', brand: '中石油', distanceKm: 12.3, openingHours: '24h 营业', latitude: 30.6, longitude: 114.33, address: '友谊大道 300 号' },
+  { id: 'station-14', name: '中石化武珞路加油站', brand: '中石化', distanceKm: 13.1, openingHours: '24h 营业', latitude: 30.54, longitude: 114.31, address: '武珞路 456 号' },
+  { id: 'station-15', name: '中海油白沙洲站', brand: '中海油', distanceKm: 14, openingHours: '24h 营业', latitude: 30.49, longitude: 114.29, address: '白沙洲大道 77 号' },
+  { id: 'station-16', name: '中石化丁字桥加油站', brand: '中石化', distanceKm: 14.8, openingHours: '24h 营业', latitude: 30.53, longitude: 114.33, address: '丁字桥路 22 号' },
+  { id: 'station-17', name: '南湖恒信加油站', brand: '民营', distanceKm: 15.6, openingHours: '07:00-22:00', latitude: 30.48, longitude: 114.31, address: '南湖路 210 号' },
+  { id: 'station-18', name: '中石油四新大道加油站', brand: '中石油', distanceKm: 16.5, openingHours: '24h 营业', latitude: 30.54, longitude: 114.24, address: '四新大道 88 号' },
+  { id: 'station-19', name: '中石化龙阳大道加油站', brand: '中石化', distanceKm: 17.3, openingHours: '24h 营业', latitude: 30.56, longitude: 114.21, address: '龙阳大道 500 号' },
+  { id: 'station-20', name: '壳牌汉阳大道站', brand: 'Shell', distanceKm: 18.1, openingHours: '06:00-23:00', latitude: 30.55, longitude: 114.22, address: '汉阳大道 320 号' },
+  { id: 'station-21', name: '中海油沌口站', brand: '中海油', distanceKm: 19, openingHours: '24h 营业', latitude: 30.5, longitude: 114.17, address: '沌口路 66 号' },
+  { id: 'station-22', name: '中石化鹦鹉大道加油站', brand: '中石化', distanceKm: 19.8, openingHours: '24h 营业', latitude: 30.55, longitude: 114.26, address: '鹦鹉大道 130 号' },
+  { id: 'station-23', name: '中石化解放大道加油站', brand: '中石化', distanceKm: 20.7, openingHours: '24h 营业', latitude: 30.59, longitude: 114.3, address: '解放大道 1000 号' },
+  { id: 'station-24', name: '中石油建设大道加油站', brand: '中石油', distanceKm: 21.5, openingHours: '24h 营业', latitude: 30.61, longitude: 114.28, address: '建设大道 588 号' },
+  { id: 'station-25', name: '壳牌香港路站', brand: 'Shell', distanceKm: 22.4, openingHours: '06:00-23:00', latitude: 30.6, longitude: 114.29, address: '香港路 220 号' },
+  { id: 'station-26', name: '中石化常青路加油站', brand: '中石化', distanceKm: 23.2, openingHours: '24h 营业', latitude: 30.63, longitude: 114.25, address: '常青路 88 号' },
+  { id: 'station-27', name: '中海油姑嫂树站', brand: '中海油', distanceKm: 24.1, openingHours: '24h 营业', latitude: 30.65, longitude: 114.27, address: '姑嫂树路 15 号' },
+  { id: 'station-28', name: '中石油发展大道加油站', brand: '中石油', distanceKm: 24.9, openingHours: '24h 营业', latitude: 30.62, longitude: 114.23, address: '发展大道 400 号' },
+  { id: 'station-29', name: '后湖兴业加油站', brand: '民营', distanceKm: 25.8, openingHours: '06:30-22:30', latitude: 30.66, longitude: 114.3, address: '后湖大道 199 号' },
+  { id: 'station-30', name: '中石化和平大道加油站', brand: '中石化', distanceKm: 26.6, openingHours: '24h 营业', latitude: 30.63, longitude: 114.38, address: '和平大道 800 号' },
+  { id: 'station-31', name: '中石油工业四路加油站', brand: '中石油', distanceKm: 27.5, openingHours: '24h 营业', latitude: 30.66, longitude: 114.42, address: '工业四路 33 号' },
+  { id: 'station-32', name: '壳牌金银湖站', brand: 'Shell', distanceKm: 28.3, openingHours: '06:00-23:00', latitude: 30.68, longitude: 114.18, address: '金银湖路 77 号' },
+  { id: 'station-33', name: '中石化吴家山加油站', brand: '中石化', distanceKm: 29.2, openingHours: '24h 营业', latitude: 30.66, longitude: 114.14, address: '吴家山 107 国道旁' },
+  { id: 'station-34', name: '中海油藏龙岛站', brand: '中海油', distanceKm: 30, openingHours: '24h 营业', latitude: 30.42, longitude: 114.32, address: '藏龙岛开发区 12 号' },
+  { id: 'station-35', name: '中石油纸坊大街加油站', brand: '中石油', distanceKm: 30.9, openingHours: '24h 营业', latitude: 30.38, longitude: 114.31, address: '纸坊大街 240 号' },
+  { id: 'station-36', name: '中石化庙山加油站', brand: '中石化', distanceKm: 31.7, openingHours: '24h 营业', latitude: 30.41, longitude: 114.36, address: '庙山大道 55 号' },
 ]

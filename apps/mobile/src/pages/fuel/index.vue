@@ -13,16 +13,24 @@
         </view>
       </view>
 
-      <view class="station-heading"><text class="section-title">附近加油站点</text><text>共 {{ stations.length }} 个 · 按距离</text></view>
+      <view class="station-heading"><text class="section-title">附近加油站点</text><text>共 {{ total }} 个 · 按距离</text></view>
       <view class="station-list">
         <view v-for="station in stations" :key="station.id" class="station-card card-surface">
           <view class="station-info">
             <text class="station-name">{{ station.name }}</text>
-            <text class="station-meta">距你 {{ formatDistanceKm(station.distanceKm) }}km · {{ station.openingHours }}</text>
-            <text class="station-prices">92# <b>{{ station.price92.toFixed(2) }}</b> · 95# {{ station.price95.toFixed(2) }} 元/升</text>
+            <text class="station-meta">距你 {{ formatDistanceKm(station.distanceKm) }}km{{ station.openingHours ? ` · ${station.openingHours}` : '' }}</text>
+           <!-- 腾讯实时站点不提供油价：拿不到时整行隐藏，避免显示「0.00 元/升」 -->
+            <text v-if="station.price92 > 0" class="station-prices">92# <b>{{ station.price92.toFixed(2) }}</b> · 95# {{ station.price95.toFixed(2) }} 元/升</text>
           </view>
           <button class="navigate-button" @click="navigateToStation(station)">导航</button>
         </view>
+      </view>
+
+      <!-- 分页状态：触底自动加载下一页 -->
+      <view class="station-more" role="status">
+        <text v-if="loadingMore">正在加载更多…</text>
+        <text v-else-if="hasMore">上拉加载更多</text>
+        <text v-else>已显示全部 {{ total }} 个站点</text>
       </view>
     </view>
   </AppShell>
@@ -36,7 +44,7 @@ import { openNavigation } from '@/common/mapNavigation'
 import type { FuelStation } from '@/types/domain'
 import { useFuel } from './useFuel'
 
-const { prices, stations, updatedAt, priceSource, priceRegion, loadFuel } = useFuel()
+const { prices, stations, total, hasMore, loadingMore, updatedAt, priceSource, priceRegion, loadFuel } = useFuel()
 async function navigateToStation(station: FuelStation) {
   try { await openNavigation({ latitude: station.latitude, longitude: station.longitude, name: station.name, address: station.address }) }
   catch { uni.showToast({ title: '当前环境无法唤起地图', icon: 'none' }) }
@@ -53,6 +61,7 @@ async function navigateToStation(station: FuelStation) {
 .price { margin-right: 8rpx; color: var(--chumen-ink); font-size: 46rpx; font-weight: 900; }
 .unit { font-size: 22rpx; }.change { margin-top: 6rpx; }.up { color: #e5484d; }.down { color: #2ba24c; }
 .station-heading { display: flex; align-items: center; justify-content: space-between; }.station-heading > text:last-child { color: var(--chumen-muted); font-size: 22rpx; }
+.station-more { padding: 20rpx 0 4rpx; color: var(--chumen-muted); font-size: 22rpx; text-align: center; }
 .station-card { display: flex; align-items: center; min-height: 178rpx; margin-bottom: 22rpx; padding: 24rpx 28rpx; }
 .station-info { flex: 1; min-width: 0; padding-right: 18rpx; }.station-name,.station-meta,.station-prices { display: block; }
 .station-name { overflow: hidden; color: var(--chumen-ink); font-size: 28rpx; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }

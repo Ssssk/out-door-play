@@ -9,5 +9,7 @@ import { FuelService } from './fuel.service'
 export class FuelController {
   constructor(private readonly fuel: FuelService) {}
   @Get('prices') prices(@Query() query: FuelPricesDto) { return this.fuel.prices(query.cityCode) }
-  @Get('stations') stations(@Query() query: FuelStationsDto) { return this.fuel.stations(parseGeoPoint(query.lat, query.lng)) }
+  @Get('stations') stations(@Query() query: FuelStationsDto) {
+    return this.fuel.stations(parseGeoPoint(query.lat, query.lng), query.page, query.pageSize)
+  }
 }

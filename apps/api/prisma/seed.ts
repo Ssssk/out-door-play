@@ -52,8 +52,10 @@ async function main() {
     await prisma.discovery.upsert({ where: { id: item.id }, update: data, create: data })
   }
 
+  // 挂牌价正常由 FuelService 按省级指导价覆盖，库内值只是省级源不可用时的回落，故统一注入
+  const stationFallbackPrice = { price92: 8.31, price95: 8.89 }
   for (const item of fuelStationRecords) {
-    const data = { ...item, cityCode: '420100', enabled: true }
+    const data = { ...item, ...stationFallbackPrice, cityCode: '420100', enabled: true }
     await prisma.fuelStation.upsert({ where: { id: item.id }, update: data, create: data })
   }
 
