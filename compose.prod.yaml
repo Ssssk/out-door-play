@@ -32,6 +32,14 @@ services:
       IDENTITY_SUBJECT_HMAC_KEY: ${IDENTITY_SUBJECT_HMAC_KEY:?IDENTITY_SUBJECT_HMAC_KEY is required}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://www.chumenliuliu.cloud}
       ADMIN_ALLOWED_ORIGINS: ${ADMIN_ALLOWED_ORIGINS:-https://www.chumenliuliu.cloud}
+      # 附近加油站：腾讯地点搜索（定时同步用）。
+      # ⚠️ 必须在此显式透传：本服务用 environment 逐项列举（没有 env_file），
+      # 只把变量写进 .env.production 是进不了容器的。留空即关闭同步。
+      TENCENT_MAP_KEY: ${TENCENT_MAP_KEY:-}
+      TENCENT_MAP_SECRET: ${TENCENT_MAP_SECRET:-}
+      STATION_SYNC_ENABLED: ${STATION_SYNC_ENABLED:-false}
+      STATION_SYNC_CITIES: ${STATION_SYNC_CITIES:-}
+      STATION_SYNC_CALL_BUDGET: ${STATION_SYNC_CALL_BUDGET:-}
     depends_on:
       db:
         condition: service_healthy
