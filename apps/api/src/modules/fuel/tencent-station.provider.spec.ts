@@ -130,6 +130,19 @@ describe('parseStations', () => {
     expect(result.items.map((item) => item.id)).toEqual(['f1'])
   })
 
+  it('drops charging piles that Tencent misclassifies as 其它加油站', () => {
+    // 实测（2026-09-19）：腾讯把部分充电桩归到 191099「其它加油站」而不是 191014「充电站」，
+    // 服务端 category<>191014 与「分类含充电」都拦不住——分类串里没有「充电」二字，
+    // 只有名称带「充电桩」。漏掉这条判断，充电桩就会被写进库并出现在「附近加油站」里。
+    const result = parseStations(payload(3, [
+      poi({ id: 'c1', title: '团结名居桂圆3号充电桩', category: '汽车:加油站:其它加油站' }),
+      poi({ id: 'c2', title: '瞰江坊1号充电桩', address: '四美塘路124号', category: '汽车:加油站:其它加油站' }),
+      poi({ id: 'f1', title: '中国石化月亮湾加油站', category: '汽车:加油站:中石化' }),
+    ]))
+
+    expect(result.items.map((item) => item.id)).toEqual(['f1'])
+  })
+
   it('tolerates an unexpected payload shape', () => {
     expect(parseStations(null)).toEqual({ items: [], count: 0 })
     expect(parseStations({ status: 0 })).toEqual({ items: [], count: 0 })

@@ -40,13 +40,21 @@ const KEYWORD = '加油站'
 /**
  * 分类过滤：191000 = 汽车:加油站。
  *
- * ⚠️ 实测（2026-09）直接写 `category=191000` 时，腾讯会把**子类一并返回**，
- * 首屏 5 条全是 `汽车:加油站:充电站`——即充电桩被当成加油站。故改为「排除充电站 191014」
- * 的写法，并叠加下面的客户端兜底过滤，双保险。
+ * ⚠️ 实测（2026-09-19，真实 key）：关键词「加油站」下腾讯默认按距离返回的**前 20 条
+ * 全是 `汽车:加油站:充电站`（191014）**，即充电桩被排在前面。故服务端必须写
+ * 「排除 191014」，实测可把该分类全部滤掉、返回真正的加油站。
  */
 const CATEGORY_FILTER = 'category<>191014'
-/** 分类命中这些片段的 POI 不是加油站，解析时剔除（兜住分类过滤未生效的情况） */
-const EXCLUDED_CATEGORY_HINTS = ['充电']
+/**
+ * 非加油站 POI 的剔除关键字，**名称与分类一并匹配**。
+ *
+ * ⚠️ 实测（2026-09-19）发现「服务端过滤 + 只看分类」**都不够**：腾讯会把部分充电桩
+ * 归到 `汽车:加油站:其它加油站`（191099）而不是 `充电站`（191014），
+ * 例如「团结名居桂圆3号充电桩」「瞰江坊1号充电桩」——
+ * 它们能通过 `category<>191014` 的服务端过滤，分类串里也没有「充电」二字，
+ * 只有**名称**带「充电桩」。因此名称必须一并纳入匹配，否则充电桩会被写进库。
+ */
+const EXCLUDED_HINTS = ['充电']
 const ORDER_BY = '_distance'
 /** 腾讯每页上限 20 条，无法调高 */
 const PAGE_SIZE = 20
@@ -118,8 +126,9 @@ export function parseStations(payload: unknown): { items: TencentStation[]; coun
     const name = toText(poi.title)
     const category = toText(poi.category)
     if (!id || !name || latitude === null || longitude === null) continue
-    // 充电站等非加油类 POI 一律剔除（腾讯会把「汽车:加油站」的子类一并返回）
-    if (EXCLUDED_CATEGORY_HINTS.some((hint) => category.includes(hint))) continue
+    // 充电桩等非加油 POI 一律剔除：腾讯既会混入 191014「充电站」，也会把部分充电桩
+    // 误分类成 191099「其它加油站」（只有名称能识别），故名称与分类都要匹配
+    if (EXCLUDED_HINTS.some((hint) => `${name}${category}`.includes(hint))) continue
 
     items.push({
       id,
