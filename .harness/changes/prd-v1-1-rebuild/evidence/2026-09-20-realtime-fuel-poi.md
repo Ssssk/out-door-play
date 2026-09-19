@@ -17,3 +17,8 @@ Windows / Node 22 / pnpm；执行者 Codex。api test：16文件90测试通过�
 
 ## 补充定位回归
 加油页显式刷新设备坐标，避免同一会话永久复用旧位置；其他调用方默认缓存行为保持。mobile test 34 个通过，type-check 和小程序构建通过。实测本地 HTTP：health 200，无坐标422，未配置腾讯 Key 时503/FUEL_POI_UNAVAILABLE；未伪装成空列表。
+
+## 远端验证 2026-09-20
+- 提交 `2f2263b` 已推送到 `main`，组件 CI release #23（提交 `c102c4b`）通过。
+- Harness Contract #48（运行 ID `35455402309`）的安装、格式、Lint、类型检查、单元、契约、构建、集成、E2E 和 Secret 扫描步骤均已执行；最终仅因依赖安全审计阻断：两项已批准例外于 2026-09-15 过期，另有四项未批准 high advisory（`GHSA-wc9g-mqfw-jrwm`、`GHSA-qfvm-cv95-jqjf`、`GHSA-535w-7cp7-47q4`、`GHSA-7q85-xj36-vmfc`）。未绕过该门禁。
+- `Deploy production` 是 `workflow_dispatch` 手动工作流；截至记录时没有提交 `2f2263b` 的生产部署运行。线上只读检查 `https://www.chumenliuliu.cloud/v1/health` 返回 200，但 `/v1/fuel/stations` 仍返回 `station-*` 种子数据，不能作为实时腾讯 POI 的正向证据。部署后冒烟脚本已写入 `.github/workflows/deploy-production.yml`，待获授权并成功部署后执行。
