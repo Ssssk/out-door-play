@@ -226,6 +226,20 @@ describe('TencentStationProvider.fetchPage', () => {
     expect(decodeURIComponent(String(fetchMock.mock.calls[0][0]))).toContain('page_index=3')
   })
 
+  it('slices the raw window before filtering charging POIs', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => payload(3, [
+      poi({ id: 'charge', title: '充电桩' }), poi({ id: 'second' }), poi({ id: 'third' }),
+    ]) })
+    const result = await new TencentStationProvider().fetchPage(POINT, 1, { offset: 1, limit: 1 })
+    expect(result?.items.map(s => s.id)).toEqual(['second'])
+    expect(result?.count).toBe(3)
+  })
+
+  it('treats a malformed successful response as failure', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ status: 0 }) })
+    await expect(new TencentStationProvider().fetchPage(POINT)).resolves.toBeNull()
+  })
+
   it('returns null on a non-zero status', async () => {
     // 111 签名错误、121 额度耗尽都走这条路
     fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ status: 121, message: '此key每日调用量已达到上限', count: 0, data: [] }) })

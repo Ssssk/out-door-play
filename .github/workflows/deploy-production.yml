@@ -109,6 +109,8 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
           DEPLOY_ENV_FILE: ${{ secrets.DEPLOY_ENV_FILE }}
+          TENCENT_MAP_KEY: ${{ secrets.TENCENT_MAP_KEY || vars.TENCENT_MAP_KEY }}
+          TENCENT_MAP_SECRET: ${{ secrets.TENCENT_MAP_SECRET || vars.TENCENT_MAP_SECRET }}
           API_IMAGE: ${{ needs.build-images.outputs.api_image }}
           WEB_IMAGE: ${{ needs.build-images.outputs.web_image }}
         run: |
@@ -116,6 +118,9 @@ jobs:
           test -n "$DEPLOY_ENV_FILE"
           deploy_port="${DEPLOY_PORT:-22}"
           deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
+          test -n "$TENCENT_MAP_KEY"
+          DEPLOY_ENV_FILE="$(printf '%s\n' "$DEPLOY_ENV_FILE" | sed '/^TENCENT_MAP_KEY=/d; /^TENCENT_MAP_SECRET=/d; /^STATION_SYNC_ENABLED=/d')"
+          DEPLOY_ENV_FILE="$(printf '%s\nTENCENT_MAP_KEY=%s\nTENCENT_MAP_SECRET=%s\nSTATION_SYNC_ENABLED=false\n' "$DEPLOY_ENV_FILE" "$TENCENT_MAP_KEY" "$TENCENT_MAP_SECRET")"
           env_payload="$(printf '%s\nAPI_IMAGE=%s\nWEB_IMAGE=%s\n' "$DEPLOY_ENV_FILE" "$API_IMAGE" "$WEB_IMAGE" | base64 -w0)"
           printf '%s' "$env_payload" | ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "base64 -d > '$deploy_dir/.env.production' && chmod 600 '$deploy_dir/.env.production'"
 

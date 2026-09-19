@@ -5,9 +5,7 @@ import type { GeoPoint } from '../../common/geo'
 /**
  * 附近加油站数据源：腾讯位置服务「地点搜索」（WebService API）。
  *
- * 用法：**只被定时同步任务调用**（见 `station-sync.service`）——把 POI 拉到我们自己的库，
- * 用户请求只读库，因此不受配额约束。**不要在请求链路里直接调用它**：
- * 个人开发者 `place/search` 仅 **200 次/日**，且额度由账号下全部 key 共享。
+ * 用法：按用户 GCJ-02 坐标实时请求，Key/Secret 仅在服务端使用。
  *
  * 官方文档（2026-09 核对）中必须照做的点：
  * - `boundary=nearby(lat,lng,radius)` 的坐标顺序是**纬度在前**（与高德相反）；
@@ -18,7 +16,7 @@ import type { GeoPoint } from '../../common/geo'
  * - key 开启 SN 校验时必须附 `sig`：`md5(路径 + "?" + 参数名升序的原始值拼接 + SK)`，
  *   路径含 `/ws/` 前缀，且参与签名的值必须**未经 urlencode**。
  *
- * 腾讯不返回油价，站点挂牌价由 `FuelService` 按省级指导价补（见 province-price.provider）。
+ * 腾讯不返回油价，站点不展示补造的价格。
  */
 
 export interface TencentStation {
@@ -166,9 +164,9 @@ export class TencentStationProvider {
    * 取一页加油站 POI（腾讯每页上限 20 条）。
    *
    * ⚠️ 这是**配额敏感**入口：调用一次即消耗一次额度，而个人开发者只有 200 次/日。
-   * 因此这里只暴露「单页」，不提供自动翻页——请求次数由调用方（定时同步任务）自己控制。
+   * 因此这里只暴露「单页」，不提供自动翻页——请求次数由调用方按分页窗口控制。
    */
-  async fetchPage(center: GeoPoint, pageIndex = 1): Promise<{ items: TencentStation[]; count: number } | null> {
+  async fetchPage(center: GeoPoint, pageIndex = 1, window?: { offset: number; limit: number }): Promise<{ items: TencentStation[]; count: number } | null> {
     if (!this.enabled) return null
 
     const params: Record<string, string> = {
@@ -196,9 +194,13 @@ export class TencentStationProvider {
         const message = toText(asRecord(payload)?.message)
         throw new Error(`status ${status}${message ? ` ${message}` : ''}`)
       }
-      return parseStations(payload)
-    } catch (error) {
-      this.logger.warn(`腾讯地点搜索请求失败，本次跳过：${(error as Error).message}`)
+      const record = asRecord(payload)
+      if (!Array.isArray(record?.data) || toNumber(record?.count) === null) throw new Error('Invalid POI response')
+      const data = window ? record.data.slice(window.offset, window.offset + window.limit) : record.data
+      return parseStations({ ...record, data })
+    } catch {
+      // 不输出原始异常与 URL，避免泄露 Key 或签名。
+      this.logger.warn('腾讯地点搜索请求失败（网络、配置或配额异常）')
       return null
     }
   }

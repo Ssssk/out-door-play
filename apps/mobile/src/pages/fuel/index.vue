@@ -15,7 +15,7 @@
 
       <view class="station-heading">
         <text class="section-title">附近加油站点</text>
-        <text v-if="stationState === 'ready' || stationState === 'empty'">共 {{ total }} 个 · 按距离</text>
+        <text v-if="stationState === 'ready' || stationState === 'empty'">已找到 {{ stations.length }} 个 · 按距离</text>
         <text v-else>开启定位后查询</text>
       </view>
 
@@ -32,7 +32,7 @@
         <button @click="loadFuel">重试</button>
       </view>
       <view v-else-if="stationState === 'empty'" class="station-state" role="status">
-        <text>附近暂未找到加油站，请稍后重试或扩大搜索范围</text>
+        <text>当前结果中暂未找到加油站</text>
       </view>
 
       <view v-else-if="stationState === 'ready'" class="station-list">
@@ -48,10 +48,10 @@
       </view>
 
       <!-- 分页状态：触底自动加载下一页 -->
-      <view v-if="stationState === 'ready'" class="station-more" role="status">
+      <view v-if="stationState === 'ready' || stationState === 'empty'" class="station-more" role="status">
         <text v-if="loadingMore">正在加载更多…</text>
-        <text v-else-if="hasMore">上拉加载更多</text>
-        <text v-else>已显示全部 {{ total }} 个站点</text>
+        <button v-else-if="hasMore" @click="loadMore">{{ stationError || '加载更多' }}</button>
+        <text v-else>已显示本次检索结果</text>
       </view>
     </view>
   </AppShell>
@@ -68,7 +68,6 @@ import { useFuel } from './useFuel'
 const {
   prices,
   stations,
-  total,
   hasMore,
   loading,
   loadingMore,
@@ -80,6 +79,7 @@ const {
   priceSource,
   priceRegion,
   loadFuel,
+  loadMore,
 } = useFuel()
 
 async function enableLocation() {

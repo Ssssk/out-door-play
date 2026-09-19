@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../../database/prisma.service'
+import { BadRequestException, Injectable, ServiceUnavailableException } from '@nestjs/common'
+import { TencentStationProvider } from './tencent-station.provider'
 import { distanceInKm, roundDistanceKm } from '../../common/geo'
-import { FUEL_GRADES, gradePrice, ProvinceFuelPriceProvider, regionFromCityCode } from './province-price.provider'
+import { ProvinceFuelPriceProvider, regionFromCityCode } from './province-price.provider'
 import { STATION_PAGE_SIZE, STATION_PAGE_SIZE_MAX } from './fuel.dto'
 import type { GeoPoint } from '../../common/geo'
 import type { ProvinceFuelPrice } from './province-price.provider'
@@ -9,13 +9,10 @@ import type { ProvinceFuelPrice } from './province-price.provider'
 /** 油价数据来源：省级官方参考价 / 暂无（成品油按省定价，无城市级数据源） */
 export type FuelPriceSource = 'province' | 'empty'
 
-/** 腾讯地点搜索同步写入的站点统一使用该前缀；seed 演示站点不对用户端开放。 */
-const SYNCED_STATION_ID_PREFIX = 'tx-'
-
 @Injectable()
 export class FuelService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly tencent: TencentStationProvider,
     private readonly provincePrice: ProvinceFuelPriceProvider,
   ) {}
 
@@ -33,71 +30,48 @@ export class FuelService {
     }
   }
 
-  /**
-   * 附近加油站：**按距离由近到远**排序后分页返回。
-   *
-   * 站点数据由 `StationSyncService` 定时从腾讯地点搜索同步落库（见该文件说明），
-   * 这里只读自己的库，因此**不消耗腾讯额度**，与用户量无关。
-   * 有设备定位时用真实坐标算距离，否则用同步时记录的「到城市中心」的距离。
-   * 因为排序键依赖用户坐标，无法交给数据库，所以取出后在内存中排序再切片；
-   * 站点量级较大时应改为数据库侧的空间索引分页。
-   */
+  /** 用户坐标实时查询腾讯 POI；不读取或写入站点台账。 */
   async stations(point?: GeoPoint | null, page = 1, pageSize = STATION_PAGE_SIZE) {
+    if (!point) throw new BadRequestException({ code: 'FUEL_LOCATION_REQUIRED', message: '请先开启定位' })
     const currentPage = Math.max(1, Math.trunc(page) || 1)
     const size = Math.min(Math.max(1, Math.trunc(pageSize) || STATION_PAGE_SIZE), STATION_PAGE_SIZE_MAX)
-
-    const records = await this.prisma.fuelStation.findMany({
-      where: { enabled: true, id: { startsWith: SYNCED_STATION_ID_PREFIX } },
-    })
-    // Prisma 的 mock/替代实现可能不会执行 where 条件，内存再过滤一次保证
-    // 演示 seed（station-*）不会被误当成腾讯 POI 返回给移动端。
-    const stations = records.filter((station) => station.id.startsWith(SYNCED_STATION_ID_PREFIX))
-    const located = (await this.withOfficialPrices(stations)).map((station) => ({
-      ...station,
-      distanceKm: point
-        ? roundDistanceKm(distanceInKm(point, { latitude: station.latitude, longitude: station.longitude }))
-        : station.distanceKm,
-    }))
-
-    // 距离相同则按 id 兜底，保证翻页之间顺序稳定、不漏不重
-    located.sort((left, right) => left.distanceKm - right.distanceKm || left.id.localeCompare(right.id))
-
     const start = (currentPage - 1) * size
-    const items = located.slice(start, start + size)
-    return {
-      items,
-      total: located.length,
-      page: currentPage,
-      pageSize: size,
-      // 前端据此决定是否继续上拉加载
-      hasMore: start + items.length < located.length,
+    const end = Math.min(start + size, 200)
+    const items = []
+    let total = 0
+    // 腾讯每页最多 20 条；按原始结果窗口切分后再过滤，保留客户端 30 条分页。
+    for (let offset = Math.floor(start / 20) * 20; offset < end; offset += 20) {
+      const result = await this.tencent.fetchPage(point, offset / 20 + 1, {
+        offset: Math.max(start - offset, 0),
+        limit: Math.min(end, offset + 20) - Math.max(start, offset),
+      })
+      if (!result) throw new ServiceUnavailableException({ code: 'FUEL_POI_UNAVAILABLE', message: '附近加油站查询暂不可用，请稍后重试' })
+      total = Math.min(result.count, 200)
+      // 腾讯越界页会重复末页，必须按 count 截止。
+      if (start >= total) break
+      items.push(...result.items)
+      if (offset + 20 >= total) break
     }
+    const stations = [...new Map(items.map((station) => [station.id, station])).values()].map((station) => ({
+      id: 'tx-' + station.id,
+      name: station.name,
+      brand: station.brand,
+      address: station.address,
+      latitude: station.latitude,
+      longitude: station.longitude,
+      distanceKm: roundDistanceKm(distanceInKm(point, station)),
+      openingHours: '',
+      // POI 不提供站点报价；省级参考价由页面独立展示。
+      price92: 0,
+      price95: 0,
+    }))
+    stations.sort((a, b) => a.distanceKm - b.distanceKm || a.id.localeCompare(b.id))
+    return { items: stations, total, page: currentPage, pageSize: size, hasMore: end < total }
   }
 
   private async fetchProvincePrice(cityCode: string): Promise<ProvinceFuelPrice | null> {
     const region = regionFromCityCode(cityCode)
     return region ? this.provincePrice.fetchByRegion(region) : null
-  }
-
-  /**
-   * 站点挂牌价在**读取时**按省级指导价（零售价上限）覆盖。
-   * 站点价写死在库里会随调价周期变旧，而指导价由省级源每周更新；
-   * 省级源不可用时才回落到库内值，避免站点列表出现空白单价。
-   */
-  private async withOfficialPrices<T extends { cityCode: string; price92: number; price95: number }>(stations: T[]) {
-    // 同一省份只查一次
-    const cityCodes = [...new Set(stations.map((station) => station.cityCode))]
-    const byCity = new Map(
-      await Promise.all(cityCodes.map(async (code) => [code, await this.fetchProvincePrice(code)] as const)),
-    )
-
-    return stations.map((station) => {
-      const province = byCity.get(station.cityCode) ?? null
-      return Object.assign({}, station, {
-        price92: gradePrice(province, FUEL_GRADES.gasoline92) ?? station.price92,
-        price95: gradePrice(province, FUEL_GRADES.gasoline95) ?? station.price95,
-      })
-    })
   }
 
   /** 省级源只有调价日期，没有具体时刻，因此只展示到日，不补造时间 */

@@ -42,3 +42,6 @@ TASK-005/006/Owner 确认 → Requirements Gate → Design Gate → TASK-007/008
 | TASK-007~010 | 工程角色 | 独立 Reviewer | implementation/security | 自动化 Evidence |
 | TASK-013 | 工程角色 | 独立 Reviewer | implementation/verification | evidence/2026-09-06-component-ci-release.md |
 
+
+## TASK-FUEL-POI-001（用户 2026-09-20 明确修正）
+按用户定位实时代理腾讯 POI 查询，停用同步表依赖，修复 GitHub Secret 注入，验证分页/权限/错误/竞态。FR/AC 与设计见 evidence/2026-09-20-realtime-fuel-poi.md。实现中；生产与真机验证 pending。

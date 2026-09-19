@@ -1,0 +1,16 @@
+# 实时附近加油站修正
+
+- Change: CHG-OUTDOOR-V110-001 / TASK-FUEL-POI-001
+- 基线提交：2b568a659256149df7416114a6961955568da8e1。
+- 用户明确要求：获取用户经纬度后实时调用腾讯 POI 加油站检索；服务端不维护这批站点数据。该明确指令修正此前同步落库设计。
+- FR/AC：定位成功才查询；坐标透传腾讯附近检索；不访问站点表；拒绝定位、空结果和上游失败分别反馈；30 条客户端分页适配腾讯 20 条分页；过滤充电桩；不补造站点油价。
+- 设计：保留 /v1/fuel/stations，lat/lng 为必填 GCJ-02 坐标。服务端签名代理腾讯请求，固定域名和 8 秒上游超时；最多两次上游请求/客户端页；最多 200 条候选。total 是腾讯候选数，过滤后的 UI 只显示已找到条数。错误码 FUEL_LOCATION_REQUIRED / FUEL_POI_UNAVAILABLE。Secret 不下发前端，不记录原始 URL/异常。
+- 停止注册 StationSyncService，旧数据模型与后台台账不做删除迁移。STATION_SYNC_ENABLED 不再控制附近查询。
+- 配置：GitHub 环境页面实际名称 production，确认 TENCENT_MAP_KEY/TENCENT_MAP_SECRET/STATION_SYNC_ENABLED 三个 Secret 名称存在，未读取值。工作流将前两个 Secret 显式写入部署环境，停用旧同步。
+- CI 故障复现：Harness Contract #45 在 prisma generate 报缺少 SHADOW_DATABASE_URL，非 POI 业务测试失败；补齐隔离 CI 地址。
+- 验证：新前端 6 个行为测试通过；后端初轮 88 个测试通过。后续构建、实时接口和目标端结果继续补记；未执行项不能视为通过。
+- 回滚：回滚本次代码提交并重新构建部署；不涉及数据库迁移或业务数据删除。
+- 生产与微信真机 UAT 尚未验证，Gate 仍 pending。
+
+## 本地验证 2026-09-20 00:18–00:24 +08:00
+Windows / Node 22 / pnpm；执行者 Codex。api test：16文件90测试通过；mobile test：11文件33测试通过；api/mobile type-check 与 api build、mobile build:mp-weixin 通过；test:contract：4契约18操作通过；lint：0错误16既有告警；format:check、security:secret、Harness 校验、7个发布工具测试通过。日志位于本机 TEMP/fuel-api-tests.log、fuel-lint.log、fuel-build.log。此记录绑定本次待提交工作树，远端 SHA 与运行结果后补。

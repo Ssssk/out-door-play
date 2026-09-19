@@ -14,7 +14,7 @@ export const outdoorApi = {
     request<{ items: FuelPrice[]; updatedAt: string; source: FuelPriceSource; region?: string }>(`/fuel/prices?cityCode=${cityCode}`),
   // 传入设备定位坐标时，服务端按真实位置计算距离、由近到远排序后分页返回
   fuelStations: (point?: GeoPoint | null, page = 1) =>
-    request<FuelStationPage>(`/fuel/stations?${point ? `lat=${point.latitude}&lng=${point.longitude}&` : ''}page=${page}`),
+    request<FuelStationPage>(`/fuel/stations?${point ? `lat=${point.latitude}&lng=${point.longitude}&` : ''}page=${page}`, { timeout: 20000 }),
   me: () => request<UserProfile>('/user/me', { auth: 'required' }),
   saveMe: (data: { nickname: string; avatarUrl?: string }) => request<UserProfile>('/user/me', { method: 'PATCH', data, auth: 'required' }),
   favorites: (scene: 'drive' | 'fish') => request<FavoriteItem[]>(`/user/favorites?scene=${scene}`, { auth: 'required' }),

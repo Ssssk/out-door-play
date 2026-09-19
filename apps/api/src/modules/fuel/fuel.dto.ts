@@ -10,9 +10,9 @@ export class FuelPricesDto {
   @IsOptional() @IsString() date?: string
 }
 export class FuelStationsDto {
-  // 坐标可选：提供时按用户真实位置计算距离并由近到远排序；缺失时回落到库内预置距离
-  @IsOptional() @IsLatitude() lat?: string
-  @IsOptional() @IsLongitude() lng?: string
+  // 实时附近检索必须提供完整 GCJ-02 坐标。
+  @IsLatitude() lat!: string
+  @IsLongitude() lng!: string
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(STATION_PAGE_SIZE_MAX) pageSize?: number
 }

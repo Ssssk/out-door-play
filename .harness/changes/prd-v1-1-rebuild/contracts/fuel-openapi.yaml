@@ -1,0 +1,19 @@
+openapi: 3.0.3
+info:
+  title: Real-time fuel POI API
+  version: 1.0.0
+paths:
+  /v1/fuel/stations:
+    get:
+      operationId: FuelController_stations
+      description: GCJ-02 用户坐标实时检索腾讯 POI，不读取站点表。total 为最多200条腾讯候选数，过滤后 items 数量可能小于 pageSize。
+      parameters:
+        - { in: query, name: lat, required: true, schema: { type: number, minimum: -90, maximum: 90 } }
+        - { in: query, name: lng, required: true, schema: { type: number, minimum: -180, maximum: 180 } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: pageSize, schema: { type: integer, minimum: 1, maximum: 30, default: 30 } }
+      responses:
+        '200': { description: '腾讯 POI 分页结果；data 包含 items,total,page,pageSize,hasMore。无站点报价时 price92/price95 为0，客户端隐藏。' }
+        '400': { description: FUEL_LOCATION_REQUIRED }
+        '422': { description: 参数校验失败 }
+        '503': { description: FUEL_POI_UNAVAILABLE，腾讯配置、配额、超时或响应错误 }
