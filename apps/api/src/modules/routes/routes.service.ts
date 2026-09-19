@@ -59,6 +59,9 @@ export class RoutesService {
       depthM: item.scene === 'fish' ? item.depthM : null,
       difficulty: item.difficulty,
       coverImageUrl: item.coverImageUrl,
+      // 客户端据此按设备定位实算「距你」距离
+      latitude: item.latitude,
+      longitude: item.longitude,
     }
   }
 

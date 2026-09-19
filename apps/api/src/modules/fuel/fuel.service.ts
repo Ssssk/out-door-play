@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../../database/prisma.service'
+import { distanceInKm, roundDistanceKm } from '../../common/geo'
+import type { GeoPoint } from '../../common/geo'
 
 @Injectable()
 export class FuelService {
@@ -14,8 +16,19 @@ export class FuelService {
     }
   }
 
-  stations() {
-    return this.prisma.fuelStation.findMany({ where: { enabled: true }, orderBy: { distanceKm: 'asc' } })
+  async stations(point?: GeoPoint | null) {
+    const stations = await this.prisma.fuelStation.findMany({
+      where: { enabled: true },
+      orderBy: { distanceKm: 'asc' },
+    })
+    if (!point) return stations
+
+    return stations
+      .map((station) => ({
+        ...station,
+        distanceKm: roundDistanceKm(distanceInKm(point, { latitude: station.latitude, longitude: station.longitude })),
+      }))
+      .sort((left, right) => left.distanceKm - right.distanceKm)
   }
 
   private formatDate(value: Date) {
