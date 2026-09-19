@@ -9,7 +9,6 @@
         <text class="section-title">钓点信息</text>
         <view class="info-list"><view><text>钓点入口</text><text>{{ spot.entryPoint || '--' }}</text></view><view><text>主钓区</text><text>{{ spot.mainArea || '--' }}</text></view><view><text>最佳时段</text><text>{{ spot.bestTime }}</text></view><view><text>装备建议</text><text>{{ spot.gear || '--' }}</text></view></view>
         <text class="section-title">钓点介绍</text><text class="description">{{ spot.description }}</text>
-        <view class="tags"><text v-for="tag in spot.tags" :key="tag">#{{ tag }}</text></view>
       </view>
       <DetailActionBar :favorite="isFavorite" @favorite="toggleFavorite" @share="share" @start="start" />
     </view>
@@ -103,7 +102,7 @@ async function start() {
 <style scoped lang="scss">
 .detail-page { padding-bottom: 130rpx; }.header-over-hero { position: absolute; z-index: 10; top: 0; right: 24rpx; left: 24rpx; }.header-over-hero :deep(.page-header) { padding-top: var(--chumen-top-inset, var(--status-bar-height, 0px)); color: #fff; }.header-over-hero :deep(.back) { color: #fff; background: rgba(0,0,0,.22); border-color: rgba(255,255,255,.38); }
 .detail-body { padding: 30rpx 32rpx; }.summary-card { display: flex; padding: 30rpx 8rpx; border-radius: 30rpx; background: var(--chumen-soft); }.summary-card > view { flex: 1; text-align: center; }.summary-card > view + view { border-left: 2rpx solid var(--chumen-line); }.summary-card text { display: block; }.summary-card text:first-child { font-size: 27rpx; font-weight: 900; }.summary-card text:last-child { margin-top: 8rpx; color: var(--chumen-muted); font-size: 20rpx; }
-.info-list > view { display: flex; padding: 12rpx 0; font-size: 25rpx; }.info-list text:first-child { width: 150rpx; flex-shrink: 0; color: var(--chumen-muted); }.info-list text:last-child { flex: 1; }.description { display: block; color: var(--chumen-muted); font-size: 26rpx; line-height: 1.8; }.tags { display: flex; flex-wrap: wrap; margin: 18rpx -6rpx; }.tags text { margin: 6rpx; padding: 8rpx 18rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 21rpx; }
+.info-list > view { display: flex; padding: 12rpx 0; font-size: 25rpx; }.info-list text:first-child { width: 150rpx; flex-shrink: 0; color: var(--chumen-muted); }.info-list text:last-child { flex: 1; }.description { display: block; color: var(--chumen-muted); font-size: 26rpx; line-height: 1.8; }
 .detail-notice { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22rpx; padding: 18rpx 22rpx; border-radius: 22rpx; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 22rpx; }.detail-notice button,.error-state button { min-height: 54rpx; margin-left: 18rpx; padding: 0 24rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 22rpx; line-height: 54rpx; }
 .loading { display: flex; flex-direction: column; align-items: center; padding: 40vh 32rpx 0; text-align: center; }.loading text { margin-top: 18rpx; color: var(--chumen-muted); }.error-state button { margin: 24rpx 0 0; }
 </style>
