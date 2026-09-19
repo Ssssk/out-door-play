@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../../database/prisma.service'
 import { distanceInKm, roundDistanceKm } from '../../common/geo'
-import { ProvinceFuelPriceProvider, regionFromCityCode } from './province-price.provider'
+import { FUEL_GRADES, gradePrice, ProvinceFuelPriceProvider, regionFromCityCode } from './province-price.provider'
 import type { GeoPoint } from '../../common/geo'
+import type { ProvinceFuelPrice } from './province-price.provider'
 
-/** 油价数据来源：库内城市油价 / 省级官方参考价 / 暂无 */
-export type FuelPriceSource = 'city' | 'province' | 'empty'
+/** 油价数据来源：省级官方参考价 / 暂无（成品油按省定价，无城市级数据源） */
+export type FuelPriceSource = 'province' | 'empty'
 
 @Injectable()
 export class FuelService {
@@ -15,20 +16,8 @@ export class FuelService {
   ) {}
 
   async prices(cityCode: string) {
-    const records = await this.prisma.fuelPrice.findMany({ where: { cityCode }, orderBy: { grade: 'asc' } })
-    if (records.length > 0) {
-      const publishedAt = records[0].publishedAt
-      return {
-        items: records.map(({ grade, price, change }) => ({ grade, price, change })),
-        updatedAt: publishedAt ? this.formatDate(publishedAt) : '',
-        source: 'city' satisfies FuelPriceSource,
-      }
-    }
-
-    // 城市未单独维护时，降级使用省级官方价（成品油按省定价，同省内各城市一致）。
-    // 返回 region 以便界面标注「XX省参考价」，避免把省级价当成该城市价格。
-    const region = regionFromCityCode(cityCode)
-    const province = region ? await this.provincePrice.fetchByRegion(region) : null
+    // 返回 region 以便界面标注「XX省参考价」，避免把省级价当成该城市的价
+    const province = await this.fetchProvincePrice(cityCode)
     if (!province) {
       return { items: [], updatedAt: '', source: 'empty' satisfies FuelPriceSource }
     }
@@ -45,9 +34,10 @@ export class FuelService {
       where: { enabled: true },
       orderBy: { distanceKm: 'asc' },
     })
-    if (!point) return stations
+    const priced = await this.withOfficialPrices(stations)
+    if (!point) return priced
 
-    return stations
+    return priced
       .map((station) => ({
         ...station,
         distanceKm: roundDistanceKm(distanceInKm(point, { latitude: station.latitude, longitude: station.longitude })),
@@ -55,12 +45,30 @@ export class FuelService {
       .sort((left, right) => left.distanceKm - right.distanceKm)
   }
 
-  private formatDate(value: Date) {
-    const parts = new Intl.DateTimeFormat('zh-CN', {
-      timeZone: 'Asia/Shanghai', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
-    }).formatToParts(value)
-    const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value || ''
-    return `${part('month')}-${part('day')} ${part('hour')}:${part('minute')}`
+  private async fetchProvincePrice(cityCode: string): Promise<ProvinceFuelPrice | null> {
+    const region = regionFromCityCode(cityCode)
+    return region ? this.provincePrice.fetchByRegion(region) : null
+  }
+
+  /**
+   * 站点挂牌价在**读取时**按省级指导价（零售价上限）覆盖。
+   * 站点价写死在库里会随调价周期变旧，而指导价由省级源每周更新；
+   * 省级源不可用时才回落到库内值，避免站点列表出现空白单价。
+   */
+  private async withOfficialPrices<T extends { cityCode: string; price92: number; price95: number }>(stations: T[]) {
+    // 同一省份只查一次
+    const cityCodes = [...new Set(stations.map((station) => station.cityCode))]
+    const byCity = new Map(
+      await Promise.all(cityCodes.map(async (code) => [code, await this.fetchProvincePrice(code)] as const)),
+    )
+
+    return stations.map((station) => {
+      const province = byCity.get(station.cityCode) ?? null
+      return Object.assign({}, station, {
+        price92: gradePrice(province, FUEL_GRADES.gasoline92) ?? station.price92,
+        price95: gradePrice(province, FUEL_GRADES.gasoline95) ?? station.price95,
+      })
+    })
   }
 
   /** 省级源只有调价日期，没有具体时刻，因此只展示到日，不补造时间 */

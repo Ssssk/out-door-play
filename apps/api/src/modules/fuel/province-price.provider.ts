@@ -33,12 +33,19 @@ export interface ProvinceFuelPrice {
   items: ProvinceFuelPriceItem[]
 }
 
-/** 只取界面与后台已维护的油号，避免与库内「城市油价」的油号数目不一致 */
 interface GradeField {
   price: string
   change: string
   grade: string
 }
+
+/** 本项目油号文案：油价卡与加油站挂牌价取值均以此为准 */
+export const FUEL_GRADES = {
+  gasoline92: '92# 汽油',
+  gasoline95: '95# 汽油',
+  gasoline98: '98# 汽油',
+  diesel0: '0# 柴油',
+} as const
 
 export interface SourceDescriptor {
   name: string
@@ -57,10 +64,10 @@ export const PROVINCE_PRICE_SOURCES: readonly SourceDescriptor[] = [
     pickList: (payload) => asArray(asRecord(payload)?.data),
     regionField: 'regionName',
     fields: [
-      { price: 'n92', change: 'n92Change', grade: '92# 汽油' },
-      { price: 'n95', change: 'n95Change', grade: '95# 汽油' },
-      { price: 'n98', change: 'n98Change', grade: '98# 汽油' },
-      { price: 'n0', change: 'n0Change', grade: '0# 柴油' },
+      { price: 'n92', change: 'n92Change', grade: FUEL_GRADES.gasoline92 },
+      { price: 'n95', change: 'n95Change', grade: FUEL_GRADES.gasoline95 },
+      { price: 'n98', change: 'n98Change', grade: FUEL_GRADES.gasoline98 },
+      { price: 'n0', change: 'n0Change', grade: FUEL_GRADES.diesel0 },
     ],
   },
   {
@@ -69,10 +76,10 @@ export const PROVINCE_PRICE_SOURCES: readonly SourceDescriptor[] = [
     pickList: (payload) => asArray(asRecord(asRecord(payload)?.data)?.list),
     regionField: 'region',
     fields: [
-      { price: 'gasoline_92', change: 'gasoline_92_chg', grade: '92# 汽油' },
-      { price: 'gasoline_95', change: 'gasoline_95_chg', grade: '95# 汽油' },
-      { price: 'gasoline_98', change: 'gasoline_98_chg', grade: '98# 汽油' },
-      { price: 'diesel_0', change: 'diesel_0_chg', grade: '0# 柴油' },
+      { price: 'gasoline_92', change: 'gasoline_92_chg', grade: FUEL_GRADES.gasoline92 },
+      { price: 'gasoline_95', change: 'gasoline_95_chg', grade: FUEL_GRADES.gasoline95 },
+      { price: 'gasoline_98', change: 'gasoline_98_chg', grade: FUEL_GRADES.gasoline98 },
+      { price: 'diesel_0', change: 'diesel_0_chg', grade: FUEL_GRADES.diesel0 },
     ],
   },
 ]
@@ -152,10 +159,16 @@ export function parseProvinces(payload: unknown, source: SourceDescriptor): Prov
   return provinces
 }
 
+/** 取某油号的省级价格；省份数据缺失或该油号未返回时返回 null */
+export function gradePrice(province: ProvinceFuelPrice | null, grade: string): number | null {
+  return province?.items.find((item) => item.grade === grade)?.price ?? null
+}
+
 @Injectable()
 export class ProvinceFuelPriceProvider {
   private readonly logger = new Logger(ProvinceFuelPriceProvider.name)
   private cache: { value: Map<string, ProvinceFuelPrice>; expiresAt: number } | null = null
+  private inflight: Promise<Map<string, ProvinceFuelPrice> | null> | null = null
 
   /** 按归一化省份名取省级油价；所有数据源均不可用时返回 null（调用方降级为空态） */
   async fetchByRegion(region: string): Promise<ProvinceFuelPrice | null> {
@@ -165,7 +178,12 @@ export class ProvinceFuelPriceProvider {
 
   private async load(): Promise<Map<string, ProvinceFuelPrice> | null> {
     if (this.cache && this.cache.expiresAt > Date.now()) return this.cache.value
+    // 油价卡与加油站列表由前端并行请求，复用同一次外部请求避免重复拉取
+    this.inflight ??= this.fetchAll().finally(() => { this.inflight = null })
+    return this.inflight
+  }
 
+  private async fetchAll(): Promise<Map<string, ProvinceFuelPrice> | null> {
     for (const source of PROVINCE_PRICE_SOURCES) {
       try {
         const payload = await this.fetchJson(source.url)
