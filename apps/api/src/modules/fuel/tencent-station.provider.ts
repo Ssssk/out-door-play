@@ -1,0 +1,204 @@
+import { Injectable, Logger } from '@nestjs/common'
+import { createHash } from 'node:crypto'
+import type { GeoPoint } from '../../common/geo'
+
+/**
+ * 附近加油站数据源：腾讯位置服务「地点搜索」（WebService API）。
+ *
+ * 用法：**只被定时同步任务调用**（见 `station-sync.service`）——把 POI 拉到我们自己的库，
+ * 用户请求只读库，因此不受配额约束。**不要在请求链路里直接调用它**：
+ * 个人开发者 `place/search` 仅 **200 次/日**，且额度由账号下全部 key 共享。
+ *
+ * 官方文档（2026-09 核对）中必须照做的点：
+ * - `boundary=nearby(lat,lng,radius)` 的坐标顺序是**纬度在前**（与高德相反）；
+ *   且 radius 上限仅 1000 米，靠 `auto_extend`（默认开）按 1→2→5km→全城市自动扩大。
+ * - **每页最多 20 条**，同一组参数最多只能翻出 200 条。
+ * - ⚠️ `page_index` 超出总页数**不报错**，会重复返回最后一段 —— 所以「还有没有下一页」
+ *   只能按返回的 `count` 自行判断，绝不能靠「本页是否为空」。
+ * - key 开启 SN 校验时必须附 `sig`：`md5(路径 + "?" + 参数名升序的原始值拼接 + SK)`，
+ *   路径含 `/ws/` 前缀，且参与签名的值必须**未经 urlencode**。
+ *
+ * 腾讯不返回油价，站点挂牌价由 `FuelService` 按省级指导价补（见 province-price.provider）。
+ */
+
+export interface TencentStation {
+  /** 腾讯 POI id */
+  id: string
+  name: string
+  address: string
+  /** 由 POI 名称/分类推导，用于界面展示 */
+  brand: string
+  latitude: number
+  longitude: number
+  /** 腾讯下发的省份名（如「湖北省」），调用方据此取省级指导价 */
+  province: string
+}
+
+const BASE_URL = 'https://apis.map.qq.com'
+const SEARCH_PATH = '/ws/place/v1/search'
+const KEYWORD = '加油站'
+/**
+ * 分类过滤：191000 = 汽车:加油站。
+ *
+ * ⚠️ 实测（2026-09）直接写 `category=191000` 时，腾讯会把**子类一并返回**，
+ * 首屏 5 条全是 `汽车:加油站:充电站`——即充电桩被当成加油站。故改为「排除充电站 191014」
+ * 的写法，并叠加下面的客户端兜底过滤，双保险。
+ */
+const CATEGORY_FILTER = 'category<>191014'
+/** 分类命中这些片段的 POI 不是加油站，解析时剔除（兜住分类过滤未生效的情况） */
+const EXCLUDED_CATEGORY_HINTS = ['充电']
+const ORDER_BY = '_distance'
+/** 腾讯每页上限 20 条，无法调高 */
+const PAGE_SIZE = 20
+/** 腾讯 nearby 的半径上限只有 1000 米，更远的范围由 auto_extend 自动扩大 */
+const NEARBY_RADIUS_METERS = 1000
+const REQUEST_TIMEOUT_MS = 8000
+
+/** 由 POI 名称优先识别品牌，识别不出再看分类 */
+const BRAND_HINTS: ReadonlyArray<readonly [string, string]> = [
+  ['中国石化', '中石化'], ['中石化', '中石化'],
+  ['中国石油', '中石油'], ['中石油', '中石油'],
+  ['中国海油', '中海油'], ['中海油', '中海油'], ['中国海洋石油', '中海油'],
+  ['壳牌', 'Shell'], ['shell', 'Shell'],
+  ['道达尔', '道达尔'], ['total', '道达尔'],
+  ['中化', '中化'], ['bp', 'BP'],
+]
+
+type RawRecord = Record<string, unknown>
+
+function asRecord(value: unknown): RawRecord | null {
+  return typeof value === 'object' && value !== null ? (value as RawRecord) : null
+}
+
+function toNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+function toText(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+/**
+ * 腾讯 SN 校验签名：`md5(请求路径 + "?" + 参数名升序的 key=value 拼接 + SK)`。
+ * 参与签名的必须是**未编码的原始值**（发送时才逐值 urlencode），路径要带 `/ws/` 前缀。
+ */
+export function buildSignature(path: string, params: Record<string, string>, secretKey: string): string {
+  const rawQuery = Object.entries(params)
+    // 参数名按字母升序（a→z），与官方要求一致
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+    .map(([name, value]) => `${name}=${value}`)
+    .join('&')
+  return createHash('md5').update(`${path}?${rawQuery}${secretKey}`, 'utf8').digest('hex')
+}
+
+/** 名称优先、分类兜底地推导品牌；都识别不出时统一记作「加油站」 */
+export function deriveBrand(title: string, category: string): string {
+  const haystack = title.toLowerCase()
+  for (const [hint, brand] of BRAND_HINTS) {
+    if (haystack.includes(hint)) return brand
+  }
+  // 分类形如「汽车:加油站:中石化」，最后一段常是品牌或油站类型
+  const segment = category.split(':').at(-1)?.trim() ?? ''
+  return segment && segment !== '加油站' && segment !== '其它加油站' ? segment : '加油站'
+}
+
+/** 解析腾讯返回体；结构不符或缺少必要字段的记录会被跳过 */
+export function parseStations(payload: unknown): { items: TencentStation[]; count: number } {
+  const record = asRecord(payload)
+  const list = Array.isArray(record?.data) ? record.data : []
+  const items: TencentStation[] = []
+
+  for (const raw of list) {
+    const poi = asRecord(raw)
+    if (!poi) continue
+    const location = asRecord(poi.location)
+    const latitude = toNumber(location?.lat)
+    const longitude = toNumber(location?.lng)
+    const id = toText(poi.id)
+    const name = toText(poi.title)
+    const category = toText(poi.category)
+    if (!id || !name || latitude === null || longitude === null) continue
+    // 充电站等非加油类 POI 一律剔除（腾讯会把「汽车:加油站」的子类一并返回）
+    if (EXCLUDED_CATEGORY_HINTS.some((hint) => category.includes(hint))) continue
+
+    items.push({
+      id,
+      name,
+      address: toText(poi.address),
+      brand: deriveBrand(name, category),
+      latitude,
+      longitude,
+      province: toText(asRecord(poi.ad_info)?.province),
+    })
+  }
+
+  // count 是腾讯给出的结果总数（可能大于 200，但实际最多只能取到 200）
+  return { items, count: toNumber(record?.count) ?? items.length }
+}
+
+@Injectable()
+export class TencentStationProvider {
+  private readonly logger = new Logger(TencentStationProvider.name)
+
+  /** 未配置 key 时整体关闭该数据源 */
+  get enabled(): boolean {
+    return this.apiKey().length > 0
+  }
+
+  private apiKey(): string {
+    return process.env.TENCENT_MAP_KEY?.trim() ?? ''
+  }
+
+  private secretKey(): string {
+    return process.env.TENCENT_MAP_SECRET?.trim() ?? ''
+  }
+
+  /**
+   * 取一页加油站 POI（腾讯每页上限 20 条）。
+   *
+   * ⚠️ 这是**配额敏感**入口：调用一次即消耗一次额度，而个人开发者只有 200 次/日。
+   * 因此这里只暴露「单页」，不提供自动翻页——请求次数由调用方（定时同步任务）自己控制。
+   */
+  async fetchPage(center: GeoPoint, pageIndex = 1): Promise<{ items: TencentStation[]; count: number } | null> {
+    if (!this.enabled) return null
+
+    const params: Record<string, string> = {
+      key: this.apiKey(),
+      keyword: KEYWORD,
+      // ⚠️ 纬度在前、经度在后（与高德相反）；半径上限 1000 米
+      boundary: `nearby(${center.latitude},${center.longitude},${NEARBY_RADIUS_METERS})`,
+      filter: CATEGORY_FILTER,
+      orderby: ORDER_BY,
+      page_size: String(PAGE_SIZE),
+      page_index: String(pageIndex),
+      added_fields: 'category_code',
+    }
+    const secret = this.secretKey()
+    // sig 必须基于「不含 sig 自身」的参数串计算
+    if (secret) params.sig = buildSignature(SEARCH_PATH, params, secret)
+
+    try {
+      const response = await fetch(this.buildUrl(params), { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+      const payload: unknown = await response.json()
+      const status = toNumber(asRecord(payload)?.status)
+      if (status !== 0) {
+        const message = toText(asRecord(payload)?.message)
+        throw new Error(`status ${status}${message ? ` ${message}` : ''}`)
+      }
+      return parseStations(payload)
+    } catch (error) {
+      this.logger.warn(`腾讯地点搜索请求失败，本次跳过：${(error as Error).message}`)
+      return null
+    }
+  }
+
+  private buildUrl(params: Record<string, string>): string {
+    // 发送时逐值 urlencode；签名已经用原始值算过，两者不能混用
+    const query = Object.entries(params)
+      .map(([name, value]) => `${name}=${encodeURIComponent(value)}`)
+      .join('&')
+    return `${BASE_URL}${SEARCH_PATH}?${query}`
+  }
+}
