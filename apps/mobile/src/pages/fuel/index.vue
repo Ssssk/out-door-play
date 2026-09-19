@@ -20,7 +20,7 @@
             <text class="station-name">{{ station.name }}</text>
             <text class="station-meta">距你 {{ formatDistanceKm(station.distanceKm) }}km{{ station.openingHours ? ` · ${station.openingHours}` : '' }}</text>
            <!-- 腾讯实时站点不提供油价：拿不到时整行隐藏，避免显示「0.00 元/升」 -->
-            <text v-if="station.price92 > 0" class="station-prices">92# <b>{{ station.price92.toFixed(2) }}</b> · 95# {{ station.price95.toFixed(2) }} 元/升</text>
+            <text v-if="station.price92 > 0" class="station-prices">92# <text class="price-strong">{{ station.price92.toFixed(2) }}</text> · 95# {{ station.price95.toFixed(2) }} 元/升</text>
           </view>
           <button class="navigate-button" @click="navigateToStation(station)">导航</button>
         </view>
@@ -65,6 +65,8 @@ async function navigateToStation(station: FuelStation) {
 .station-card { display: flex; align-items: center; min-height: 178rpx; margin-bottom: 22rpx; padding: 24rpx 28rpx; }
 .station-info { flex: 1; min-width: 0; padding-right: 18rpx; }.station-name,.station-meta,.station-prices { display: block; }
 .station-name { overflow: hidden; color: var(--chumen-ink); font-size: 28rpx; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
-.station-meta,.station-prices { margin-top: 10rpx; color: var(--chumen-muted); font-size: 22rpx; }.station-prices b { color: var(--chumen-ink); }
+.station-meta,.station-prices { margin-top: 10rpx; color: var(--chumen-muted); font-size: 22rpx; }
+/* 注意：小程序 <text> 只能嵌套 <text>，写 <b> 会被编译成 <view> 并被整体丢弃（实测 92# 数字因此不显示） */
+.station-prices .price-strong { color: var(--chumen-ink); font-weight: 700; }
 .navigate-button { min-width: 142rpx; min-height: 72rpx; margin: 0; padding: 0 26rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 26rpx; line-height: 72rpx; }
 </style>
