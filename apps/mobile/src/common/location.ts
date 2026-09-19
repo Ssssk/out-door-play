@@ -43,8 +43,8 @@ function isValidPoint(point: GeoPoint | null | undefined): point is GeoPoint {
  * 读取设备定位。同一会话内只请求一次并复用结果（含并发去重），
  * 用户拒绝授权、超出可用范围或非小程序环境时返回 null。
  */
-export function getCurrentLocation(): Promise<GeoPoint | null> {
-  if (cachedPoint) return Promise.resolve(cachedPoint)
+export function getCurrentLocation(refresh = false): Promise<GeoPoint | null> {
+  if (cachedPoint && !refresh) return Promise.resolve(cachedPoint)
   if (pendingRequest) return pendingRequest
 
   const request = new Promise<GeoPoint | null>((resolve) => {

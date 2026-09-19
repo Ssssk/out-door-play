@@ -58,6 +58,18 @@ describe('location helpers', () => {
     expect(getLocation).toHaveBeenCalledTimes(1)
   })
 
+  it('refreshes a cached coordinate and does not reuse it after permission is revoked', async () => {
+    const getLocation = vi.fn()
+      .mockImplementationOnce(options => options.success(wuhan))
+      .mockImplementationOnce(options => options.success(beijing))
+      .mockImplementationOnce(options => options.fail())
+    vi.stubGlobal('uni', { getLocation })
+    expect(await getCurrentLocation()).toEqual(wuhan)
+    expect(await getCurrentLocation(true)).toEqual(beijing)
+    expect(await getCurrentLocation(true)).toBeNull()
+    expect(getLocation).toHaveBeenCalledTimes(3)
+  })
+
   it('resolves to null when location is denied or unavailable', async () => {
     vi.stubGlobal('uni', { getLocation: vi.fn((options: { fail: () => void }) => options.fail()) })
     expect(await getCurrentLocation()).toBeNull()

@@ -14,3 +14,6 @@
 
 ## 本地验证 2026-09-20 00:18–00:24 +08:00
 Windows / Node 22 / pnpm；执行者 Codex。api test：16文件90测试通过；mobile test：11文件33测试通过；api/mobile type-check 与 api build、mobile build:mp-weixin 通过；test:contract：4契约18操作通过；lint：0错误16既有告警；format:check、security:secret、Harness 校验、7个发布工具测试通过。日志位于本机 TEMP/fuel-api-tests.log、fuel-lint.log、fuel-build.log。此记录绑定本次待提交工作树，远端 SHA 与运行结果后补。
+
+## 补充定位回归
+加油页显式刷新设备坐标，避免同一会话永久复用旧位置；其他调用方默认缓存行为保持。mobile test 34 个通过，type-check 和小程序构建通过。实测本地 HTTP：health 200，无坐标422，未配置腾讯 Key 时503/FUEL_POI_UNAVAILABLE；未伪装成空列表。

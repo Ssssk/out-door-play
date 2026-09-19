@@ -99,7 +99,7 @@ export function useFuel() {
     stationState.value = 'loading'
     const pricesRequest = loadPrices(requestId)
     try {
-      const point = await ensureLocation()
+      const point = await ensureLocation(true)
       if (requestId !== loadRequestId) return
       searchPoint = point
       await loadStations(point, 1, false, requestId)

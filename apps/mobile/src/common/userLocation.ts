@@ -13,10 +13,10 @@ export function useUserLocation() {
   const appStore = useAppStore()
   const status = ref<UserLocationStatus>(appStore.location ? 'ready' : 'idle')
 
-  async function ensureLocation(): Promise<GeoPoint | null> {
+  async function ensureLocation(refresh = false): Promise<GeoPoint | null> {
     status.value = 'loading'
     try {
-      const point = await getCurrentLocation()
+      const point = await getCurrentLocation(refresh)
       if (point) {
         appStore.setLocation(point)
         status.value = 'ready'
