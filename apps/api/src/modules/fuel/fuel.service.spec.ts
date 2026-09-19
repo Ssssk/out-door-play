@@ -5,13 +5,13 @@ import type { ProvinceFuelPrice } from './province-price.provider'
 // 库内按 distanceKm 升序返回：a 排在前面但实际离查询点更远。
 // price92/price95 是库内存储值，仅在省级源不可用时才会被使用。
 const rows = [
-  { id: 'a', cityCode: '420100', distanceKm: 1, latitude: 30.6, longitude: 114.6, price92: 7.82, price95: 8.39 },
-  { id: 'b', cityCode: '420100', distanceKm: 9.9, latitude: 30.41, longitude: 114.31, price92: 7.85, price95: 8.42 },
+  { id: 'tx-a', cityCode: '420100', distanceKm: 1, latitude: 30.6, longitude: 114.6, price92: 7.82, price95: 8.39 },
+  { id: 'tx-b', cityCode: '420100', distanceKm: 9.9, latitude: 30.41, longitude: 114.31, price92: 7.85, price95: 8.42 },
 ]
 
 /** 用于分页断言：65 条，库内距离依次递增 */
 const many = Array.from({ length: 65 }, (_, index) => ({
-  id: `s${String(index + 1).padStart(2, '0')}`,
+  id: `tx-s${String(index + 1).padStart(2, '0')}`,
   cityCode: '420100',
   distanceKm: index + 1,
   latitude: 30.5,
@@ -41,10 +41,20 @@ function createService(provinceResult: ProvinceFuelPrice | null = null, stations
 }
 
 describe('FuelService.stations', () => {
+  it('excludes legacy seed stations so user requests only return synced POI', async () => {
+    const result = await createService(null, [rows[0], {
+      id: 'station-1', cityCode: '420100', distanceKm: 0.1,
+      latitude: 30.5, longitude: 114.4, price92: 8, price95: 8.5,
+    }]).service.stations({ latitude: 30.5, longitude: 114.4 })
+
+    expect(result.items.map((station) => station.id)).toEqual(['tx-a'])
+    expect(result.total).toBe(1)
+  })
+
   it('keeps the stored distances and order when no coordinates are given', async () => {
     const result = await createService().service.stations(null)
 
-    expect(result.items.map((station) => station.id)).toEqual(['a', 'b'])
+    expect(result.items.map((station) => station.id)).toEqual(['tx-a', 'tx-b'])
     expect(result.items[0].distanceKm).toBe(1)
     expect(result.total).toBe(2)
     expect(result.page).toBe(1)
@@ -54,7 +64,7 @@ describe('FuelService.stations', () => {
   it('recomputes distances from the device location and sorts by them', async () => {
     const result = await createService().service.stations({ latitude: 30.4, longitude: 114.3 })
 
-    expect(result.items.map((station) => station.id)).toEqual(['b', 'a'])
+    expect(result.items.map((station) => station.id)).toEqual(['tx-b', 'tx-a'])
     expect(result.items[0].distanceKm).toBeLessThan(result.items[1].distanceKm)
     // 距离口径保留 1 位小数
     expect(result.items[0].distanceKm).toBe(Math.round(result.items[0].distanceKm * 10) / 10)
@@ -79,8 +89,8 @@ describe('FuelService.stations', () => {
   it('queries each province only once regardless of how many stations share it', async () => {
     const { service, fetchByRegion } = createService(provincePrice, [
       { ...rows[0] },
-      { ...rows[1], id: 'c', cityCode: '110000' },
-      { ...rows[0], id: 'd' },
+      { ...rows[1], id: 'tx-c', cityCode: '110000' },
+      { ...rows[0], id: 'tx-d' },
     ])
 
     await service.stations(null)

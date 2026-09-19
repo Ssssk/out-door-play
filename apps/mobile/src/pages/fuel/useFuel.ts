@@ -1,9 +1,8 @@
 import { ref, shallowRef } from 'vue'
 import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app'
 import { outdoorApi } from '@/api/outdoor'
-import { withRealDistance } from '@/common/location'
 import { useUserLocation } from '@/common/userLocation'
-import { fuelPrices, fuelStations } from '@/data/mock'
+import { fuelPrices } from '@/data/mock'
 import { useAppStore } from '@/stores/app'
 import type { GeoPoint } from '@/common/location'
 import type { FuelPrice, FuelPriceSource, FuelStation } from '@/types/domain'
@@ -11,26 +10,27 @@ import type { FuelPrice, FuelPriceSource, FuelStation } from '@/types/domain'
 /** 附近加油站每页条数，需与服务端上限保持一致 */
 export const STATION_PAGE_SIZE = 30
 
+/** 服务端同步的腾讯 POI 统一使用 tx- 前缀；兼容旧接口时也要挡住 seed 演示数据。 */
+function isTencentPoi(station: FuelStation) {
+  return station.id.startsWith('tx-')
+}
+
 export function useFuel() {
   const appStore = useAppStore()
-  const { ensureLocation } = useUserLocation()
+  const { ensureLocation, openLocationSettings, status: locationStatus } = useUserLocation()
   const prices = shallowRef<FuelPrice[]>(fuelPrices)
 
-  /** 拿不到接口时的本地兜底：同样按距离由近到远，并截到一页 */
-  function localStations(point: GeoPoint | null) {
-    return fuelStations
-      .map((station) => withRealDistance(station, point))
-      .sort((left, right) => left.distanceKm - right.distanceKm)
-      .slice(0, STATION_PAGE_SIZE)
-  }
-
   // 服务端已按「距你」由近到远排好并分页，前端只负责拼接，不再重排
-  const stations = shallowRef<FuelStation[]>(localStations(null))
-  const total = ref(stations.value.length)
+  // 没有取得设备坐标前不展示任何站点，避免把演示数据误认为附近 POI。
+  const stations = shallowRef<FuelStation[]>([])
+  const total = ref(0)
   const page = ref(1)
   const hasMore = ref(false)
   const loading = ref(false)
   const loadingMore = ref(false)
+  const stationState = ref<'idle' | 'loading' | 'ready' | 'empty' | 'error' | 'denied'>('idle')
+  const stationError = ref('')
+  let loadRequestId = 0
   // 展示服务端最后一次发布油价的时间；未获取到时不展示虚假时间
   const updatedAt = ref('')
   // 省级官方参考价 / 暂无；省级来源时界面需标注省份口径
@@ -39,19 +39,42 @@ export function useFuel() {
   const priceRegion = ref('')
 
   async function loadStations(point: GeoPoint | null, targetPage: number, append: boolean) {
+    if (!point) {
+      if (!append) {
+        stations.value = []
+        total.value = 0
+        page.value = 1
+        hasMore.value = false
+        stationState.value = 'denied'
+      }
+      return
+    }
+
+    if (!append) {
+      stationState.value = 'loading'
+      stationError.value = ''
+    }
     try {
       const result = await outdoorApi.fuelStations(point, targetPage)
-      stations.value = append ? [...stations.value, ...result.items] : result.items
-      total.value = result.total
+      const items = result.items.filter(isTencentPoi)
+      const hasOnlyPoiItems = items.length === result.items.length
+      stations.value = append ? [...stations.value, ...items] : items
+      // 兼容尚未滚动到新 API 镜像的服务端：旧接口可能还会返回 station-*
+      // 演示数据，此时不把它们计入总数，也不继续翻页。
+      total.value = hasOnlyPoiItems ? result.total : items.length
       page.value = result.page
-      hasMore.value = result.hasMore
+      hasMore.value = hasOnlyPoiItems && result.hasMore
+      if (!append) stationState.value = items.length > 0 ? 'ready' : 'empty'
     } catch {
-      // 接口不可用：只在首屏回落到本地兜底，已经翻出来的内容不清空
-      if (append) return
-      stations.value = localStations(point)
-      total.value = stations.value.length
-      page.value = 1
-      hasMore.value = false
+      stationError.value = '附近加油站加载失败，请重试'
+      // 接口失败时清空首屏，绝不回落到 mock，避免把演示站点当成真实 POI。
+      if (!append) {
+        stations.value = []
+        total.value = 0
+        page.value = 1
+        hasMore.value = false
+        stationState.value = 'error'
+      }
     }
   }
 
@@ -70,17 +93,25 @@ export function useFuel() {
 
   /** 首屏、下拉刷新、切回页面：都重置回第一页 */
   async function loadFuel() {
+    const requestId = ++loadRequestId
     loading.value = true
     const pricesRequest = loadPrices()
-    const point = await ensureLocation()
-    await Promise.allSettled([pricesRequest, loadStations(point, 1, false)])
-    loading.value = false
-    uni.stopPullDownRefresh()
+    try {
+      const point = await ensureLocation()
+      await pricesRequest
+      if (requestId !== loadRequestId) return
+      await loadStations(point, 1, false)
+    } finally {
+      if (requestId === loadRequestId) {
+        loading.value = false
+        uni.stopPullDownRefresh()
+      }
+    }
   }
 
   /** 触底加载下一页 */
   async function loadMore() {
-    if (loading.value || loadingMore.value || !hasMore.value) return
+    if (loading.value || loadingMore.value || !hasMore.value || !appStore.location) return
     loadingMore.value = true
     await loadStations(appStore.location, page.value + 1, true)
     loadingMore.value = false
@@ -90,5 +121,21 @@ export function useFuel() {
   onShow(loadFuel)
   onPullDownRefresh(loadFuel)
   onReachBottom(loadMore)
-  return { prices, stations, total, hasMore, updatedAt, priceSource, priceRegion, loading, loadingMore, loadFuel, loadMore }
+  return {
+    prices,
+    stations,
+    total,
+    hasMore,
+    updatedAt,
+    priceSource,
+    priceRegion,
+    loading,
+    loadingMore,
+    stationState,
+    stationError,
+    locationStatus,
+    openLocationSettings,
+    loadFuel,
+    loadMore,
+  }
 }

@@ -1,4 +1,4 @@
-import type { City, FavoriteItem, FishingSpot, FuelPrice, FuelStation, RouteDetail, UserProfile, Weather } from '@/types/domain'
+import type { City, FavoriteItem, FishingSpot, FuelPrice, RouteDetail, UserProfile, Weather } from '@/types/domain'
 
 export const cities: City[] = [
   { code: '420100', name: '武汉' }, { code: '110000', name: '北京' },
@@ -78,17 +78,6 @@ export const fishingSpots: FishingSpot[] = [
 export const fuelPrices: FuelPrice[] = [
   { grade: '92# 汽油', price: 8.31, change: 0.21 }, { grade: '95# 汽油', price: 8.89, change: 0.22 },
   { grade: '98# 汽油', price: 10.29, change: 0.3 }, { grade: '0# 柴油', price: 7.96, change: 0.21 },
-]
-
-/**
- * 站点兜底数据。挂牌价正常由服务端按省级指导价下发（读取时覆盖），
- * 这里只在与服务端完全失联时展示，故直接取湖北指导价、不做品牌差异。
- */
-export const fuelStations: FuelStation[] = [
-  { id: 'station-1', name: '中石化光谷大道加油站', brand: '中石化', distanceKm: 1.2, openingHours: '24h 营业', price92: 8.31, price95: 8.89, latitude: 30.47, longitude: 114.41, address: '光谷大道 88 号' },
-  { id: 'station-2', name: '中石油珞喻路加油气站', brand: '中石油', distanceKm: 2.6, openingHours: '24h 营业', price92: 8.31, price95: 8.89, latitude: 30.51, longitude: 114.39, address: '珞喻路 610 号' },
-  { id: 'station-3', name: '壳牌武汉关山大道站', brand: 'Shell', distanceKm: 3.4, openingHours: '06:00-23:00', price92: 8.31, price95: 8.89, latitude: 30.48, longitude: 114.42, address: '关山大道 120 号' },
-  { id: 'station-4', name: '道达尔高新二路站', brand: '道达尔', distanceKm: 4.8, openingHours: '24h 营业', price92: 8.31, price95: 8.89, latitude: 30.45, longitude: 114.44, address: '高新二路 39 号' },
 ]
 
 export const mockUser: UserProfile = { avatarUrl: '/static/icons/avatar-mine.png', nickname: '溜车老登', stats: { mileage: 1280, favorites: 6, checkins: 23 } }

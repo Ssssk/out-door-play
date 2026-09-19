@@ -9,6 +9,9 @@ import type { ProvinceFuelPrice } from './province-price.provider'
 /** 油价数据来源：省级官方参考价 / 暂无（成品油按省定价，无城市级数据源） */
 export type FuelPriceSource = 'province' | 'empty'
 
+/** 腾讯地点搜索同步写入的站点统一使用该前缀；seed 演示站点不对用户端开放。 */
+const SYNCED_STATION_ID_PREFIX = 'tx-'
+
 @Injectable()
 export class FuelService {
   constructor(
@@ -43,7 +46,12 @@ export class FuelService {
     const currentPage = Math.max(1, Math.trunc(page) || 1)
     const size = Math.min(Math.max(1, Math.trunc(pageSize) || STATION_PAGE_SIZE), STATION_PAGE_SIZE_MAX)
 
-    const stations = await this.prisma.fuelStation.findMany({ where: { enabled: true } })
+    const records = await this.prisma.fuelStation.findMany({
+      where: { enabled: true, id: { startsWith: SYNCED_STATION_ID_PREFIX } },
+    })
+    // Prisma 的 mock/替代实现可能不会执行 where 条件，内存再过滤一次保证
+    // 演示 seed（station-*）不会被误当成腾讯 POI 返回给移动端。
+    const stations = records.filter((station) => station.id.startsWith(SYNCED_STATION_ID_PREFIX))
     const located = (await this.withOfficialPrices(stations)).map((station) => ({
       ...station,
       distanceKm: point

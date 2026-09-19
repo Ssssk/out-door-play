@@ -13,8 +13,29 @@
         </view>
       </view>
 
-      <view class="station-heading"><text class="section-title">附近加油站点</text><text>共 {{ total }} 个 · 按距离</text></view>
-      <view class="station-list">
+      <view class="station-heading">
+        <text class="section-title">附近加油站点</text>
+        <text v-if="stationState === 'ready' || stationState === 'empty'">共 {{ total }} 个 · 按距离</text>
+        <text v-else>开启定位后查询</text>
+      </view>
+
+      <view v-if="loading" class="station-state" role="status">
+        <wd-loading color="#1a1a1a" />
+        <text>正在获取位置并查询附近站点…</text>
+      </view>
+      <view v-else-if="stationState === 'denied'" class="station-state station-action" role="alert">
+        <text>开启定位后，才能查询你附近的真实加油站</text>
+        <button @click="enableLocation">开启定位</button>
+      </view>
+      <view v-else-if="stationState === 'error'" class="station-state station-action" role="alert">
+        <text>{{ stationError }}</text>
+        <button @click="loadFuel">重试</button>
+      </view>
+      <view v-else-if="stationState === 'empty'" class="station-state" role="status">
+        <text>附近暂未找到加油站，请稍后重试或扩大搜索范围</text>
+      </view>
+
+      <view v-else-if="stationState === 'ready'" class="station-list">
         <view v-for="station in stations" :key="station.id" class="station-card card-surface">
           <view class="station-info">
             <text class="station-name">{{ station.name }}</text>
@@ -27,7 +48,7 @@
       </view>
 
       <!-- 分页状态：触底自动加载下一页 -->
-      <view class="station-more" role="status">
+      <view v-if="stationState === 'ready'" class="station-more" role="status">
         <text v-if="loadingMore">正在加载更多…</text>
         <text v-else-if="hasMore">上拉加载更多</text>
         <text v-else>已显示全部 {{ total }} 个站点</text>
@@ -44,7 +65,29 @@ import { openNavigation } from '@/common/mapNavigation'
 import type { FuelStation } from '@/types/domain'
 import { useFuel } from './useFuel'
 
-const { prices, stations, total, hasMore, loadingMore, updatedAt, priceSource, priceRegion, loadFuel } = useFuel()
+const {
+  prices,
+  stations,
+  total,
+  hasMore,
+  loading,
+  loadingMore,
+  stationState,
+  stationError,
+  locationStatus,
+  openLocationSettings,
+  updatedAt,
+  priceSource,
+  priceRegion,
+  loadFuel,
+} = useFuel()
+
+async function enableLocation() {
+  // 首次点击由 getLocation 触发系统授权；拒绝后再带用户去设置页。
+  if (locationStatus.value === 'denied') await openLocationSettings()
+  await loadFuel()
+}
+
 async function navigateToStation(station: FuelStation) {
   try { await openNavigation({ latitude: station.latitude, longitude: station.longitude, name: station.name, address: station.address }) }
   catch { uni.showToast({ title: '当前环境无法唤起地图', icon: 'none' }) }
@@ -61,6 +104,9 @@ async function navigateToStation(station: FuelStation) {
 .price { margin-right: 8rpx; color: var(--chumen-ink); font-size: 46rpx; font-weight: 900; }
 .unit { font-size: 22rpx; }.change { margin-top: 6rpx; }.up { color: #e5484d; }.down { color: #2ba24c; }
 .station-heading { display: flex; align-items: center; justify-content: space-between; }.station-heading > text:last-child { color: var(--chumen-muted); font-size: 22rpx; }
+.station-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 220rpx; padding: 28rpx; border: 2rpx solid var(--chumen-line); border-radius: 28rpx; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 24rpx; line-height: 1.6; text-align: center; }
+.station-state text { margin-top: 16rpx; }
+.station-action button { min-width: 180rpx; min-height: 68rpx; margin-top: 22rpx; padding: 0 28rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 24rpx; line-height: 68rpx; }
 .station-more { padding: 20rpx 0 4rpx; color: var(--chumen-muted); font-size: 22rpx; text-align: center; }
 .station-card { display: flex; align-items: center; min-height: 178rpx; margin-bottom: 22rpx; padding: 24rpx 28rpx; }
 .station-info { flex: 1; min-width: 0; padding-right: 18rpx; }.station-name,.station-meta,.station-prices { display: block; }
