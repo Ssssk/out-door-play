@@ -1,18 +1,39 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../../database/prisma.service'
 import { distanceInKm, roundDistanceKm } from '../../common/geo'
+import { OfficialFuelPriceProvider } from './official-price.provider'
 import type { GeoPoint } from '../../common/geo'
+
+/** 油价数据来源：库内城市油价 / 官方（发改委价格监测中心）全国平均价 / 暂无 */
+export type FuelPriceSource = 'city' | 'official' | 'empty'
 
 @Injectable()
 export class FuelService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly officialPrice: OfficialFuelPriceProvider,
+  ) {}
 
   async prices(cityCode: string) {
     const records = await this.prisma.fuelPrice.findMany({ where: { cityCode }, orderBy: { grade: 'asc' } })
-    const publishedAt = records[0]?.publishedAt
+    if (records.length > 0) {
+      const publishedAt = records[0].publishedAt
+      return {
+        items: records.map(({ grade, price, change }) => ({ grade, price, change })),
+        updatedAt: publishedAt ? this.formatDate(publishedAt) : '',
+        source: 'city' satisfies FuelPriceSource,
+      }
+    }
+
+    // 城市未单独收录时，降级使用官方全国平均价（口径为全国平均，按周发布）
+    const official = await this.officialPrice.fetchLatest()
+    if (!official) {
+      return { items: [], updatedAt: '', source: 'empty' satisfies FuelPriceSource }
+    }
     return {
-      items: records.map(({ grade, price, change }) => ({ grade, price, change })),
-      updatedAt: publishedAt ? this.formatDate(publishedAt) : '',
+      items: official.items,
+      updatedAt: this.formatDate(official.publishedAt),
+      source: 'official' satisfies FuelPriceSource,
     }
   }
 
