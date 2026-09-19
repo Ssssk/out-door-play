@@ -52,7 +52,8 @@ async function main() {
     await prisma.discovery.upsert({ where: { id: item.id }, update: data, create: data })
   }
 
-  const publishedAt = new Date('2026-08-22T14:30:00+08:00')
+  // 与 seed.ts 中 fuelPriceRecords 的调价日保持一致
+  const publishedAt = new Date('2026-09-12T00:00:00+08:00')
   for (const item of fuelPriceRecords) {
     const data = { ...item, id: `420100-${item.grade}`, cityCode: '420100', publishedAt }
     await prisma.fuelPrice.upsert({ where: { id: data.id }, update: data, create: data })

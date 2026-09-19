@@ -43,14 +43,22 @@ export const cityRecords = [
   { code: '330100', name: '杭州' }, { code: '320100', name: '南京' }, { code: '430100', name: '长沙' }, { code: '500000', name: '重庆' },
 ]
 
+/**
+ * 武汉（420100）库内城市价，对齐湖北省官方参考价（调价日 2026-09-12）。
+ * 库内价格优先级高于省级参考价，两者口径必须一致，否则同一页面会出现两套数字。
+ */
 export const fuelPriceRecords = [
-  { grade: '92# 汽油', price: 7.85, change: 0.12 }, { grade: '95# 汽油', price: 8.42, change: -0.08 },
-  { grade: '98# 汽油', price: 9.61, change: 0 }, { grade: '0# 柴油', price: 7.58, change: 0.05 },
+  { grade: '92# 汽油', price: 8.31, change: 0.21 }, { grade: '95# 汽油', price: 8.89, change: 0.22 },
+  { grade: '98# 汽油', price: 10.29, change: 0.3 }, { grade: '0# 柴油', price: 7.96, change: 0.21 },
 ]
 
+/**
+ * 加油站挂牌价：成品油零售价上限即省级指导价（湖北 92# 8.31 / 95# 8.89），
+ * 中石化、中石油按上限执行，外资/民营站常有小幅优惠，故略低于上限。
+ */
 export const fuelStationRecords = [
-  { id: 'station-1', name: '中石化光谷大道加油站', brand: '中石化', distanceKm: 1.2, openingHours: '24h 营业', price92: 7.82, price95: 8.39, latitude: 30.47, longitude: 114.41, address: '光谷大道 88 号' },
-  { id: 'station-2', name: '中石油珞喻路加油气站', brand: '中石油', distanceKm: 2.6, openingHours: '24h 营业', price92: 7.85, price95: 8.42, latitude: 30.51, longitude: 114.39, address: '珞喻路 610 号' },
-  { id: 'station-3', name: '壳牌武汉关山大道站', brand: 'Shell', distanceKm: 3.4, openingHours: '06:00-23:00', price92: 7.79, price95: 8.35, latitude: 30.48, longitude: 114.42, address: '关山大道 120 号' },
-  { id: 'station-4', name: '道达尔高新二路站', brand: '道达尔', distanceKm: 4.8, openingHours: '24h 营业', price92: 7.81, price95: 8.38, latitude: 30.45, longitude: 114.44, address: '高新二路 39 号' },
+  { id: 'station-1', name: '中石化光谷大道加油站', brand: '中石化', distanceKm: 1.2, openingHours: '24h 营业', price92: 8.31, price95: 8.89, latitude: 30.47, longitude: 114.41, address: '光谷大道 88 号' },
+  { id: 'station-2', name: '中石油珞喻路加油气站', brand: '中石油', distanceKm: 2.6, openingHours: '24h 营业', price92: 8.31, price95: 8.89, latitude: 30.51, longitude: 114.39, address: '珞喻路 610 号' },
+  { id: 'station-3', name: '壳牌武汉关山大道站', brand: 'Shell', distanceKm: 3.4, openingHours: '06:00-23:00', price92: 8.28, price95: 8.86, latitude: 30.48, longitude: 114.42, address: '关山大道 120 号' },
+  { id: 'station-4', name: '道达尔高新二路站', brand: '道达尔', distanceKm: 4.8, openingHours: '24h 营业', price92: 8.29, price95: 8.87, latitude: 30.45, longitude: 114.44, address: '高新二路 39 号' },
 ]
