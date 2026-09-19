@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { FuelService } from './fuel.service'
-import type { OfficialFuelPrice } from './official-price.provider'
+import type { ProvinceFuelPrice } from './province-price.provider'
 
 // 库内按 distanceKm 升序返回：a 排在前面但实际离查询点更远
 const rows = [
@@ -8,28 +8,32 @@ const rows = [
   { id: 'b', distanceKm: 9.9, latitude: 30.41, longitude: 114.31 },
 ]
 
-const official: OfficialFuelPrice = {
-  publishedAt: new Date(Date.UTC(2026, 7, 26)),
-  items: [{ grade: '92# 汽油', price: 7.85, change: 0.01 }],
+const provincePrice: ProvinceFuelPrice = {
+  region: '湖北',
+  regionLabel: '湖北省',
+  publishedAt: new Date(Date.UTC(2026, 8, 12)),
+  items: [{ grade: '92# 汽油', price: 8.25, change: 0.21 }],
 }
 
-function createService(priceRows: unknown[] = [], officialResult: OfficialFuelPrice | null = null) {
-  return new FuelService(
+function createService(priceRows: unknown[] = [], provinceResult: ProvinceFuelPrice | null = null) {
+  const fetchByRegion = vi.fn(async () => provinceResult)
+  const service = new FuelService(
     { fuelPrice: { findMany: async () => priceRows }, fuelStation: { findMany: async () => rows } } as never,
-    { fetchLatest: async () => officialResult } as never,
+    { fetchByRegion } as never,
   )
+  return { service, fetchByRegion }
 }
 
 describe('FuelService.stations', () => {
   it('keeps the stored distances when no coordinates are given', async () => {
-    const stations = await createService().stations(null)
+    const stations = await createService().service.stations(null)
 
     expect(stations.map((station) => station.id)).toEqual(['a', 'b'])
     expect(stations[0].distanceKm).toBe(1)
   })
 
   it('recomputes distances from the device location and sorts by them', async () => {
-    const stations = await createService().stations({ latitude: 30.4, longitude: 114.3 })
+    const stations = await createService().service.stations({ latitude: 30.4, longitude: 114.3 })
 
     expect(stations.map((station) => station.id)).toEqual(['b', 'a'])
     expect(stations[0].distanceKm).toBeLessThan(stations[1].distanceKm)
@@ -41,26 +45,45 @@ describe('FuelService.stations', () => {
 
 describe('FuelService.prices', () => {
   it('prefers city prices stored in the database', async () => {
-    const result = await createService(
+    const { service, fetchByRegion } = createService(
       [{ grade: '92# 汽油', price: 7.85, change: 0.12, publishedAt: new Date('2026-08-22T06:30:00Z') }],
-      official,
-    ).prices('420100')
+      provincePrice,
+    )
+
+    const result = await service.prices('420100')
 
     expect(result.source).toBe('city')
     expect(result.items).toEqual([{ grade: '92# 汽油', price: 7.85, change: 0.12 }])
     expect(result.updatedAt).not.toBe('')
+    // 库内有数据时不应触发外部请求
+    expect(fetchByRegion).not.toHaveBeenCalled()
   })
 
-  it('falls back to the official national average when the city has no prices', async () => {
-    const result = await createService([], official).prices('110000')
+  it('falls back to the province reference price and reports the region', async () => {
+    const { service, fetchByRegion } = createService([], provincePrice)
 
-    expect(result.source).toBe('official')
-    expect(result.items).toEqual(official.items)
-    expect(result.updatedAt).toBe('08-26 08:00')
+    const result = await service.prices('420100')
+
+    // 城市码前两位 42 → 湖北
+    expect(fetchByRegion).toHaveBeenCalledWith('湖北')
+    expect(result.source).toBe('province')
+    expect(result.items).toEqual(provincePrice.items)
+    // 省级源只有调价日期，不补造时刻
+    expect(result.updatedAt).toBe('09-12')
+    expect(result.region).toBe('湖北省')
   })
 
-  it('reports an empty source when neither city nor official data is available', async () => {
-    const result = await createService([], null).prices('110000')
+  it('reports an empty source without querying any source when the city code is unknown', async () => {
+    const { service, fetchByRegion } = createService([], provincePrice)
+
+    const result = await service.prices('990000')
+
+    expect(fetchByRegion).not.toHaveBeenCalled()
+    expect(result).toEqual({ items: [], updatedAt: '', source: 'empty' })
+  })
+
+  it('reports an empty source when the province source is unavailable', async () => {
+    const result = await createService([], null).service.prices('110000')
 
     expect(result).toEqual({ items: [], updatedAt: '', source: 'empty' })
   })

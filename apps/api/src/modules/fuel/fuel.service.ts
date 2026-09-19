@@ -1,17 +1,17 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../../database/prisma.service'
 import { distanceInKm, roundDistanceKm } from '../../common/geo'
-import { OfficialFuelPriceProvider } from './official-price.provider'
+import { ProvinceFuelPriceProvider, regionFromCityCode } from './province-price.provider'
 import type { GeoPoint } from '../../common/geo'
 
-/** 油价数据来源：库内城市油价 / 官方（发改委价格监测中心）全国平均价 / 暂无 */
-export type FuelPriceSource = 'city' | 'official' | 'empty'
+/** 油价数据来源：库内城市油价 / 省级官方参考价 / 暂无 */
+export type FuelPriceSource = 'city' | 'province' | 'empty'
 
 @Injectable()
 export class FuelService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly officialPrice: OfficialFuelPriceProvider,
+    private readonly provincePrice: ProvinceFuelPriceProvider,
   ) {}
 
   async prices(cityCode: string) {
@@ -25,15 +25,18 @@ export class FuelService {
       }
     }
 
-    // 城市未单独收录时，降级使用官方全国平均价（口径为全国平均，按周发布）
-    const official = await this.officialPrice.fetchLatest()
-    if (!official) {
+    // 城市未单独维护时，降级使用省级官方价（成品油按省定价，同省内各城市一致）。
+    // 返回 region 以便界面标注「XX省参考价」，避免把省级价当成该城市价格。
+    const region = regionFromCityCode(cityCode)
+    const province = region ? await this.provincePrice.fetchByRegion(region) : null
+    if (!province) {
       return { items: [], updatedAt: '', source: 'empty' satisfies FuelPriceSource }
     }
     return {
-      items: official.items,
-      updatedAt: this.formatDate(official.publishedAt),
-      source: 'official' satisfies FuelPriceSource,
+      items: province.items,
+      updatedAt: this.formatDay(province.publishedAt),
+      source: 'province' satisfies FuelPriceSource,
+      region: province.regionLabel,
     }
   }
 
@@ -58,5 +61,14 @@ export class FuelService {
     }).formatToParts(value)
     const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value || ''
     return `${part('month')}-${part('day')} ${part('hour')}:${part('minute')}`
+  }
+
+  /** 省级源只有调价日期，没有具体时刻，因此只展示到日，不补造时间 */
+  private formatDay(value: Date) {
+    const parts = new Intl.DateTimeFormat('zh-CN', {
+      timeZone: 'Asia/Shanghai', month: '2-digit', day: '2-digit',
+    }).formatToParts(value)
+    const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value || ''
+    return `${part('month')}-${part('day')}`
   }
 }
