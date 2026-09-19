@@ -10,7 +10,7 @@ import {
   RouteStatus,
   UserStatus,
 } from '../src/generated/prisma/client'
-import { cityRecords, fuelPriceRecords, fuelStationRecords, routeRecords } from '../src/data/seed'
+import { cityRecords, fuelStationRecords, routeRecords } from '../src/data/seed'
 
 config({ path: ['.env', '.env.development'], quiet: true })
 
@@ -50,13 +50,6 @@ async function main() {
   for (const item of routeRecords) {
     const data = { ...item, cityCode: '420100', ...operational[item.id as keyof typeof operational] }
     await prisma.discovery.upsert({ where: { id: item.id }, update: data, create: data })
-  }
-
-  // 与 seed.ts 中 fuelPriceRecords 的调价日保持一致
-  const publishedAt = new Date('2026-09-12T00:00:00+08:00')
-  for (const item of fuelPriceRecords) {
-    const data = { ...item, id: `420100-${item.grade}`, cityCode: '420100', publishedAt }
-    await prisma.fuelPrice.upsert({ where: { id: data.id }, update: data, create: data })
   }
 
   for (const item of fuelStationRecords) {
