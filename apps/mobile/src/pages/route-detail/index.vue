@@ -13,9 +13,6 @@
           <view><text>出发地</text><text>{{ detail.startPoint || '--' }}</text></view><view><text>终点</text><text>{{ detail.endPoint || '--' }}</text></view><view><text>最佳时段</text><text>{{ detail.bestTime }}</text></view><view><text>车型建议</text><text>{{ detail.carType || '--' }}</text></view>
         </view>
         <text class="section-title">路线介绍</text><text class="description">{{ detail.description }}</text>
-        <view class="tags"><text v-for="tag in detail.tags" :key="tag">#{{ tag }}</text></view>
-        <text class="section-title">海拔变化</text>
-        <view class="elevation"><view v-for="(point,index) in detail.elevationPoints" :key="index" :style="[{ height: `${Math.max(20, point / 2)}rpx` }]" /></view>
       </view>
       <DetailActionBar :favorite="isFavorite" @favorite="toggleFavorite" @share="share" @start="start" />
     </view>
@@ -109,8 +106,7 @@ async function start() {
 <style scoped lang="scss">
 .detail-page { padding-bottom: 130rpx; }.header-over-hero { position: absolute; z-index: 10; top: 0; right: 24rpx; left: 24rpx; color: #fff; }.header-over-hero :deep(.page-header) { color: #fff; }.header-over-hero :deep(.back) { color: #fff; background: rgba(0,0,0,.22); border-color: rgba(255,255,255,.38); }
 .detail-body { padding: 30rpx 32rpx; }.summary-card { display: flex; padding: 30rpx 12rpx; border-radius: 30rpx; background: var(--chumen-soft); }.summary-card > view { flex: 1; text-align: center; }.summary-card > view + view { border-left: 2rpx solid var(--chumen-line); }.summary-card text { display: block; }.summary-card text:first-child { font-size: 29rpx; font-weight: 900; }.summary-card text:last-child { margin-top: 8rpx; color: var(--chumen-muted); font-size: 20rpx; }
-.info-list > view { display: flex; padding: 12rpx 0; font-size: 25rpx; }.info-list > view text:first-child { width: 150rpx; flex-shrink: 0; color: var(--chumen-muted); }.info-list > view text:last-child { flex: 1; color: var(--chumen-ink); }.description { display: block; color: var(--chumen-muted); font-size: 26rpx; line-height: 1.8; }.tags { display: flex; flex-wrap: wrap; margin: 18rpx -6rpx 0; }.tags text { margin: 6rpx; padding: 8rpx 18rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 21rpx; }
-.elevation { display: flex; align-items: flex-end; height: 180rpx; padding: 20rpx 24rpx; border-radius: 28rpx; background: var(--chumen-soft); }.elevation view { flex: 1; margin: 0 4rpx; border-radius: 12rpx 12rpx 0 0; background: var(--chumen-lime); }
+.info-list > view { display: flex; padding: 12rpx 0; font-size: 25rpx; }.info-list > view text:first-child { width: 150rpx; flex-shrink: 0; color: var(--chumen-muted); }.info-list > view text:last-child { flex: 1; color: var(--chumen-ink); }.description { display: block; color: var(--chumen-muted); font-size: 26rpx; line-height: 1.8; }
 .detail-notice { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22rpx; padding: 18rpx 22rpx; border-radius: 22rpx; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 22rpx; }.detail-notice button,.error-state button { min-height: 54rpx; margin-left: 18rpx; padding: 0 24rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 22rpx; line-height: 54rpx; }
 .loading { display: flex; flex-direction: column; align-items: center; padding: 40vh 32rpx 0; color: var(--chumen-muted); text-align: center; }.loading text { margin-top: 18rpx; }.error-state button { margin: 24rpx 0 0; }
 </style>
