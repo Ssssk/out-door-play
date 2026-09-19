@@ -35,7 +35,9 @@ import { outdoorApi } from '@/api/outdoor'
 import { userFacingError } from '@/common/apiErrors'
 import { launchLock } from '@/common/launchLock'
 import { openNavigation } from '@/common/mapNavigation'
+import { withRealDistance } from '@/common/location'
 import { requireAuth } from '@/common/requireAuth'
+import { useUserLocation } from '@/common/userLocation'
 import { driveRoutes } from '@/data/mock'
 import { useAuthStore } from '@/stores/auth'
 import type { RouteDetail } from '@/types/domain'
@@ -45,6 +47,7 @@ const loadState = ref<'loading' | 'ready' | 'fallback' | 'error'>('loading')
 const loadError = ref('路线加载失败，请重试')
 let requestedId = 'bafen-shanlu'
 const authStore = useAuthStore()
+const { ensureLocation } = useUserLocation()
 const isFavorite = ref(false)
 const favoritePending = ref(false)
 
@@ -64,12 +67,13 @@ async function loadFavorite() {
 async function loadDetail() {
   loadState.value = 'loading'
   loadError.value = '路线加载失败，请重试'
+  const point = await ensureLocation()
   try {
-    detail.value = await outdoorApi.route(requestedId)
+    detail.value = withRealDistance(await outdoorApi.route(requestedId), point)
     loadState.value = 'ready'
   } catch (error) {
     const localDetail = driveRoutes.find((item) => item.id === requestedId)
-    detail.value = localDetail
+    detail.value = localDetail ? withRealDistance(localDetail, point) : undefined
     if (localDetail) loadState.value = 'fallback'
     else {
       loadState.value = 'error'

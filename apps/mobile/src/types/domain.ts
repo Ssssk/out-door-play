@@ -18,6 +18,9 @@ export interface RouteCard {
   depthM: number | null
   difficulty: Difficulty
   coverImageUrl: string
+  /** 目的地坐标，用于按设备定位实算「距你」距离 */
+  latitude?: number | null
+  longitude?: number | null
 }
 
 export interface RouteDetail extends RouteCard {

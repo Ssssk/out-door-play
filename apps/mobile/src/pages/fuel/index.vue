@@ -17,7 +17,7 @@
         <view v-for="station in stations" :key="station.id" class="station-card card-surface">
           <view class="station-info">
             <text class="station-name">{{ station.name }}</text>
-            <text class="station-meta">距你 {{ station.distanceKm }}km · {{ station.openingHours }}</text>
+            <text class="station-meta">距你 {{ formatDistanceKm(station.distanceKm) }}km · {{ station.openingHours }}</text>
             <text class="station-prices">92# <b>{{ station.price92.toFixed(2) }}</b> · 95# {{ station.price95.toFixed(2) }} 元/升</text>
           </view>
           <button class="navigate-button" @click="navigateToStation(station)">导航</button>
@@ -30,6 +30,7 @@
 <script setup lang="ts">
 import AppShell from '@/components/AppShell.vue'
 import BrandHeader from '@/components/BrandHeader.vue'
+import { formatDistanceKm } from '@/common/location'
 import { openNavigation } from '@/common/mapNavigation'
 import type { FuelStation } from '@/types/domain'
 import { useFuel } from './useFuel'

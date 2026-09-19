@@ -1,7 +1,9 @@
-import { ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import { onLoad, onPullDownRefresh, onUnload } from '@dcloudio/uni-app'
 import { outdoorApi } from '@/api/outdoor'
 import { launchLock } from '@/common/launchLock'
+import { resolveDistanceKm } from '@/common/location'
+import { useUserLocation } from '@/common/userLocation'
 import { cities as localCities, driveRoutes, fishingSpots } from '@/data/mock'
 import { useAppStore } from '@/stores/app'
 import type { City, RouteCard, Scene } from '@/types/domain'
@@ -10,8 +12,9 @@ export type DiscoveryStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'fallback
 
 export function useDiscovery() {
   const appStore = useAppStore()
+  const { ensureLocation } = useUserLocation()
   const scene = ref<Scene>('drive')
-  const routes = shallowRef<RouteCard[]>([])
+  const rawRoutes = shallowRef<RouteCard[]>([])
   const availableCities = shallowRef<City[]>([])
   const loading = ref(false)
   const citiesLoading = ref(false)
@@ -21,6 +24,18 @@ export function useDiscovery() {
   let active = true
   let pendingKey: string | undefined
   let pendingRequest: Promise<void> | undefined
+
+  // 拿到设备定位后按真实经纬度重算「距你」距离；无定位时沿用数据自带距离。
+  const routes = computed(() =>
+    rawRoutes.value.map((item) => {
+      const distance = resolveDistanceKm(item, appStore.location)
+      return distance === null ? item : { ...item, distanceKm: distance }
+    }),
+  )
+
+  async function loadLocation() {
+    await ensureLocation()
+  }
 
   async function loadCities() {
     citiesLoading.value = true
@@ -65,16 +80,16 @@ export function useDiscovery() {
   async function executeRouteLoad(requestedCity: string, requestedScene: Scene, showFallbackToast: boolean) {
     loading.value = true
     const sequence = ++requestSequence
-    if (routes.value.length === 0) status.value = 'loading'
+    if (rawRoutes.value.length === 0) status.value = 'loading'
     try {
       const items = await outdoorApi.routes(requestedCity, requestedScene)
       if (!active || sequence !== requestSequence) return
-      routes.value = items
+      rawRoutes.value = items
       status.value = items.length === 0 ? 'empty' : 'ready'
     } catch {
       if (!active || sequence !== requestSequence) return
-      routes.value = requestedScene === 'drive' ? driveRoutes : fishingSpots
-      status.value = routes.value.length === 0 ? 'error' : 'fallback'
+      rawRoutes.value = requestedScene === 'drive' ? driveRoutes : fishingSpots
+      status.value = rawRoutes.value.length === 0 ? 'error' : 'fallback'
       if (showFallbackToast) uni.showToast({ title: '暂时用本地推荐', icon: 'none' })
     } finally {
       if (active && sequence === requestSequence) {
@@ -92,6 +107,8 @@ export function useDiscovery() {
 
   onLoad(async () => {
     await launchLock.waitReady()
+    // 定位与列表并行获取，定位到达后 distances 会自动重算，不阻塞列表渲染。
+    void loadLocation()
     await loadCities()
     await loadRoutes(true)
   })

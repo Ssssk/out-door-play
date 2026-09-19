@@ -26,7 +26,10 @@
     "appid": "wxc6c3e9cde3af7cf9",
     "setting": { "urlCheck": false },
     "usingComponents": true,
-    "requiredPrivateInfos": ["getLocation", "chooseLocation"]
+    "requiredPrivateInfos": ["getLocation", "chooseLocation"],
+    "permission": {
+      "scope.userLocation": { "desc": "你的位置信息将用于计算附近路线与加油站点的真实距离" }
+    }
   },
   "mp-alipay": { "usingComponents": true, "component2": true },
   "mp-baidu": { "usingComponents": true },

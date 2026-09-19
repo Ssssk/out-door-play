@@ -29,7 +29,9 @@ import { outdoorApi } from '@/api/outdoor'
 import { userFacingError } from '@/common/apiErrors'
 import { launchLock } from '@/common/launchLock'
 import { openNavigation } from '@/common/mapNavigation'
+import { withRealDistance } from '@/common/location'
 import { requireAuth } from '@/common/requireAuth'
+import { useUserLocation } from '@/common/userLocation'
 import { fishingSpots } from '@/data/mock'
 import { useAuthStore } from '@/stores/auth'
 import type { FishingSpot } from '@/types/domain'
@@ -39,6 +41,7 @@ const loadState = ref<'loading' | 'ready' | 'fallback' | 'error'>('loading')
 const loadError = ref('钓点加载失败，请重试')
 let requestedId = 'liangzihu'
 const authStore = useAuthStore()
+const { ensureLocation } = useUserLocation()
 const isFavorite = ref(false)
 const favoritePending = ref(false)
 
@@ -58,12 +61,13 @@ async function loadFavorite() {
 async function loadSpot() {
   loadState.value = 'loading'
   loadError.value = '钓点加载失败，请重试'
+  const point = await ensureLocation()
   try {
-    spot.value = await outdoorApi.spot(requestedId)
+    spot.value = withRealDistance(await outdoorApi.spot(requestedId), point)
     loadState.value = 'ready'
   } catch (error) {
     const localSpot = fishingSpots.find((item) => item.id === requestedId)
-    spot.value = localSpot
+    spot.value = localSpot ? withRealDistance(localSpot, point) : undefined
     if (localSpot) loadState.value = 'fallback'
     else {
       loadState.value = 'error'

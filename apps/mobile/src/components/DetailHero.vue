@@ -2,7 +2,7 @@
   <view class="detail-hero">
     <image :src="item.coverImageUrl" mode="aspectFill" />
     <view class="shade" />
-    <view class="hero-top"><view class="rank"><image src="/static/icons/bolt.svg" mode="aspectFit" /><text>{{ item.rankTag }} Top {{ item.rank }}</text></view><view class="distance"><image src="/static/icons/pin-light.svg" mode="aspectFit" /><text>距你 {{ item.distanceKm.toFixed(1) }}km</text></view></view>
+    <view class="hero-top"><view class="rank"><image src="/static/icons/bolt.svg" mode="aspectFit" /><text>{{ item.rankTag }} Top {{ item.rank }}</text></view><view class="distance"><image src="/static/icons/pin-light.svg" mode="aspectFit" /><text>距你 {{ formatDistanceKm(item.distanceKm) }}km</text></view></view>
     <view class="hero-content">
       <text class="title">{{ item.title }}</text>
       <view class="hero-metrics">
@@ -15,6 +15,7 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatDistanceKm } from '@/common/location'
 import type { RouteCard } from '@/types/domain'
 const props = defineProps<{ item: RouteCard }>()
 const verticalMetric = computed(() => {
