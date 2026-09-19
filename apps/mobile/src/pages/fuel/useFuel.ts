@@ -14,7 +14,7 @@ export function useFuel() {
   const rawStations = shallowRef<FuelStation[]>(fuelStations)
   // 展示服务端最后一次发布油价的时间；未获取到时不展示虚假时间
   const updatedAt = ref('')
-  // 城市油价 / 省级官方参考价 / 暂无；省级来源时界面需标注省份口径
+  // 省级官方参考价 / 暂无；省级来源时界面需标注省份口径
   const priceSource = ref<FuelPriceSource>('empty')
   // 省级参考价对应的省份名，仅 source 为 province 时有值
   const priceRegion = ref('')

@@ -56,8 +56,8 @@ export interface FuelPrice {
   change: number
 }
 
-/** 油价数据来源：库内城市油价 / 省级官方参考价 / 暂无 */
-export type FuelPriceSource = 'city' | 'province' | 'empty'
+/** 油价数据来源：省级官方参考价 / 暂无（成品油按省定价，无城市级数据源） */
+export type FuelPriceSource = 'province' | 'empty'
 
 export interface FuelStation {
   id: string
