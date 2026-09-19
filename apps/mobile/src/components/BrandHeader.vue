@@ -4,7 +4,7 @@
       <text class="brand-title">{{ title }}</text>
       <image class="brand-underline" src="/static/icons/brand-underline.svg" mode="scaleToFill" />
     </view>
-    <WeatherBanner :city-name="appStore.city.name" :weather="weather" />
+    <WeatherBanner :city-name="appStore.city.name" :weather="weatherStore.weather" />
     <button class="city-chip" :aria-label="`选择城市，当前已选${appStore.city.name}`" @click="showPicker = true">
       <image src="/static/icons/location.svg" mode="aspectFit" />
       <text>{{ appStore.city.name }}</text>
@@ -27,22 +27,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import WeatherBanner from '@/components/WeatherBanner.vue'
 import { cities as localCities } from '@/data/mock'
 import { useAppStore } from '@/stores/app'
-import type { City, Weather } from '@/types/domain'
+import { useWeatherStore } from '@/stores/weather'
+import type { City } from '@/types/domain'
 
-withDefaults(defineProps<{ title?: string; cities?: City[]; citiesLoading?: boolean; citiesFallback?: boolean; weather?: Weather | null }>(), {
+withDefaults(defineProps<{ title?: string; cities?: City[]; citiesLoading?: boolean; citiesFallback?: boolean }>(), {
   title: '粗门溜溜',
   cities: () => localCities,
   citiesLoading: false,
   citiesFallback: false,
-  weather: null,
 })
 const emit = defineEmits<{ change: [city: City]; 'retry-cities': [] }>()
 const appStore = useAppStore()
+// 天气取自共享 store，任何使用品牌栏的页面都会展示同一份数据
+const weatherStore = useWeatherStore()
 const showPicker = ref(false)
+
+// 由此触发首次拉取：store 对同一城市去重，因此多个页面都挂品牌栏也不会重复请求
+onMounted(() => { void weatherStore.load() })
 
 function selectCity(city: City) {
   const changed = city.code !== appStore.city.code

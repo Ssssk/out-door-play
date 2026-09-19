@@ -5,7 +5,6 @@
         :cities="availableCities"
         :cities-loading="citiesLoading"
         :cities-fallback="citiesFallback"
-        :weather="weather"
         @change="loadRoutes()"
         @retry-cities="loadCities"
       />
@@ -48,7 +47,6 @@ import SceneTabs from '@/components/SceneTabs.vue'
 import { navigate } from '@/common/router'
 import type { RouteCard } from '@/types/domain'
 import { useDiscovery } from './useDiscovery'
-import { useWeather } from './useWeather'
 
 const {
   scene,
@@ -62,8 +60,6 @@ const {
   loadRoutes,
   changeScene,
 } = useDiscovery()
-
-const { weather } = useWeather()
 
 function openDetail(item: RouteCard) {
   const path = item.scene === 'fish' ? '/pages/fishing-detail/index' : '/pages/route-detail/index'
