@@ -9,8 +9,9 @@ export const outdoorApi = {
     request<RouteCard[]>(`/routes?city=${encodeURIComponent(cityCode)}&scene=${encodeURIComponent(scene)}&limit=10`),
   route: (id: string) => request<RouteDetail>(`/routes/${encodeURIComponent(id)}`),
   spot: (id: string) => request<FishingSpot>(`/spots/${encodeURIComponent(id)}`),
+  // region 仅在 source 为 province 时返回，用于界面标注「XX省参考价」
   fuelPrices: (cityCode: string) =>
-    request<{ items: FuelPrice[]; updatedAt: string; source: FuelPriceSource }>(`/fuel/prices?cityCode=${cityCode}`),
+    request<{ items: FuelPrice[]; updatedAt: string; source: FuelPriceSource; region?: string }>(`/fuel/prices?cityCode=${cityCode}`),
   // 传入设备定位坐标时，服务端按真实位置计算距离并按距离排序
   fuelStations: (point?: GeoPoint | null) =>
     request<FuelStation[]>(`/fuel/stations?${point ? `lat=${point.latitude}&lng=${point.longitude}&` : ''}radius=10000`),

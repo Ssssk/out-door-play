@@ -2,14 +2,14 @@
   <AppShell>
     <view class="page-content fuel-page">
       <BrandHeader title="今日油价" @change="loadFuel" />
-      <text class="updated-at">数据更新于 {{ updatedAt || '—' }}{{ priceSource === 'official' ? ' · 全国平均参考价' : '' }}</text>
+      <text class="updated-at">数据更新于 {{ updatedAt || '—' }}{{ priceSource === 'province' && priceRegion ? ` · ${priceRegion}参考价` : '' }}</text>
 
       <view v-if="prices.length === 0" class="price-empty" role="status">这个城市暂时没有油价数据</view>
       <view v-else class="price-grid">
         <view v-for="price in prices" :key="price.grade" class="price-card">
           <text class="grade">{{ price.grade }}</text>
           <view><text class="price">{{ price.price.toFixed(2) }}</text><text class="unit">元/升</text></view>
-          <text class="change" :class="price.change > 0 ? 'up' : price.change < 0 ? 'down' : 'flat'">{{ price.change > 0 ? '↑' : price.change < 0 ? '↓' : '—' }} {{ price.change === 0 ? '持平' : `${Math.abs(price.change).toFixed(2)} 较昨日` }}</text>
+          <text class="change" :class="price.change > 0 ? 'up' : price.change < 0 ? 'down' : 'flat'">{{ price.change > 0 ? '↑' : price.change < 0 ? '↓' : '—' }} {{ price.change === 0 ? '持平' : `${Math.abs(price.change).toFixed(2)} 较上期` }}</text>
         </view>
       </view>
 
@@ -36,7 +36,7 @@ import { openNavigation } from '@/common/mapNavigation'
 import type { FuelStation } from '@/types/domain'
 import { useFuel } from './useFuel'
 
-const { prices, stations, updatedAt, priceSource, loadFuel } = useFuel()
+const { prices, stations, updatedAt, priceSource, priceRegion, loadFuel } = useFuel()
 async function navigateToStation(station: FuelStation) {
   try { await openNavigation({ latitude: station.latitude, longitude: station.longitude, name: station.name, address: station.address }) }
   catch { uni.showToast({ title: '当前环境无法唤起地图', icon: 'none' }) }

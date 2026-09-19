@@ -14,8 +14,10 @@ export function useFuel() {
   const rawStations = shallowRef<FuelStation[]>(fuelStations)
   // 展示服务端最后一次发布油价的时间；未获取到时不展示虚假时间
   const updatedAt = ref('')
-  // 城市油价 / 官方全国平均价 / 暂无；官方来源时界面需标注口径
+  // 城市油价 / 省级官方参考价 / 暂无；省级来源时界面需标注省份口径
   const priceSource = ref<FuelPriceSource>('empty')
+  // 省级参考价对应的省份名，仅 source 为 province 时有值
+  const priceRegion = ref('')
   const loading = ref(false)
 
   // 有设备定位时用真实坐标重算距离，并按距离由近到远排序。
@@ -38,6 +40,7 @@ export function useFuel() {
       prices.value = results[0].value.items
       updatedAt.value = results[0].value.updatedAt
       priceSource.value = results[0].value.source
+      priceRegion.value = results[0].value.region ?? ''
     }
     if (results[1].status === 'fulfilled') rawStations.value = results[1].value
     loading.value = false
@@ -47,5 +50,5 @@ export function useFuel() {
   // onShow 在每次进入或切回加油页时都会触发，保证展示的是服务端最新发布的价格
   onShow(loadFuel)
   onPullDownRefresh(loadFuel)
-  return { prices, stations, updatedAt, priceSource, loading, loadFuel }
+  return { prices, stations, updatedAt, priceSource, priceRegion, loading, loadFuel }
 }

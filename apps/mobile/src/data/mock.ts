@@ -74,16 +74,18 @@ export const fishingSpots: FishingSpot[] = [
   },
 ]
 
+/** 首屏请求返回前的占位数据，对齐默认城市（武汉）所属湖北省的官方参考价，避免先显示一组错价再跳变 */
 export const fuelPrices: FuelPrice[] = [
-  { grade: '92# 汽油', price: 7.85, change: 0.12 }, { grade: '95# 汽油', price: 8.42, change: -0.08 },
-  { grade: '98# 汽油', price: 9.61, change: 0 }, { grade: '0# 柴油', price: 7.58, change: 0.05 },
+  { grade: '92# 汽油', price: 8.31, change: 0.21 }, { grade: '95# 汽油', price: 8.89, change: 0.22 },
+  { grade: '98# 汽油', price: 10.29, change: 0.3 }, { grade: '0# 柴油', price: 7.96, change: 0.21 },
 ]
 
+/** 站点挂牌价与后端种子保持一致：中石化/中石油按省级指导价上限，外资站小幅优惠 */
 export const fuelStations: FuelStation[] = [
-  { id: 'station-1', name: '中石化光谷大道加油站', brand: '中石化', distanceKm: 1.2, openingHours: '24h 营业', price92: 7.82, price95: 8.39, latitude: 30.47, longitude: 114.41, address: '光谷大道 88 号' },
-  { id: 'station-2', name: '中石油珞喻路加油气站', brand: '中石油', distanceKm: 2.6, openingHours: '24h 营业', price92: 7.85, price95: 8.42, latitude: 30.51, longitude: 114.39, address: '珞喻路 610 号' },
-  { id: 'station-3', name: '壳牌武汉关山大道站', brand: 'Shell', distanceKm: 3.4, openingHours: '06:00-23:00', price92: 7.79, price95: 8.35, latitude: 30.48, longitude: 114.42, address: '关山大道 120 号' },
-  { id: 'station-4', name: '道达尔高新二路站', brand: '道达尔', distanceKm: 4.8, openingHours: '24h 营业', price92: 7.81, price95: 8.38, latitude: 30.45, longitude: 114.44, address: '高新二路 39 号' },
+  { id: 'station-1', name: '中石化光谷大道加油站', brand: '中石化', distanceKm: 1.2, openingHours: '24h 营业', price92: 8.31, price95: 8.89, latitude: 30.47, longitude: 114.41, address: '光谷大道 88 号' },
+  { id: 'station-2', name: '中石油珞喻路加油气站', brand: '中石油', distanceKm: 2.6, openingHours: '24h 营业', price92: 8.31, price95: 8.89, latitude: 30.51, longitude: 114.39, address: '珞喻路 610 号' },
+  { id: 'station-3', name: '壳牌武汉关山大道站', brand: 'Shell', distanceKm: 3.4, openingHours: '06:00-23:00', price92: 8.28, price95: 8.86, latitude: 30.48, longitude: 114.42, address: '关山大道 120 号' },
+  { id: 'station-4', name: '道达尔高新二路站', brand: '道达尔', distanceKm: 4.8, openingHours: '24h 营业', price92: 8.29, price95: 8.87, latitude: 30.45, longitude: 114.44, address: '高新二路 39 号' },
 ]
 
 export const mockUser: UserProfile = { avatarUrl: '/static/icons/avatar-mine.png', nickname: '溜车老登', stats: { mileage: 1280, favorites: 6, checkins: 23 } }
