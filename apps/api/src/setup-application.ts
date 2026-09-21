@@ -1,7 +1,6 @@
 import { UnprocessableEntityException, ValidationPipe } from '@nestjs/common'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import type { INestApplication } from '@nestjs/common'
-import express from 'express'
 import { AllExceptionsFilter } from './common/all-exceptions.filter'
 import { ResponseInterceptor } from './common/response.interceptor'
 
@@ -15,7 +14,13 @@ export function configureApplication(app: INestApplication): void {
       callback(null, !origin || origins.includes(origin) || (allowDevelopmentOrigin && localOrigin.test(origin))),
   })
   app.setGlobalPrefix('v1')
-  app.use('/v1/uploads', express.static(process.env.UPLOAD_DIR || 'uploads', { maxAge: '30d', index: false }))
+  const httpAdapter = app.getHttpAdapter()
+  if (!httpAdapter.useStaticAssets) throw new Error('当前 HTTP 适配器不支持静态文件服务')
+  httpAdapter.useStaticAssets(process.env.UPLOAD_DIR || 'uploads', {
+    prefix: '/v1/uploads',
+    maxAge: '30d',
+    index: false,
+  })
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
