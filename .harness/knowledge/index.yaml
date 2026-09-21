@@ -53,6 +53,16 @@ entries:
     tags: [runtime-dependency, express, healthcheck, compose, outage]
     owner: 用户（项目负责人）
     last_verified: 2026-09-22
+  - id: KB-INC-002
+    title: GitHub Environment Secret 未被工作流消费导致微信登录不可用
+    type: incident
+    status: draft
+    path: incidents/KB-INC-002-GitHub-Environment-Secret未注入导致微信登录不可用.md
+    scope: [authentication, ci, deployment, production-availability]
+    stack: [github-actions, docker-compose, nestjs, wechat]
+    tags: [environment-secret, secret-injection, wechat-login, code2session, auth-provider-unavailable]
+    owner: 用户（项目负责人）
+    last_verified: null
   - id: KB-INBOX-001
     title: role-developer 3.0 经验 Skill 吸收与分类清单
     type: decision

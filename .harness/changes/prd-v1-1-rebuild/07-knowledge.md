@@ -105,3 +105,11 @@
 - 采用方式：保留头像本地静态目录需求，改用 Nest HTTP 适配器注册；镜像切换前执行编译产物运行时加载检查，生产只切换 API 镜像并保留回滚制品。
 - 验证状态：verified；修复提交 `3eda51a`，API 91 项测试及类型、契约、构建通过，生产 API healthy、restart 0，公网核心只读接口通过。
 - 新增知识：`KB-INC-001`；详细证据：`evidence/2026-09-22-express-runtime-outage.md`。
+
+## 2026-09-22 微信登录 Secret 注入故障
+
+- 查询词与范围：`WECHAT_APP_ID/WECHAT_APP_SECRET/DEPLOY_ENV_FILE/GitHub Environment/Secret 注入/AUTH_PROVIDER_UNAVAILABLE/code2Session`；范围为知识索引、认证 Change、部署 Wiki、生产工作流、Compose、Provider 实现和目标环境只读配置存在性。
+- 检索结论：没有相同的 verified 记录；`KB-INBOX-011` 的高影响自动化控制可作为权限与停止条件参考，`KB-INC-001` 仅说明同日另一类运行时故障，不能替代本次根因证据。
+- 当前事实：GitHub Environment 中存在独立 Secret 不代表 Job 自动消费；工作流必须显式引用并写入远端环境文件。原流程漏掉两个微信 Secret，服务器与容器中的值为空，触发 503 fail-closed。
+- 采用方式：提交 `e8255ff2f992ce092b0894138f4548d06f1097aa` 增加显式映射、非空检查、旧值替换和部署后认证错误码冒烟；不读取或记录 Secret 明文。
+- 新增知识：`KB-INC-002`（draft）。本地验证已通过，生产部署与微信目标端验证仍 pending；详细证据见 `evidence/2026-09-22-wechat-secret-injection.md`。
