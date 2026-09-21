@@ -43,6 +43,16 @@ entries:
     tags: [ORM, 渐进迁移, 用例驱动, 模块化单体]
     owner: 用户（项目负责人）
     last_verified: 2026-08-30
+  - id: KB-INC-001
+    title: API 直接引用未声明运行时依赖导致生产不可用
+    type: incident
+    status: verified
+    path: incidents/KB-INC-001-API运行时依赖缺失导致生产不可用.md
+    scope: [backend, deployment, production-availability]
+    stack: [nestjs, pnpm, docker, nginx]
+    tags: [runtime-dependency, express, healthcheck, compose, outage]
+    owner: 用户（项目负责人）
+    last_verified: 2026-09-22
   - id: KB-INBOX-001
     title: role-developer 3.0 经验 Skill 吸收与分类清单
     type: decision

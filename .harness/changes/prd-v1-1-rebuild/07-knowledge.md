@@ -97,3 +97,11 @@
 
 ## 2026-09-20 实时附近 POI 检索
 检索词：加油/fuel/腾讯/POI/定位，范围 knowledge、wiki、changes。未发现适用于实时加油站检索的 verified 知识；当前旧同步设计不适用用户新指令。核对腾讯官方地点搜索文档：nearby 纬度在前、半径 10–1000m、可自动扩展、每页20条、总计最多200条、越界返回末页。采用这些边界作为回归用例。
+
+## 2026-09-22 API 运行时依赖生产事故
+
+- 查询词与范围：`NestJS/Express/pnpm/运行时依赖/Docker/healthcheck/Compose/生产不可用`；范围为知识索引、部署 Wiki、生产容器状态、故障日志、最近提交和 CI/部署脚本。
+- 结论：提交 `b063fc2` 直接导入未声明的 `express`，pnpm 严格隔离下生产运行时报 `Cannot find module 'express'`；API 重启阻塞依赖其健康状态的 Web 容器，形成整站 TLS/网络失败。
+- 采用方式：保留头像本地静态目录需求，改用 Nest HTTP 适配器注册；镜像切换前执行编译产物运行时加载检查，生产只切换 API 镜像并保留回滚制品。
+- 验证状态：verified；修复提交 `3eda51a`，API 91 项测试及类型、契约、构建通过，生产 API healthy、restart 0，公网核心只读接口通过。
+- 新增知识：`KB-INC-001`；详细证据：`evidence/2026-09-22-express-runtime-outage.md`。
