@@ -34,7 +34,9 @@
 ## 生产执行与发布边界
 
 - 当前仓库中的 Implementation、Verification、Security、UAT、Operations 和 Release Gate 仍为 pending；`CHG-MOBILE-IDENTITY-001` 的发布计划也明确标记“未授权执行”。
-- 因此本证据目前只证明修复代码和本地门禁通过；生产 workflow dispatch、容器重建、配置存在性复核和公网认证冒烟均为 `not-run`，不得描述为已上线。
+- GitHub Component CI release run `35631585145`（#27）在提交 `fc2ddb815b654f3de2fb656faa84155fd19d1cc1` 上成功，耗时 5m32s：变更检测、后端 CI、管理端 CI、小程序构建与体验版上传均成功；体验二维码 Artifact digest 为 `sha256:cbd556434355b190f1a63db0bfd2df011f5072877c76c571807c42bf9698050c`。
+- GitHub Harness Contract run `35631584803`（#54）失败于供应链安全门禁：`GHSA-c27g-q93r-2cwf`、`GHSA-fx2h-pf6j-xcff` 的已批准例外已于 2026-09-15 到期，另有 `GHSA-wc9g-mqfw-jrwm`、`GHSA-qfvm-cv95-jqjf`、`GHSA-535w-7cp7-47q4`、`GHSA-7q85-xj36-vmfc` 未获批准。该失败未被重跑或弱化。
+- 因此本证据目前只证明修复代码、本地门禁和组件 CI 通过；生产 workflow dispatch、容器重建、配置存在性复核和公网认证冒烟均为 `not-run`，不得描述为已上线。
 - 生产执行需要 Release/Operations/Security Owner 对本次配置修复和回滚范围作明确批准；执行后补记 run URL、SHA、镜像 digest、开始/结束时间、结果和观察窗口。
 
 ## 回滚与停止条件
