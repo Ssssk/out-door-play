@@ -109,6 +109,8 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
           DEPLOY_ENV_FILE: ${{ secrets.DEPLOY_ENV_FILE }}
+          WECHAT_APP_ID: ${{ secrets.WECHAT_APP_ID }}
+          WECHAT_APP_SECRET: ${{ secrets.WECHAT_APP_SECRET }}
           TENCENT_MAP_KEY: ${{ secrets.TENCENT_MAP_KEY || vars.TENCENT_MAP_KEY }}
           TENCENT_MAP_SECRET: ${{ secrets.TENCENT_MAP_SECRET || vars.TENCENT_MAP_SECRET }}
           API_IMAGE: ${{ needs.build-images.outputs.api_image }}
@@ -118,9 +120,11 @@ jobs:
           test -n "$DEPLOY_ENV_FILE"
           deploy_port="${DEPLOY_PORT:-22}"
           deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
+          test -n "$WECHAT_APP_ID"
+          test -n "$WECHAT_APP_SECRET"
           test -n "$TENCENT_MAP_KEY"
-          DEPLOY_ENV_FILE="$(printf '%s\n' "$DEPLOY_ENV_FILE" | sed '/^TENCENT_MAP_KEY=/d; /^TENCENT_MAP_SECRET=/d; /^STATION_SYNC_ENABLED=/d')"
-          DEPLOY_ENV_FILE="$(printf '%s\nTENCENT_MAP_KEY=%s\nTENCENT_MAP_SECRET=%s\nSTATION_SYNC_ENABLED=false\n' "$DEPLOY_ENV_FILE" "$TENCENT_MAP_KEY" "$TENCENT_MAP_SECRET")"
+          DEPLOY_ENV_FILE="$(printf '%s\n' "$DEPLOY_ENV_FILE" | sed '/^WECHAT_APP_ID=/d; /^WECHAT_APP_SECRET=/d; /^TENCENT_MAP_KEY=/d; /^TENCENT_MAP_SECRET=/d; /^STATION_SYNC_ENABLED=/d')"
+          DEPLOY_ENV_FILE="$(printf '%s\nWECHAT_APP_ID=%s\nWECHAT_APP_SECRET=%s\nTENCENT_MAP_KEY=%s\nTENCENT_MAP_SECRET=%s\nSTATION_SYNC_ENABLED=false\n' "$DEPLOY_ENV_FILE" "$WECHAT_APP_ID" "$WECHAT_APP_SECRET" "$TENCENT_MAP_KEY" "$TENCENT_MAP_SECRET")"
           env_payload="$(printf '%s\nAPI_IMAGE=%s\nWEB_IMAGE=%s\n' "$DEPLOY_ENV_FILE" "$API_IMAGE" "$WEB_IMAGE" | base64 -w0)"
           printf '%s' "$env_payload" | ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "base64 -d > '$deploy_dir/.env.production' && chmod 600 '$deploy_dir/.env.production'"
 
@@ -176,3 +180,17 @@ jobs:
           printf '%s' "$health" | python3 -c 'import json,sys; body=json.load(sys.stdin); assert body.get("code") == 0 and body.get("data", {}).get("status") == "ok"'
           poi="$(curl --fail --silent --show-error --max-time 30 'https://www.chumenliuliu.cloud/v1/fuel/stations?lat=30.5928&lng=114.3055&page=1&pageSize=10')"
           printf '%s' "$poi" | python3 -c 'import json,sys; body=json.load(sys.stdin); data=body.get("data") or {}; items=data.get("items") or []; assert body.get("code") == 0 and items and all(str(item.get("id", "")).startswith("tx-") for item in items) and all(float(item.get("distanceKm", -1)) >= 0 for item in items); print(json.dumps({"status":"passed","count":len(items),"total":data.get("total"),"firstId":items[0].get("id")}, ensure_ascii=False))'
+          auth_file="$(mktemp)"
+          auth_status="$(curl --silent --show-error --max-time 20 --output "$auth_file" --write-out '%{http_code}' --header 'content-type: application/json' --data '{"code":"deployment-invalid-code-probe"}' https://www.chumenliuliu.cloud/v1/auth/wechat/login)"
+          AUTH_STATUS="$auth_status" python3 - "$auth_file" <<'PY'
+          import json
+          import os
+          import sys
+
+          with open(sys.argv[1], encoding='utf-8') as response:
+              body = json.load(response)
+          assert os.environ['AUTH_STATUS'] == '401', (os.environ['AUTH_STATUS'], body.get('code'))
+          assert body.get('code') == 'AUTH_CODE_INVALID', body.get('code')
+          print(json.dumps({'status': 'passed', 'code': body.get('code')}, ensure_ascii=False))
+          PY
+          rm -f "$auth_file"
