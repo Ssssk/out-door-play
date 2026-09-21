@@ -7,8 +7,8 @@ import { useAppStore } from '@/stores/app'
 import type { GeoPoint } from '@/common/location'
 import type { FuelPrice, FuelPriceSource, FuelStation } from '@/types/domain'
 
-/** 附近加油站每页条数，需与服务端上限保持一致 */
-export const STATION_PAGE_SIZE = 30
+/** 附近加油站每页条数（产品要求每页 5 条），需与服务端默认保持一致 */
+export const STATION_PAGE_SIZE = 5
 
 export function useFuel() {
   const appStore = useAppStore()

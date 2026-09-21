@@ -6,7 +6,7 @@ vi.mock('@/api/outdoor', () => ({ outdoorApi: { fuelStations: mocks.stations, fu
 vi.mock('@/common/userLocation', () => ({ useUserLocation: () => ({ ensureLocation: mocks.locate, openLocationSettings: vi.fn(), status: { value: 'ready' } }) }))
 vi.mock('@/stores/app', () => ({ useAppStore: () => ({ city: { code: '420100' } }) }))
 const point = { latitude: 30.5, longitude: 114.3 }
-const result = (id: string, page = 1) => ({ items: [{ id }], total: 60, page, pageSize: 30, hasMore: true })
+const result = (id: string, page = 1) => ({ items: [{ id }], total: 60, page, pageSize: 5, hasMore: true })
 beforeEach(() => {
   vi.clearAllMocks()
   vi.stubGlobal('uni', { stopPullDownRefresh: vi.fn() })

@@ -28,19 +28,19 @@ describe('FuelService.stations real-time POI', () => {
   it('forwards the user coordinates and never requires a station repository', async () => {
     const { service, fetchPage } = createService()
     const result = await service.stations(point)
-    expect(fetchPage).toHaveBeenNthCalledWith(1, point, 1, { offset: 0, limit: 20 })
-    expect(fetchPage).toHaveBeenNthCalledWith(2, point, 2, { offset: 0, limit: 10 })
-    expect(result.items).toHaveLength(30)
+    expect(fetchPage).toHaveBeenCalledTimes(1)
+    expect(fetchPage).toHaveBeenNthCalledWith(1, point, 1, { offset: 0, limit: 5 })
+    expect(result.items).toHaveLength(5)
     expect(result.items[0]).toMatchObject({ id: 'tx-0', distanceKm: 0, price92: 0, price95: 0, openingHours: '' })
   })
-  it('preserves non-overlapping 30-item pages over Tencent 20-item pages', async () => {
+  it('preserves non-overlapping 5-item pages over Tencent 20-item pages', async () => {
     const { service } = createService()
     const a = await service.stations(point)
     const b = await service.stations(point, 2)
     const c = await service.stations(point, 3)
-    expect([a.items.length, b.items.length, c.items.length]).toEqual([30, 30, 5])
-    expect(new Set([...a.items, ...b.items, ...c.items].map(s => s.id)).size).toBe(65)
-    expect([a.hasMore, b.hasMore, c.hasMore]).toEqual([true, true, false])
+    expect([a.items.length, b.items.length, c.items.length]).toEqual([5, 5, 5])
+    expect(new Set([...a.items, ...b.items, ...c.items].map(s => s.id)).size).toBe(15)
+    expect([a.hasMore, b.hasMore, c.hasMore]).toEqual([true, true, true])
   })
   it('returns a retryable error when Tencent fails instead of an empty success', async () => {
     const { service, fetchPage } = createService()
@@ -49,8 +49,9 @@ describe('FuelService.stations real-time POI', () => {
   })
   it('rejects a partial page if a second upstream call fails', async () => {
     const { service, fetchPage } = createService()
+    // 显式要 30 条/页：一个客户端页需要两次上游请求，第二次失败必须整体报错而不是返回半页
     fetchPage.mockResolvedValueOnce({ items: rows.slice(0,20), count:65 }).mockResolvedValueOnce(null as never)
-    await expect(service.stations(point)).rejects.toThrow('附近加油站查询暂不可用')
+    await expect(service.stations(point, 1, 30)).rejects.toThrow('附近加油站查询暂不可用')
   })
   it('handles valid empty results and does not fetch another page', async () => {
     const { service, fetchPage } = createService()
@@ -61,12 +62,13 @@ describe('FuelService.stations real-time POI', () => {
   it('does not return Tencent repeated last-page results beyond the count', async () => {
     const { service, fetchPage } = createService()
     fetchPage.mockResolvedValueOnce({ items: rows.slice(-20), count: 65 })
-    expect(await service.stations(point, 4)).toMatchObject({ items: [], total: 65, hasMore: false })
+    // 第 14 页 start=65 ≥ total，必须在中断处截止而不是重复末页
+    expect(await service.stations(point, 14)).toMatchObject({ items: [], total: 65, hasMore: false })
     expect(fetchPage).toHaveBeenCalledTimes(1)
   })
   it('never requests beyond the 200-result upstream cap', async () => {
     const { service, fetchPage } = createService()
-    expect(await service.stations(point, 8)).toMatchObject({ items: [], hasMore: false })
+    expect(await service.stations(point, 41)).toMatchObject({ items: [], hasMore: false })
     expect(fetchPage).not.toHaveBeenCalled()
   })
   it('caps oversized page requests at 30', async () => {
