@@ -81,10 +81,7 @@ async function loadDetail() {
 }
 async function toggleFavorite() {
   if (!detail.value || favoritePending.value) return
-  if (!authStore.isAuthenticated) {
-    await requireAuth(`/pages/route-detail/index?routeId=${encodeURIComponent(detail.value.id)}`)
-    return
-  }
+  if (!authStore.isAuthenticated && !await requireAuth()) return
   favoritePending.value = true
   try {
     if (isFavorite.value) await outdoorApi.removeFavorite(detail.value.id)

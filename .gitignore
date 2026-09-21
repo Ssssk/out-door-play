@@ -22,3 +22,6 @@ apps/api/src/generated/
 tmp/
 temp/
 *.tmp
+
+# 用户上传文件（头像等）
+apps/api/uploads/

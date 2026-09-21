@@ -1,6 +1,16 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException, PayloadTooLargeException, UnauthorizedException } from '@nestjs/common'
+import { randomUUID } from 'node:crypto'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { PrismaService } from '../../database/prisma.service'
-import type { UpdateUserDto } from './user.dto'
+import type { UpdateUserDto, UploadedImage } from './user.dto'
+
+const AVATAR_MIME_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+}
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024
 
 @Injectable()
 export class UserService {
@@ -23,6 +33,29 @@ export class UserService {
 
   async update(userId: string, input: UpdateUserDto) {
     const updated = await this.prisma.user.updateMany({ where: { id: userId, status: 'normal' }, data: input })
+    if (updated.count !== 1) {
+      throw new UnauthorizedException({ code: 'AUTH_SESSION_INVALID', message: '登录状态无效或已过期' })
+    }
+    return this.me(userId)
+  }
+
+  async saveAvatar(userId: string, file: UploadedImage | undefined) {
+    if (!file || !Buffer.isBuffer(file.buffer) || file.buffer.length === 0) {
+      throw new BadRequestException({ code: 'AVATAR_FILE_REQUIRED', message: '请选择头像图片' })
+    }
+    const extension = AVATAR_MIME_EXTENSIONS[file.mimetype]
+    if (!extension) {
+      throw new BadRequestException({ code: 'AVATAR_TYPE_UNSUPPORTED', message: '头像仅支持 JPG / PNG / WebP 格式' })
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      throw new PayloadTooLargeException({ code: 'AVATAR_FILE_TOO_LARGE', message: '头像图片不能超过 5MB' })
+    }
+    const avatarDir = join(process.env.UPLOAD_DIR || join(process.cwd(), 'uploads'), 'avatars')
+    await mkdir(avatarDir, { recursive: true })
+    const filename = `${randomUUID()}.${extension}`
+    await writeFile(join(avatarDir, filename), file.buffer)
+    const avatarUrl = `/v1/uploads/avatars/${filename}`
+    const updated = await this.prisma.user.updateMany({ where: { id: userId, status: 'normal' }, data: { avatarUrl } })
     if (updated.count !== 1) {
       throw new UnauthorizedException({ code: 'AUTH_SESSION_INVALID', message: '登录状态无效或已过期' })
     }

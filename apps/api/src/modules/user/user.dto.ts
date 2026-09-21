@@ -10,8 +10,15 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  @Matches(/^(https:\/\/|\/static\/)/u)
+  @Matches(/^(https:\/\/|\/static\/|\/v1\/uploads\/)/u)
   avatarUrl?: string
+}
+
+export interface UploadedImage {
+  buffer: Buffer
+  mimetype: string
+  size: number
+  originalname: string
 }
 
 export class FavoriteQueryDto {

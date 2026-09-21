@@ -32,6 +32,10 @@ services:
       IDENTITY_SUBJECT_HMAC_KEY: ${IDENTITY_SUBJECT_HMAC_KEY:?IDENTITY_SUBJECT_HMAC_KEY is required}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://www.chumenliuliu.cloud}
       ADMIN_ALLOWED_ORIGINS: ${ADMIN_ALLOWED_ORIGINS:-https://www.chumenliuliu.cloud}
+      # 微信小程序登录（jscode2session）：与上面同理，必须在此显式透传，
+      # 值来自 GitHub Secret DEPLOY_ENV_FILE。留空时登录接口返回 503 AUTH_PROVIDER_UNAVAILABLE。
+      WECHAT_APP_ID: ${WECHAT_APP_ID:-}
+      WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-}
       # 附近加油站：腾讯地点搜索（定时同步用）。
       # ⚠️ 必须在此显式透传：本服务用 environment 逐项列举（没有 env_file），
       # 只把变量写进 .env.production 是进不了容器的。留空即关闭同步。

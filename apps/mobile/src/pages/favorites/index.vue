@@ -39,7 +39,7 @@ onShow(() => { void load() })
 watch(scene, () => { void load() })
 
 async function load() {
-  if (!await requireAuth('/pages/favorites/index')) return
+  if (!await requireAuth()) return
   loading.value = true
   loadError.value = ''
   try { items.value = await outdoorApi.favorites(scene.value) }

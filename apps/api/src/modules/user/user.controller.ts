@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
+import { FileInterceptor } from '@nestjs/platform-express'
 import { MobileAuthGuard } from '../identity/api/mobile-auth.guard'
 import type { MobileAuthenticatedRequest } from '../identity/domain/identity.types'
-import { AddFavoriteDto, FavoriteParamDto, FavoriteQueryDto, UpdateUserDto } from './user.dto'
+import { AddFavoriteDto, FavoriteParamDto, FavoriteQueryDto, UpdateUserDto, UploadedImage } from './user.dto'
 import { UserService } from './user.service'
 
 @ApiTags('user')
@@ -23,6 +24,14 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ operationId: 'updateCurrentUserProfileLegacy', deprecated: true })
   updateLegacy(@Req() request: MobileAuthenticatedRequest, @Body() input: UpdateUserDto) { return this.users.update(request.mobileAuth.userId, input) }
+
+  @Post('avatar')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ operationId: 'uploadCurrentUserAvatar' })
+  @UseInterceptors(FileInterceptor('file'))
+  uploadAvatar(@Req() request: MobileAuthenticatedRequest, @UploadedFile() file?: Express.Multer.File) {
+    return this.users.saveAvatar(request.mobileAuth.userId, file as UploadedImage | undefined)
+  }
 
   @Get('favorites')
   @ApiOperation({ operationId: 'listCurrentUserFavorites' })

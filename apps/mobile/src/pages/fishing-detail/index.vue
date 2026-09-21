@@ -77,10 +77,7 @@ async function loadSpot() {
 }
 async function toggleFavorite() {
   if (!spot.value || favoritePending.value) return
-  if (!authStore.isAuthenticated) {
-    await requireAuth(`/pages/fishing-detail/index?spotId=${encodeURIComponent(spot.value.id)}`)
-    return
-  }
+  if (!authStore.isAuthenticated && !await requireAuth()) return
   favoritePending.value = true
   try {
     if (isFavorite.value) await outdoorApi.removeFavorite(spot.value.id)
