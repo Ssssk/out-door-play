@@ -97,6 +97,19 @@ describe('FuelService.prices', () => {
     ])
   })
 
+  it('returns only the grades the operator filled in for a partial manual config', async () => {
+    const { service } = createService(provincePrice, {
+      name: '武汉', oilPrice92: null, oilPrice95: 8.18, oilPrice0: null, oilSource: 'manual',
+      oilUpdatedAt: new Date(Date.UTC(2026, 8, 24)),
+    })
+
+    const result = await service.prices('420100')
+
+    // 部分档位手动录入：只返回已填档位，留空档位不编造价格，也不回退省级价
+    expect(result.source).toBe('city-manual')
+    expect(result.items).toEqual([{ grade: '95#', price: 8.18, change: 0 }])
+  })
+
   it('ignores city config when the source is failed and falls back to the province', async () => {
     const { service, fetchByRegion } = createService(provincePrice, {
       name: '武汉', oilPrice92: 7.62, oilPrice95: null, oilPrice0: null, oilSource: 'failed', oilUpdatedAt: null,

@@ -24,17 +24,22 @@ export class FuelService {
       where: { code: cityCode },
       select: { name: true, oilPrice92: true, oilPrice95: true, oilPrice0: true, oilSource: true, oilUpdatedAt: true },
     })
-    if (city && (city.oilSource === 'manual' || city.oilSource === 'auto') && city.oilPrice92 != null) {
+    if (city && (city.oilSource === 'manual' || city.oilSource === 'auto')) {
+      // 只返回后台已录入的档位（手动填写允许部分档位留空，留空档位不编造价格）
       const items = [
-        { grade: '92#', price: city.oilPrice92, change: 0 },
-        { grade: '95#', price: city.oilPrice95 ?? 0, change: 0 },
-        { grade: '0#', price: city.oilPrice0 ?? 0, change: 0 },
-      ].filter((item) => item.price > 0)
-      return {
-        items,
-        updatedAt: city.oilUpdatedAt ? this.formatDay(city.oilUpdatedAt) : '',
-        source: (city.oilSource === 'manual' ? 'city-manual' : 'city-auto') satisfies FuelPriceSource,
-        region: city.name,
+        { grade: '92#', price: city.oilPrice92 },
+        { grade: '95#', price: city.oilPrice95 },
+        { grade: '0#', price: city.oilPrice0 },
+      ]
+        .filter((item): item is { grade: string; price: number } => item.price != null && item.price > 0)
+        .map((item) => ({ ...item, change: 0 }))
+      if (items.length > 0) {
+        return {
+          items,
+          updatedAt: city.oilUpdatedAt ? this.formatDay(city.oilUpdatedAt) : '',
+          source: (city.oilSource === 'manual' ? 'city-manual' : 'city-auto') satisfies FuelPriceSource,
+          region: city.name,
+        }
       }
     }
     // 返回 region 以便界面标注「XX省参考价」，避免把省级价当成该城市的价

@@ -1,6 +1,7 @@
 import { Logger, UnprocessableEntityException, ValidationPipe } from '@nestjs/common'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import type { INestApplication } from '@nestjs/common'
+import { json as expressJson } from 'express'
 import { AllExceptionsFilter } from './common/all-exceptions.filter'
 import { ResponseInterceptor } from './common/response.interceptor'
 import { allowedAdminOrigins } from './modules/admin-auth/admin-origin'
@@ -18,6 +19,12 @@ export function configureApplication(app: INestApplication): void {
     new Logger('Bootstrap').warn('ADMIN_ALLOWED_ORIGINS 与 CORS_ORIGINS 均为空：后台管理请求将仅接受与 API 同源的 Origin。请在部署环境中显式配置域名白名单（例如 https://www.chumenliuliu.cloud）。')
   }
   app.setGlobalPrefix('v1')
+  // 默认 JSON body 限制 100KB，无法承载二维码 dataURL（≤2MB 图片 ≈ 2.7MB base64）；
+  // 与运营端校验上限（2MB 图片）对齐放宽到 6MB。测试替身/非 Express 适配器无此能力时跳过。
+  try {
+    const httpInstance = app.getHttpAdapter().getInstance() as { use?: (handler: unknown) => void } | undefined
+    httpInstance?.use?.(expressJson({ limit: '6mb' }))
+  } catch { /* 适配器不支持底层实例访问时保持默认限制 */ }
   const httpAdapter = app.getHttpAdapter()
   if (!httpAdapter.useStaticAssets) throw new Error('当前 HTTP 适配器不支持静态文件服务')
   httpAdapter.useStaticAssets(process.env.UPLOAD_DIR || 'uploads', {

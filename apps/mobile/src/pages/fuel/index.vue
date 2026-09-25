@@ -15,8 +15,6 @@
 
       <view class="station-heading">
         <text class="section-title">附近加油站点</text>
-        <text v-if="stationState === 'ready' || stationState === 'empty'">共 {{ total }} 个 · 按距离</text>
-        <text v-else>开启定位后查询</text>
       </view>
 
       <view v-if="loading" class="station-state" role="status">

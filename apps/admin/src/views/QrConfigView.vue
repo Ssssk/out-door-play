@@ -84,11 +84,18 @@ async function save() {
 }
 
 async function reset() {
-  await ElMessageBox.confirm('将清空两张二维码并重置更新时间，继续？', '重置', { type: 'warning' })
-  draft.fanGroup = ''
-  draft.contact = ''
-  dirty.value = true
-  ElMessage.info('已清空，点击「保存配置」生效')
+  await ElMessageBox.confirm('将清空两张二维码并重置更新时间，立即生效，继续？', '重置', { type: 'warning' })
+  saving.value = true
+  try {
+    const saved = await apiPut<QrConfig>('/admin/config/qrcodes', { fanGroup: '', contact: '' })
+    Object.assign(config, saved)
+    draft.fanGroup = ''
+    draft.contact = ''
+    dirty.value = false
+    ElMessage.success('二维码配置已重置并同步至小程序')
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '重置失败')
+  } finally { saving.value = false }
 }
 
 onMounted(load)
