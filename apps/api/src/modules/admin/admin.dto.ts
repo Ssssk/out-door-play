@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer'
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator'
+import { IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator'
 
 export class RouteActionDto {
   @IsString() @MinLength(8) @MaxLength(64) actionId!: string
@@ -19,6 +19,25 @@ export class UpdateRankingDto {
 }
 
 export class ToggleCityDto { @IsBoolean() enabled!: boolean }
+
+export class UpdateCityScenesDto {
+  @IsArray() @IsIn(['drive', 'fish', 'fuel'], { each: true }) scenes!: string[]
+}
+
+export class SetCityOilDto {
+  @IsOptional() @Type(() => Number) @Min(0) @Max(20) price92?: number
+  @IsOptional() @Type(() => Number) @Min(0) @Max(20) price95?: number
+  @IsOptional() @Type(() => Number) @Min(0) @Max(20) price0?: number
+  @IsOptional() @IsString() @MaxLength(200) note?: string
+}
+
+export class UpdateQrConfigDto {
+  /** 二维码图片 dataURL（运营端已校验 image/* 且 ≤ 2MB） */
+  @IsOptional() @IsString() @MaxLength(3_000_000) fanGroup?: string
+  @IsOptional() @IsString() @MaxLength(3_000_000) contact?: string
+}
+
+export class UpdateUserNoteDto { @IsOptional() @IsString() @MaxLength(255) adminNote?: string }
 export class UpdateUserStatusDto { @IsIn(['normal', 'banned']) status!: 'normal' | 'banned' }
 export class UpdateFeedStatusDto { @IsIn(['pending', 'published', 'offline']) status!: 'pending' | 'published' | 'offline' }
 

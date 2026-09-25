@@ -46,6 +46,10 @@ export async function apiPatch<T>(url: string, data?: unknown): Promise<T> {
   return unwrap(request.patch<Envelope<T>>(url, data))
 }
 
+export async function apiPut<T>(url: string, data?: unknown): Promise<T> {
+  return unwrap(request.put<Envelope<T>>(url, data))
+}
+
 export async function apiDelete<T>(url: string): Promise<T> {
   return unwrap(request.delete<Envelope<T>>(url))
 }

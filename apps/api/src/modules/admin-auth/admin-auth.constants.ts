@@ -10,13 +10,13 @@ export const ADMIN_PERMISSIONS = [
   'ranking:read', 'ranking:write', 'city:read', 'city:write',
   'fuel:read', 'fuel:write', 'user:read', 'user:ban',
   'feed:read', 'feed:audit', 'analytics:read', 'report:read',
-  'report:write', 'system:write',
+  'report:write', 'system:write', 'config:read', 'config:write',
 ] as const
 
 export type AdminPermissionCode = typeof ADMIN_PERMISSIONS[number]
 
 export const ROLE_PERMISSIONS: Record<string, readonly AdminPermissionCode[]> = {
-  analyst: ['route:read', 'ranking:read', 'city:read', 'fuel:read', 'user:read', 'feed:read', 'analytics:read', 'report:read'],
+  analyst: ['route:read', 'ranking:read', 'city:read', 'fuel:read', 'user:read', 'feed:read', 'analytics:read', 'report:read', 'config:read'],
   content_reviewer: ['route:read', 'route:audit', 'feed:read', 'feed:audit'],
   operator: ADMIN_PERMISSIONS.filter((permission) => permission !== 'system:write'),
   super_admin: ADMIN_PERMISSIONS,

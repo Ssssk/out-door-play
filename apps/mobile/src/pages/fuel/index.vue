@@ -2,7 +2,7 @@
   <AppShell>
     <view class="page-content fuel-page">
       <BrandHeader title="今日油价" @change="loadFuel" />
-      <text class="updated-at">数据更新于 {{ updatedAt || '—' }}{{ priceSource === 'province' && priceRegion ? ` · ${priceRegion}参考价` : '' }}</text>
+      <text class="updated-at">数据更新于 {{ updatedAt || '—' }}{{ priceSource === 'province' && priceRegion ? ` · ${priceRegion}参考价` : priceSource.startsWith('city') && priceRegion ? ` · ${priceRegion}油价` : '' }}</text>
 
       <view v-if="prices.length === 0" class="price-empty" role="status">这个城市暂时没有油价数据</view>
       <view v-else class="price-grid">

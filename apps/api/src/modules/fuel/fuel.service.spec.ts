@@ -11,12 +11,13 @@ const provincePrice: ProvinceFuelPrice = {
   region: '湖北', regionLabel: '湖北省', publishedAt: new Date(Date.UTC(2026, 8, 12)),
   items: [{ grade: '92# 汽油', price: 8.31, change: 0.21 }],
 }
-function createService(provinceResult: ProvinceFuelPrice | null = null) {
+function createService(provinceResult: ProvinceFuelPrice | null = null, cityRecord: Record<string, unknown> | null = null) {
   const fetchByRegion = vi.fn(async (_region: string) => provinceResult)
   const fetchPage = vi.fn(async (_point: typeof point, page: number, window: { offset: number; limit: number }) => ({
     items: rows.slice((page - 1) * 20, page * 20).slice(window.offset, window.offset + window.limit), count: rows.length,
   }))
-  return { service: new FuelService({ fetchPage } as never, { fetchByRegion } as never), fetchPage, fetchByRegion }
+  const prisma = { city: { findUnique: vi.fn(async () => cityRecord) } }
+  return { service: new FuelService({ fetchPage } as never, { fetchByRegion } as never, prisma as never), fetchPage, fetchByRegion, prisma }
 }
 
 describe('FuelService.stations real-time POI', () => {
@@ -77,6 +78,36 @@ describe('FuelService.stations real-time POI', () => {
 })
 
 describe('FuelService.prices', () => {
+  it('prefers the city-level price maintained by the admin console', async () => {
+    const { service, fetchByRegion } = createService(provincePrice, {
+      name: '武汉', oilPrice92: 7.62, oilPrice95: 8.18, oilPrice0: 7.3, oilSource: 'manual',
+      oilUpdatedAt: new Date(Date.UTC(2026, 8, 24)),
+    })
+
+    const result = await service.prices('420100')
+
+    // 后台手动配置优先于省级参考价，且不查询省级源
+    expect(fetchByRegion).not.toHaveBeenCalled()
+    expect(result.source).toBe('city-manual')
+    expect(result.region).toBe('武汉')
+    expect(result.items).toEqual([
+      { grade: '92#', price: 7.62, change: 0 },
+      { grade: '95#', price: 8.18, change: 0 },
+      { grade: '0#', price: 7.3, change: 0 },
+    ])
+  })
+
+  it('ignores city config when the source is failed and falls back to the province', async () => {
+    const { service, fetchByRegion } = createService(provincePrice, {
+      name: '武汉', oilPrice92: 7.62, oilPrice95: null, oilPrice0: null, oilSource: 'failed', oilUpdatedAt: null,
+    })
+
+    const result = await service.prices('420100')
+
+    expect(fetchByRegion).toHaveBeenCalledWith('湖北')
+    expect(result.source).toBe('province')
+  })
+
   it('returns the province reference price and reports the region', async () => {
     const { service, fetchByRegion } = createService(provincePrice)
 

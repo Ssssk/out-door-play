@@ -37,7 +37,7 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
   listCities() {
     return this.prisma.city.findMany({
       where: { enabled: true },
-      select: { code: true, name: true },
+      select: { code: true, name: true, scenes: true },
       orderBy: { code: 'asc' },
     })
   }

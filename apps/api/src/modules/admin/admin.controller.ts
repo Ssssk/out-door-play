@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import { AdminService } from './admin.service'
 import { CurrentAdmin, CurrentRequestId, RequireAdminPermissions } from '../admin-auth/admin-auth.decorators'
@@ -6,11 +6,15 @@ import type { AdminActor } from '../admin-auth/admin-auth.types'
 import {
   CreateReportDto,
   RouteActionDto,
+  SetCityOilDto,
   ToggleCityDto,
+  UpdateCityScenesDto,
   UpdateFeedStatusDto,
   UpdateFuelStationDto,
+  UpdateQrConfigDto,
   UpdateRankingDto,
   UpdateRouteDto,
+  UpdateUserNoteDto,
   UpdateUserStatusDto,
 } from './admin.dto'
 
@@ -27,8 +31,16 @@ export class AdminController {
   @RequireAdminPermissions('ranking:write') @Patch('rankings/:id') updateRanking(@Param('id') id: string, @Body() input: UpdateRankingDto) { return this.admin.updateRanking(id, input) }
   @RequireAdminPermissions('city:read') @Get('cities') cities() { return this.admin.cities() }
   @RequireAdminPermissions('city:write') @Patch('cities/:code') toggleCity(@Param('code') code: string, @Body() input: ToggleCityDto) { return this.admin.toggleCity(code, input.enabled) }
+  @RequireAdminPermissions('city:write') @Patch('cities/:code/scenes') updateCityScenes(@Param('code') code: string, @Body() input: UpdateCityScenesDto) { return this.admin.updateCityScenes(code, input.scenes) }
+  @RequireAdminPermissions('city:write') @Patch('cities/:code/oil') setCityOil(@Param('code') code: string, @Body() input: SetCityOilDto) { return this.admin.setCityOil(code, input) }
+  @RequireAdminPermissions('city:write') @Post('cities/:code/oil/refresh') refreshCityOil(@Param('code') code: string) { return this.admin.refreshCityOil(code) }
+  @RequireAdminPermissions('city:write') @Post('cities/refresh-oil') refreshAllCityOil() { return this.admin.refreshAllCityOil() }
   @RequireAdminPermissions('user:read') @Get('users') users() { return this.admin.users() }
+  @RequireAdminPermissions('user:read') @Get('users/:id') userDetail(@Param('id') id: string) { return this.admin.userDetail(id) }
   @RequireAdminPermissions('user:ban') @Patch('users/:id/status') updateUserStatus(@Param('id') id: string, @Body() input: UpdateUserStatusDto) { return this.admin.updateUserStatus(id, input) }
+  @RequireAdminPermissions('user:ban') @Patch('users/:id/note') updateUserNote(@Param('id') id: string, @Body() input: UpdateUserNoteDto) { return this.admin.updateUserNote(id, input) }
+  @RequireAdminPermissions('config:read') @Get('config/qrcodes') qrcodes() { return this.admin.qrcodes() }
+  @RequireAdminPermissions('config:write') @Put('config/qrcodes') updateQrcodes(@Body() input: UpdateQrConfigDto) { return this.admin.updateQrcodes(input) }
   @RequireAdminPermissions('feed:read') @Get('feeds') feeds() { return this.admin.feeds() }
   @RequireAdminPermissions('feed:audit') @Patch('feeds/:id/status') updateFeedStatus(@Param('id') id: string, @Body() input: UpdateFeedStatusDto) { return this.admin.updateFeedStatus(id, input) }
   @RequireAdminPermissions('analytics:read') @Get('analytics') analytics() { return this.admin.analytics() }

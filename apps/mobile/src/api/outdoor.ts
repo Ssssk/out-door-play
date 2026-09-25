@@ -16,6 +16,8 @@ export const outdoorApi = {
   fuelStations: (point?: GeoPoint | null, page = 1) =>
     request<FuelStationPage>(`/fuel/stations?${point ? `lat=${point.latitude}&lng=${point.longitude}&` : ''}page=${page}`, { timeout: 20000 }),
   me: () => request<UserProfile>('/user/me', { auth: 'required' }),
+  // 运营后台「上传二维码」配置；未配置时返回空串，页面回退默认入口
+  qrcodes: () => request<{ fanGroup: string; contact: string; fanGroupAt: string | null; contactAt: string | null }>('/config/qrcodes'),
   saveMe: (data: { nickname: string; avatarUrl?: string; phone?: string }) => request<UserProfile>('/user/me', { method: 'PATCH', data, auth: 'required' }),
   uploadAvatar: (filePath: string) => uploadFile<UserProfile>('/user/avatar', filePath),
   favorites: (scene: 'drive' | 'fish') => request<FavoriteItem[]>(`/user/favorites?scene=${scene}`, { auth: 'required' }),

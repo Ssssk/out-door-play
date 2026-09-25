@@ -5,24 +5,36 @@ import { PrismaService } from '../../database/prisma.service'
 import type {
   CreateReportDto,
   RouteActionDto,
+  SetCityOilDto,
   UpdateFeedStatusDto,
   UpdateFuelStationDto,
+  UpdateQrConfigDto,
   UpdateRankingDto,
   UpdateRouteDto,
+  UpdateUserNoteDto,
   UpdateUserStatusDto,
 } from './admin.dto'
+
+const QR_CONFIG_KEY = 'qrcodes'
+
+/** 油价来源口径（与 web-cities.md 对齐）：manual 手动录入 / auto 自动获取 / failed 获取失败 */
+export type CityOilSource = 'manual' | 'auto' | 'failed'
 
 @Injectable()
 export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
 
   async stats() {
-    const [onShelfCount, pendingAuditCount, routeAggregate, userCount, bannedUsers, stationCount, feedPending] = await Promise.all([
+    const dayAgo = new Date(Date.now() - 24 * 3600 * 1000)
+    const monthAgo = new Date(Date.now() - 30 * 24 * 3600 * 1000)
+    const [onShelfCount, pendingAuditCount, routeAggregate, userCount, bannedUsers, dau, mau, stationCount, feedPending] = await Promise.all([
       this.prisma.discovery.count({ where: { status: 'online' } }),
       this.prisma.discovery.count({ where: { status: 'pending' } }),
       this.prisma.discovery.aggregate({ _sum: { impressions: true, clicks: true } }),
       this.prisma.user.count(),
       this.prisma.user.count({ where: { status: 'banned' } }),
+      this.prisma.user.count({ where: { lastActiveAt: { gte: dayAgo } } }),
+      this.prisma.user.count({ where: { lastActiveAt: { gte: monthAgo } } }),
       this.prisma.fuelStation.count({ where: { enabled: true } }),
       this.prisma.feed.count({ where: { status: 'pending' } }),
     ])
@@ -30,7 +42,7 @@ export class AdminService {
     const clicks = routeAggregate._sum.clicks || 0
     return {
       routes: { onShelfCount, monthImpressions: impressions, ctr: impressions ? clicks / impressions : 0, pendingAuditCount },
-      users: { total: userCount, banned: bannedUsers },
+      users: { total: userCount, banned: bannedUsers, dau, mau },
       fuel: { stations: stationCount },
       content: { pending: feedPending },
     }
@@ -123,6 +135,12 @@ export class AdminService {
       scenes: Array.isArray(city.scenes) ? city.scenes : [],
       routeCount: city._count.discoveries,
       stationCount: city._count.fuelStations,
+      oilPrice92: city.oilPrice92,
+      oilPrice95: city.oilPrice95,
+      oilPrice0: city.oilPrice0,
+      oilSource: city.oilSource,
+      oilUpdatedAt: city.oilUpdatedAt,
+      oilError: city.oilError,
     }))
   }
 
@@ -130,6 +148,115 @@ export class AdminService {
     const found = await this.prisma.city.findUnique({ where: { code } })
     if (!found) throw new NotFoundException('城市不存在')
     return this.prisma.city.update({ where: { code }, data: { enabled } })
+  }
+
+  /** 场景开关：关闭后 C 端该城市对应场景数据不再返回 */
+  async updateCityScenes(code: string, scenes: string[]) {
+    const found = await this.prisma.city.findUnique({ where: { code } })
+    if (!found) throw new NotFoundException('城市不存在')
+    const allowed = ['drive', 'fish', 'fuel'] as const
+    const filtered = allowed.filter((scene) => scenes.includes(scene))
+    return this.prisma.city.update({ where: { code }, data: { scenes: filtered } })
+  }
+
+  /** 手动录入油价：运营优先，不会被自动获取覆盖（web-cities.md §3.1） */
+  async setCityOil(code: string, input: SetCityOilDto) {
+    const found = await this.prisma.city.findUnique({ where: { code } })
+    if (!found) throw new NotFoundException('城市不存在')
+    const price92 = input.price92 ?? found.oilPrice92
+    const price95 = input.price95 ?? found.oilPrice95
+    const price0 = input.price0 ?? found.oilPrice0
+    if (price92 == null && price95 == null && price0 == null) throw new BadRequestException('至少填写一档油价')
+    return this.prisma.city.update({
+      where: { code },
+      data: {
+        oilPrice92: price92,
+        oilPrice95: price95,
+        oilPrice0: price0,
+        oilSource: 'manual',
+        oilUpdatedAt: new Date(),
+        oilError: null,
+      },
+    })
+  }
+
+  /**
+   * 自动获取油价（第三方接口 mock）：约 70% 成功率，成功在现价基础上 ±0.05 抖动；
+   * 失败保留原价格、标记 failed + 错误信息，运营可「重新获取」或「手动填写」恢复。
+   */
+  async refreshCityOil(code: string) {
+    const found = await this.prisma.city.findUnique({ where: { code } })
+    if (!found) throw new NotFoundException('城市不存在')
+    if (!found.enabled) throw new BadRequestException('城市未启用，无法获取油价')
+    await new Promise((resolve) => setTimeout(resolve, 400))
+
+    const success = Math.random() < 0.7
+    if (!success) {
+      return this.prisma.city.update({
+        where: { code },
+        data: { oilSource: 'failed', oilError: '第三方油价接口超时，请稍后重试或手动填写' },
+      })
+    }
+    const jitter = () => Math.round((Math.random() * 0.1 - 0.05) * 100) / 100
+    const base92 = found.oilPrice92 ?? 7.6
+    const base95 = found.oilPrice95 ?? 8.2
+    const base0 = found.oilPrice0 ?? 7.3
+    return this.prisma.city.update({
+      where: { code },
+      data: {
+        oilPrice92: Math.max(5, Math.round((base92 + jitter()) * 100) / 100),
+        oilPrice95: Math.max(5, Math.round((base95 + jitter()) * 100) / 100),
+        oilPrice0: Math.max(5, Math.round((base0 + jitter()) * 100) / 100),
+        oilSource: 'auto',
+        oilUpdatedAt: new Date(),
+        oilError: null,
+      },
+    })
+  }
+
+  /** 批量刷新所有启用城市的油价 */
+  async refreshAllCityOil() {
+    const cities = await this.prisma.city.findMany({ where: { enabled: true }, select: { code: true } })
+    const results = []
+    for (const city of cities) {
+      try {
+        const updated = await this.refreshCityOil(city.code)
+        results.push({ code: city.code, source: updated.oilSource })
+      } catch {
+        results.push({ code: city.code, source: 'failed' })
+      }
+    }
+    return { total: cities.length, results }
+  }
+
+  /** 小程序「我的」页二维码配置（官方粉丝群 / 个人微信） */
+  async qrcodes() {
+    const record = await this.prisma.systemConfig.findUnique({ where: { key: QR_CONFIG_KEY } })
+    const value = (record?.value || {}) as Record<string, unknown>
+    return {
+      fanGroup: typeof value.fanGroup === 'string' ? value.fanGroup : '',
+      contact: typeof value.contact === 'string' ? value.contact : '',
+      fanGroupAt: typeof value.fanGroupAt === 'string' ? value.fanGroupAt : null,
+      contactAt: typeof value.contactAt === 'string' ? value.contactAt : null,
+      savedAt: record?.updatedAt ?? null,
+    }
+  }
+
+  async updateQrcodes(input: UpdateQrConfigDto) {
+    const current = await this.qrcodes()
+    const now = new Date().toISOString()
+    const value = {
+      fanGroup: input.fanGroup !== undefined ? input.fanGroup : current.fanGroup,
+      contact: input.contact !== undefined ? input.contact : current.contact,
+      fanGroupAt: input.fanGroup !== undefined ? now : current.fanGroupAt,
+      contactAt: input.contact !== undefined ? now : current.contactAt,
+    }
+    await this.prisma.systemConfig.upsert({
+      where: { key: QR_CONFIG_KEY },
+      update: { value: value as object },
+      create: { key: QR_CONFIG_KEY, value: value as object },
+    })
+    return { ...value, savedAt: now }
   }
 
   async users() {
@@ -154,7 +281,57 @@ export class AdminService {
   async updateUserStatus(id: string, input: UpdateUserStatusDto) {
     const found = await this.prisma.user.findUnique({ where: { id } })
     if (!found) throw new NotFoundException('用户不存在')
+    // 封禁联动：该用户已发布内容进入待下架审核队列（web-users.md AC-2）
+    if (input.status === 'banned') {
+      await this.prisma.feed.updateMany({ where: { authorId: id, status: 'published' }, data: { status: 'pending' } })
+    }
     return this.prisma.user.update({ where: { id }, data: { status: input.status } })
+  }
+
+  /** 用户详情：完整手机号（权限由 controller 控）、收藏列表、发布内容、运营备注 */
+  async userDetail(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        city: { select: { name: true } },
+        favorites: { include: { discovery: { select: { id: true, title: true, scene: true } } }, orderBy: { createdAt: 'desc' }, take: 50 },
+        feeds: { orderBy: { createdAt: 'desc' }, take: 50 },
+        identities: { select: { provider: true, createdAt: true } },
+      },
+    })
+    if (!user) throw new NotFoundException('用户不存在')
+    return {
+      id: user.id,
+      nickname: user.nickname,
+      avatarUrl: user.avatarUrl,
+      phone: user.phone || '—',
+      cityName: user.city?.name || '—',
+      status: user.status,
+      adminNote: user.adminNote || '',
+      createdAt: user.createdAt,
+      lastActiveAt: user.lastActiveAt,
+      providers: user.identities.map((identity) => ({ provider: identity.provider, boundAt: identity.createdAt })),
+      favorites: user.favorites.map((favorite) => ({
+        discoveryId: favorite.discovery.id,
+        title: favorite.discovery.title,
+        scene: favorite.discovery.scene,
+        createdAt: favorite.createdAt,
+      })),
+      feeds: user.feeds.map((feed) => ({
+        id: feed.id,
+        type: feed.type,
+        content: feed.content,
+        status: feed.status,
+        reportCount: feed.reportCount,
+        createdAt: feed.createdAt,
+      })),
+    }
+  }
+
+  async updateUserNote(id: string, input: UpdateUserNoteDto) {
+    const found = await this.prisma.user.findUnique({ where: { id } })
+    if (!found) throw new NotFoundException('用户不存在')
+    return this.prisma.user.update({ where: { id }, data: { adminNote: input.adminNote || null } })
   }
 
   async feeds() {

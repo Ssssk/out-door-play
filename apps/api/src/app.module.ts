@@ -9,6 +9,7 @@ import { UserModule } from './modules/user/user.module'
 import { ConfigModule } from '@nestjs/config'
 import { DatabaseModule } from './database/database.module'
 import { AdminModule } from './modules/admin/admin.module'
+import { ConfigModule as SystemConfigModule } from './modules/config/config.module'
 import type { MiddlewareConsumer, NestModule } from '@nestjs/common'
 import { AdminAuthModule } from './modules/admin-auth/admin-auth.module'
 import { IdentityModule } from './modules/identity/identity.module'
@@ -26,6 +27,7 @@ import { IdentityModule } from './modules/identity/identity.module'
     WeatherModule,
     UserModule,
     AdminModule,
+    SystemConfigModule,
   ],
 })
 export class AppModule implements NestModule {

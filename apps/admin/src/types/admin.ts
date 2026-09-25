@@ -9,7 +9,7 @@ export interface RouteItem {
 
 export interface AdminStats {
   routes: { onShelfCount: number; monthImpressions: number; ctr: number; pendingAuditCount: number }
-  users: { total: number; banned: number }
+  users: { total: number; banned: number; dau: number; mau: number }
   fuel: { stations: number }
   content: { pending: number }
 }
@@ -19,9 +19,25 @@ export interface RankingItem {
   status: RouteStatus; city: { name: string } | null
 }
 
+export type CityOilSource = 'manual' | 'auto' | 'failed' | ''
+
 export interface CityItem {
   code: string; name: string; enabled: boolean; scenes: string[]; routeCount: number
   stationCount: number
+  oilPrice92: number | null; oilPrice95: number | null; oilPrice0: number | null
+  oilSource: CityOilSource; oilUpdatedAt: string | null; oilError: string | null
+}
+
+export interface QrConfig {
+  fanGroup: string; contact: string
+  fanGroupAt: string | null; contactAt: string | null; savedAt: string | null
+}
+
+export interface UserDetail extends UserItem {
+  phone: string; adminNote: string
+  providers: Array<{ provider: string; boundAt: string }>
+  favorites: Array<{ discoveryId: string; title: string; scene: Scene; createdAt: string }>
+  feeds: Array<{ id: string; type: 'text' | 'video'; content: string; status: 'pending' | 'published' | 'offline'; reportCount: number; createdAt: string }>
 }
 
 export interface UserItem {

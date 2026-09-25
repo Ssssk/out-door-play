@@ -3,6 +3,7 @@ export type DiscoveryScene = 'drive' | 'fish'
 export interface PublicCityRecord {
   code: string
   name: string
+  scenes?: unknown
 }
 
 export interface PublicDiscoveryRecord {

@@ -78,6 +78,13 @@ model City {
   rankings     Ranking[]
   enabled      Boolean       @default(true)
   scenes       Json?
+  // 城市级油价（管理后台维护）：manual 手动录入优先，auto 自动获取，failed 获取失败保留旧值
+  oilPrice92   Float?        @map("oil_price_92")
+  oilPrice95   Float?        @map("oil_price_95")
+  oilPrice0    Float?        @map("oil_price_0")
+  oilSource    String?       @map("oil_source") @db.VarChar(8)
+  oilUpdatedAt DateTime?     @map("oil_updated_at")
+  oilError     String?       @map("oil_error") @db.VarChar(255)
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
 
@@ -157,6 +164,7 @@ model User {
   lastActiveAt DateTime        @default(now()) @map("last_active_at")
   mileage      Int             @default(0)
   checkins     Int             @default(0)
+  adminNote    String?         @map("admin_note") @db.VarChar(255)
   favorites    Favorite[]
   feeds        Feed[]
   identities   UserIdentity[]
@@ -393,4 +401,13 @@ model DailyMetric {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("daily_metrics")
+}
+
+/// 运营配置键值（如小程序「我的」页二维码：key = qrcodes）
+model SystemConfig {
+  key       String   @id @db.VarChar(64)
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_configs")
 }

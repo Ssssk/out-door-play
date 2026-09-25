@@ -2,23 +2,27 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { Coin, DataAnalysis, Location, MapLocation, Menu, PieChart, Tickets, User } from '@element-plus/icons-vue'
+import { Coin, DataAnalysis, Location, MapLocation, Menu, PieChart, Postcard, Tickets, User } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+// 导航分组与命名严格对齐 PRD（prototypes/web-dashboard.html 侧边栏）：
+// 用户与内容 / 路线运营（路线列表、热门榜单配置、油价配置）/ 系统配置（上传二维码）/ 数据
 const allMenus = [
-  { group: '路线运营', items: [
-    { path: '/routes', label: '路线列表', icon: MapLocation, permission: 'route:read' },
-    { path: '/rankings', label: '热门榜单配置', icon: DataAnalysis, permission: 'ranking:read' },
-    { path: '/cities', label: '城市与位置', icon: Location, permission: 'city:read' },
-    { path: '/fuel', label: '加油站与油价', icon: Coin, permission: 'fuel:read' },
-  ] },
   { group: '用户与内容', items: [
     { path: '/users', label: '用户管理', icon: User, permission: 'user:read' },
     { path: '/feeds', label: '评论与举报', icon: Menu, permission: 'feed:read' },
   ] },
-  { group: '数据中心', items: [
+  { group: '路线运营', items: [
+    { path: '/routes', label: '路线列表', icon: MapLocation, permission: 'route:read' },
+    { path: '/rankings', label: '热门榜单配置', icon: DataAnalysis, permission: 'ranking:read' },
+    { path: '/cities', label: '油价配置', icon: Location, permission: 'city:read' },
+  ] },
+  { group: '系统配置', items: [
+    { path: '/system-config', label: '上传二维码', icon: Postcard, permission: 'config:read' },
+  ] },
+  { group: '数据', items: [
     { path: '/analytics', label: '曝光与点击', icon: PieChart, permission: 'analytics:read' },
     { path: '/reports', label: '导出报表', icon: Tickets, permission: 'report:read' },
   ] },
