@@ -16,7 +16,7 @@ export const outdoorApi = {
   fuelStations: (point?: GeoPoint | null, page = 1) =>
     request<FuelStationPage>(`/fuel/stations?${point ? `lat=${point.latitude}&lng=${point.longitude}&` : ''}page=${page}`, { timeout: 20000 }),
   me: () => request<UserProfile>('/user/me', { auth: 'required' }),
-  saveMe: (data: { nickname: string; avatarUrl?: string }) => request<UserProfile>('/user/me', { method: 'PATCH', data, auth: 'required' }),
+  saveMe: (data: { nickname: string; avatarUrl?: string; phone?: string }) => request<UserProfile>('/user/me', { method: 'PATCH', data, auth: 'required' }),
   uploadAvatar: (filePath: string) => uploadFile<UserProfile>('/user/avatar', filePath),
   favorites: (scene: 'drive' | 'fish') => request<FavoriteItem[]>(`/user/favorites?scene=${scene}`, { auth: 'required' }),
   addFavorite: (discoveryId: string) => request<{ discoveryId: string; favorited: true }>('/user/favorites', { method: 'POST', data: { discoveryId }, auth: 'required' }),

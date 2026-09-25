@@ -16,7 +16,8 @@ button::after, uni-button::after, .uni-button::after { border: 0; }
   margin: 0 auto;
   min-height: 100vh;
   min-height: 100dvh;
-  overflow-x: hidden;
+  // clip 不产生滚动容器，避免破坏子元素 position: sticky 吸顶（hidden 会使 sticky 失效）。
+  overflow-x: clip;
   background: linear-gradient(225deg, rgba(204,255,0,.08) 0, var(--chumen-canvas) 30%);
 }
 

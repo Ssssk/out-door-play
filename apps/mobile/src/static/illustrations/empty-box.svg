@@ -1,0 +1,32 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 紫色问号（轻微倾斜，更俏皮） -->
+  <g transform="rotate(-12 56 60)">
+    <path d="M40 52 q0 -18 16 -18 q16 0 16 16 q0 12 -12 16 q-4 2 -4 6" fill="none" stroke="#7c3aed" stroke-width="9.5" stroke-linecap="round"/>
+    <circle cx="56" cy="84" r="6.4" fill="#7c3aed"/>
+  </g>
+
+  <!-- 紫色小星 -->
+  <path d="M202 92 l2.6 6 6 2.6 -6 2.6 -2.6 6 -2.6 -6 -6 -2.6 6 -2.6 z" fill="#7c3aed"/>
+
+  <!-- 角色（轻微歪头） -->
+  <g transform="rotate(-4 120 162)">
+    <rect x="80" y="96" width="80" height="80" rx="30" fill="#ccff00" stroke="#1a1a1a" stroke-width="5.5"/>
+    <circle cx="104" cy="126" r="8.5" fill="#1a1a1a"/>
+    <path d="M128 128 q9 -12 18 0" fill="none" stroke="#1a1a1a" stroke-width="5" stroke-linecap="round"/>
+    <!-- 脸颊红晕 -->
+    <ellipse cx="97" cy="138" rx="6" ry="4" fill="#ff7d92" opacity="0.75"/>
+    <ellipse cx="143" cy="138" rx="6" ry="4" fill="#ff7d92" opacity="0.75"/>
+    <!-- 吐舌头 -->
+    <ellipse cx="120" cy="143" rx="7.5" ry="8.5" fill="#1a1a1a"/>
+    <ellipse cx="120" cy="150" rx="5.5" ry="6" fill="#ff7d92" stroke="#1a1a1a" stroke-width="2.5"/>
+  </g>
+
+  <!-- 盒子 -->
+  <rect x="64" y="160" width="112" height="50" rx="10" fill="#ffffff" stroke="#1a1a1a" stroke-width="5.5"/>
+  <!-- 小手（搭在盒沿） -->
+  <ellipse cx="75" cy="161" rx="11.5" ry="9.5" fill="#ccff00" stroke="#1a1a1a" stroke-width="4.5"/>
+  <ellipse cx="165" cy="161" rx="11.5" ry="9.5" fill="#ccff00" stroke="#1a1a1a" stroke-width="4.5"/>
+
+  <!-- 紫色闪电 -->
+  <path d="M204 156 L184 182 H196.5 L193.5 208 L218 180 H205 Z" fill="#7c3aed" stroke="#1a1a1a" stroke-width="4.5" stroke-linejoin="round"/>
+</svg>

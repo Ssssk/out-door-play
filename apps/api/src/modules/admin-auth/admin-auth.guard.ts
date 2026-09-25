@@ -41,7 +41,7 @@ export class AdminAuthGuard implements CanActivate {
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method.toUpperCase())) {
       const origin = request.header('origin')
       const csrf = request.header('x-csrf-token')
-      if (!isAdminOriginAllowed(origin) || !this.auth.verifyCsrf(csrf, authContext.csrfHash)) {
+      if (!isAdminOriginAllowed(origin, request.header('host')) || !this.auth.verifyCsrf(csrf, authContext.csrfHash)) {
         throw new ForbiddenException({ message: '请求安全校验失败', code: 'ADMIN_CSRF_INVALID' })
       }
     }

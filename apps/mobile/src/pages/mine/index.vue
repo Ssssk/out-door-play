@@ -6,7 +6,7 @@
           <image :src="resolveAssetUrl(profile.avatarUrl)" mode="aspectFill" />
         </button>
         <image v-else class="avatar" :src="resolveAssetUrl(profile.avatarUrl)" mode="aspectFill" />
-        <view class="identity"><text class="nickname">{{ profile.nickname }}</text><text class="user-label">{{ authStore.isAuthenticated ? '户外探索者 · 武汉' : '登录后同步资料与收藏' }}</text></view>
+        <view class="identity"><text class="nickname">{{ profile.nickname }}</text><text v-if="!authStore.isAuthenticated" class="user-label">登录后同步资料与收藏</text></view>
         <button v-if="authStore.isAuthenticated" class="edit-button" @click="open('/pages/mine-edit/index')">编辑 ›</button>
         <button v-else class="edit-button" :disabled="loggingIn" @click="login">{{ loggingIn ? '登录中…' : '登录' }}</button>
       </view>

@@ -10,10 +10,10 @@
         <button v-for="item in items" :key="item.id" class="favorite-card card-surface" @click="openItem(item)">
           <image :src="item.thumbUrl" mode="aspectFill" />
           <view class="favorite-copy"><text>{{ item.title }}</text><text>{{ item.subtitle }}</text></view>
-          <wd-icon class="heart" name="heart-filled" size="20px" />
+          <wd-icon class="heart" name="heart-filled" size="22px" color="#f2545b" />
         </button>
       </view>
-      <view v-else class="empty-state"><view class="empty-mark">CL</view><text>暂无收藏</text><button @click="goExplore">去逛逛</button></view>
+      <view v-else class="empty-state"><image class="empty-illustration" src="/static/illustrations/empty-box.png" mode="aspectFit" /><text>暂无收藏</text><button @click="goExplore">去逛逛</button></view>
     </view>
   </AppShell>
 </template>
@@ -56,6 +56,6 @@ function goExplore() { void navigate('/pages/index/index') }
 
 <style scoped lang="scss">
 .favorite-list { margin-top: 20rpx; }.favorite-card { display: flex; align-items: center; width: 100%; min-height: 176rpx; margin: 0 0 22rpx; padding: 20rpx; color: var(--chumen-ink); text-align: left; line-height: 1.3; }.favorite-card image { width: 132rpx; height: 132rpx; flex-shrink: 0; border-radius: 24rpx; }.favorite-copy { flex: 1; min-width: 0; padding: 0 22rpx; }.favorite-copy text { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.favorite-copy text:first-child { font-size: 28rpx; font-weight: 800; }.favorite-copy text:last-child { margin-top: 12rpx; color: var(--chumen-muted); font-size: 22rpx; }.heart { color: #f2545b; font-size: 38rpx; }
-.empty-state { display: flex; flex-direction: column; align-items: center; padding-top: 170rpx; color: var(--chumen-muted); }.empty-mark { display: flex; align-items: center; justify-content: center; width: 150rpx; height: 150rpx; border-radius: 42rpx; background: var(--chumen-soft); color: var(--chumen-ink); font-size: 42rpx; font-weight: 900; }.empty-state > text { margin: 28rpx 0; font-size: 28rpx; }.empty-state button { min-width: 180rpx; min-height: 72rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 26rpx; line-height: 72rpx; }
+.empty-state { display: flex; flex-direction: column; align-items: center; padding-top: 70rpx; color: var(--chumen-muted); }.empty-illustration { width: 340rpx; height: 340rpx; }.empty-state > text { margin: 6rpx 0 30rpx; font-size: 28rpx; }.empty-state button { min-width: 180rpx; min-height: 72rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 26rpx; line-height: 72rpx; }
 .state { display: flex; flex-direction: column; align-items: center; padding-top: 150rpx; color: var(--chumen-muted); font-size: 25rpx; }.state text { margin-top: 18rpx; }.error-state button { min-width: 160rpx; min-height: 68rpx; margin-top: 24rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); line-height: 68rpx; }
 </style>

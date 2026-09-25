@@ -1,8 +1,9 @@
-import { UnprocessableEntityException, ValidationPipe } from '@nestjs/common'
+import { Logger, UnprocessableEntityException, ValidationPipe } from '@nestjs/common'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import type { INestApplication } from '@nestjs/common'
 import { AllExceptionsFilter } from './common/all-exceptions.filter'
 import { ResponseInterceptor } from './common/response.interceptor'
+import { allowedAdminOrigins } from './modules/admin-auth/admin-origin'
 
 export function configureApplication(app: INestApplication): void {
   const origins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174').split(',')
@@ -13,6 +14,9 @@ export function configureApplication(app: INestApplication): void {
     origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) =>
       callback(null, !origin || origins.includes(origin) || (allowDevelopmentOrigin && localOrigin.test(origin))),
   })
+  if (process.env.NODE_ENV === 'production' && allowedAdminOrigins().size === 0) {
+    new Logger('Bootstrap').warn('ADMIN_ALLOWED_ORIGINS 与 CORS_ORIGINS 均为空：后台管理请求将仅接受与 API 同源的 Origin。请在部署环境中显式配置域名白名单（例如 https://www.chumenliuliu.cloud）。')
+  }
   app.setGlobalPrefix('v1')
   const httpAdapter = app.getHttpAdapter()
   if (!httpAdapter.useStaticAssets) throw new Error('当前 HTTP 适配器不支持静态文件服务')

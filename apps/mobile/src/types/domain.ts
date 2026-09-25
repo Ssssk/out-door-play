@@ -84,6 +84,7 @@ export interface FuelStation {
 export interface UserProfile {
   avatarUrl: string
   nickname: string
+  phone?: string | null
   stats: { mileage: number; favorites: number; checkins: number }
 }
 

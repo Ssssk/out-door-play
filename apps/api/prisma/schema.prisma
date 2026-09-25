@@ -200,6 +200,16 @@ model MobileSession {
   @@map("mobile_sessions")
 }
 
+/// 新用户默认昵称候选池：注册时随机取一个未使用的名字，避免「户外玩家xxxx」这类占位昵称。
+model NicknamePool {
+  id        String   @id @db.VarChar(64)
+  name      String   @unique @db.VarChar(32)
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("nickname_pool")
+}
+
 model Favorite {
   userId      String    @map("user_id") @db.VarChar(64)
   discoveryId String    @map("discovery_id") @db.VarChar(64)

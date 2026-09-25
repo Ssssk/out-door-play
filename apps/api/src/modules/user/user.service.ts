@@ -27,6 +27,7 @@ export class UserService {
     return {
       avatarUrl: user.avatarUrl,
       nickname: user.nickname,
+      phone: user.phone,
       stats: { mileage: user.mileage, favorites: user._count.favorites, checkins: user.checkins },
     }
   }

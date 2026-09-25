@@ -18,7 +18,7 @@ export class AdminAuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(@Body() input: AdminLoginDto, @Req() request: Request, @Res({ passthrough: true }) response: Response) {
-    if (!isAdminOriginAllowed(request.header('origin'))) {
+    if (!isAdminOriginAllowed(request.header('origin'), request.header('host'))) {
       throw new ForbiddenException({ message: '请求来源不受信任', code: 'ADMIN_CSRF_INVALID' })
     }
     const key = `${request.ip || 'unknown'}:${input.username.trim().toLowerCase()}`

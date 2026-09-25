@@ -14,6 +14,12 @@
         <view class="input-meta"><text class="error">{{ error }}</text><text>{{ nickname.length }}/16</text></view>
       </view>
 
+      <view class="form-card card-surface">
+        <text class="label">手机号</text>
+        <input v-model="phone" class="nickname-input" type="number" maxlength="11" placeholder="填写手机号（选填）" @input="phoneError = ''" />
+        <view class="input-meta"><text class="error">{{ phoneError }}</text><text>{{ phone.length }}/11</text></view>
+      </view>
+
       <button class="save-button" :disabled="saving" :loading="saving" @click="save">保存</button>
     </view>
   </AppShell>
@@ -34,14 +40,17 @@ import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 const nickname = ref(authStore.profile?.nickname || '')
+const phone = ref(authStore.profile?.phone || '')
 const avatarUrl = ref(resolveAssetUrl(authStore.profile?.avatarUrl || '/static/icons/avatar-mine.png'))
 const error = ref('')
+const phoneError = ref('')
 const saving = ref(false)
 const uploadingAvatar = ref(false)
 
 onShow(async () => {
   if (!await requireAuth()) return
   nickname.value = authStore.profile?.nickname || ''
+  phone.value = authStore.profile?.phone || ''
   avatarUrl.value = resolveAssetUrl(authStore.profile?.avatarUrl || '/static/icons/avatar-mine.png')
 })
 
@@ -71,9 +80,15 @@ async function save() {
   const value = nickname.value.trim()
   if (!value) { error.value = '昵称不能为空'; return }
   if (value.length > 16) { error.value = '昵称不能超过 16 个字'; return }
+  const phoneValue = phone.value.trim()
+  if (phoneValue && !/^1[3-9]\d{9}$/.test(phoneValue)) { phoneError.value = '请输入正确的 11 位手机号'; return }
   saving.value = true
   try {
-    const profile = await outdoorApi.saveMe({ nickname: value, avatarUrl: authStore.profile?.avatarUrl })
+    const profile = await outdoorApi.saveMe({
+      nickname: value,
+      avatarUrl: authStore.profile?.avatarUrl,
+      phone: phoneValue || undefined,
+    })
     authStore.setProfile(profile)
     uni.showToast({ title: '保存成功', icon: 'success' })
     setTimeout(() => goBack('/pages/mine/index'), 400)

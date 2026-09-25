@@ -19,7 +19,7 @@ function select(scene: Scene) {
 </script>
 
 <style scoped lang="scss">
-.scene-tabs { display: flex; align-items: center; margin: 28rpx -8rpx 26rpx; }
+.scene-tabs { position: sticky; top: var(--chumen-top-inset, var(--status-bar-height, 0px)); z-index: 30; display: flex; align-items: center; margin: 28rpx -32rpx 26rpx; padding: 14rpx 24rpx; background: var(--chumen-canvas); }
 .scene-tab { min-height: 70rpx; margin: 0 8rpx; padding: 0 30rpx; border-radius: 999rpx; background: transparent; color: var(--chumen-muted); font-size: 28rpx; line-height: 70rpx; white-space: nowrap; }
 .scene-tab.active { background: var(--chumen-ink); color: var(--chumen-lime); font-weight: 800; }
 </style>

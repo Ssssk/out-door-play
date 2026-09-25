@@ -1,11 +1,13 @@
 import { Injectable, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import { PrismaService } from '../../../database/prisma.service'
+import { Prisma } from '../../../generated/prisma/client'
 import { IdentityProvider, UserStatus } from '../../../generated/prisma/client'
 import { issueMobileTokenPair, providerSubjectHash, tokenHash } from '../domain/identity.crypto'
 import type { ExternalIdentity, MobilePrincipal } from '../domain/identity.types'
 import { DevIdentityProvider } from '../infrastructure/dev-identity.provider'
 import { WechatIdentityProvider } from '../infrastructure/wechat-identity.provider'
+import { randomNickname } from '../../../data/nickname-pool'
 
 @Injectable()
 export class IdentityService {
@@ -84,6 +86,7 @@ export class IdentityService {
         ? await transaction.user.findUnique({ where: { id: identity.subject }, select: { id: true } })
         : null
       const newUserId = randomUUID()
+      const nickname = await this.pickDefaultNickname(transaction)
       const mapping = await transaction.userIdentity.upsert({
         where: { provider_providerSubjectHash: { provider, providerSubjectHash: subjectHash } },
         update: {},
@@ -97,7 +100,7 @@ export class IdentityService {
                 create: {
                   id: newUserId,
                   avatarUrl: '/static/icons/avatar-mine.png',
-                  nickname: `户外玩家${newUserId.replaceAll('-', '').slice(0, 6)}`,
+                  nickname,
                   status: UserStatus.normal,
                 },
               },
@@ -121,6 +124,25 @@ export class IdentityService {
     return this.sessionResponse(pair, await this.profile(userId))
   }
 
+  /**
+   * 注册默认昵称：优先从数据库昵称池随机取一个未使用的潮名（玩车相关）；
+   * 若数据库昵称池不可用/为空，则回落到代码内置的 1000 个同款潮名常量，保证一定有、且绝不回落到「户外玩家xxxx」。
+   */
+  private async pickDefaultNickname(transaction: Prisma.TransactionClient): Promise<string> {
+    try {
+      const picked = await transaction.$queryRawUnsafe<Array<{ id: string; name: string }>>(
+        'SELECT id, name FROM nickname_pool WHERE used = 0 ORDER BY rand() LIMIT 1',
+      )
+      if (picked.length > 0) {
+        await transaction.nicknamePool.update({ where: { id: picked[0].id }, data: { used: true } })
+        return picked[0].name
+      }
+    } catch {
+      // 数据库昵称池尚未初始化（未迁移/未 seed）时，使用代码内置常量，不影响注册主流程
+    }
+    return randomNickname()
+  }
+
   private async profile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -130,6 +152,7 @@ export class IdentityService {
     return {
       avatarUrl: user.avatarUrl,
       nickname: user.nickname,
+      phone: user.phone,
       stats: { mileage: user.mileage, favorites: user._count.favorites, checkins: user.checkins },
     }
   }

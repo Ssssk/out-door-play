@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { config } from 'dotenv'
 import { PrismaMariaDb } from '@prisma/adapter-mariadb'
 import {
@@ -26,6 +27,42 @@ const prisma = new PrismaClient({
     connectionLimit: 5,
   }),
 })
+
+/// 生成「潮、玩车相关」的默认昵称候选池（确定性洗牌，保证每次运行取的前 1000 个稳定）。
+function buildNicknamePool(count = 1000): string[] {
+  const prefixes = [
+    '野', '燃', '炸', '飙', '酷', '浪', '狂', '狠', '燥', '痞', '飒', '拽', '闪', '轰', '爆', '硬',
+    '孤', '暗', '夜', '极', '锐', '烈', '傲', '逆', '潮', '烫', '咸',
+    '不羁', '自由', '野生', '追风', '破风', '硬核', '机械', '钢铁', '老炮', '二挡', '地板油', '深夜', '周末',
+  ]
+  const nouns = [
+    '车神', '车手', '老炮', '漂移', '涡轮', '声浪', '排气', '爆改', '宽体', '姿态', '低趴', '改装', '赛车', '拉力',
+    '越野', '过弯', '压弯', '翘头', '甩尾', '推背', '炸街', '氮气', '活塞', '曲轴', '避震', '卡钳', '轮毂', '轮胎',
+    '引擎', '底盘', '四驱', '后驱', '差速', '涉水', '攀爬', '穿越', '轰油', '荒野', '赛道', '弯道', '山路', '戈壁',
+    '沙海', '雪原', '川藏', '独库', '草原', '湖边', '悬崖', '追风', '破风', '狂飙', '自由', '钢铁', '机械', '硬核',
+    '野生', '骑士', '骑手',
+  ]
+  const combos: string[] = []
+  for (const p of prefixes) for (const n of nouns) combos.push(p + n)
+  // 确定性 LCG 洗牌，使前 count 个结果在多轮运行间保持一致
+  let seed = 0x9e3779b9
+  const rand = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff
+  for (let i = combos.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1))
+    const tmp = combos[i]
+    combos[i] = combos[j]
+    combos[j] = tmp
+  }
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const combo of combos) {
+    if (seen.has(combo)) continue
+    seen.add(combo)
+    out.push(combo)
+    if (out.length >= count) break
+  }
+  return out
+}
 
 async function main() {
   const disabledCities = new Set(['330100'])
@@ -77,6 +114,13 @@ async function main() {
     const data = { ...user, avatarUrl: '/static/icons/avatar-mine.png' }
     await prisma.user.upsert({ where: { id: user.id }, update: data, create: data })
   }
+
+  // 默认昵称候选池：幂等写入，已存在的名字会被 skipDuplicates 忽略。
+  const nicknameNames = buildNicknamePool(1000)
+  await prisma.nicknamePool.createMany({
+    data: nicknameNames.map((name) => ({ id: randomUUID(), name })),
+    skipDuplicates: true,
+  })
 
   for (const discoveryId of ['bafen-shanlu', 'qinglongshan', 'liangzihu']) {
     await prisma.favorite.upsert({
