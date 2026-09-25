@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { Coin, DataAnalysis, Location, MapLocation, Menu, PieChart, Tickets, User } from '@element-plus/icons-vue'
+import { DataAnalysis, Location, MapLocation, Menu, PieChart, Tickets, User } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,7 +12,6 @@ const allMenus = [
     { path: '/routes', label: '路线列表', icon: MapLocation, permission: 'route:read' },
     { path: '/rankings', label: '热门榜单配置', icon: DataAnalysis, permission: 'ranking:read' },
     { path: '/cities', label: '城市与位置', icon: Location, permission: 'city:read' },
-    { path: '/fuel', label: '加油站', icon: Coin, permission: 'fuel:read' },
   ] },
   { group: '用户与内容', items: [
     { path: '/users', label: '用户管理', icon: User, permission: 'user:read' },
