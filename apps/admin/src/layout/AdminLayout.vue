@@ -2,13 +2,15 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { Coin, DataAnalysis, Location, MapLocation, Menu, PieChart, Postcard, Tickets, User } from '@element-plus/icons-vue'
+import { DataAnalysis, Location, MapLocation, Menu, PieChart, Postcard, Tickets, User } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 // 导航分组与命名严格对齐 PRD（prototypes/web-dashboard.html 侧边栏）：
 // 用户与内容 / 路线运营（路线列表、热门榜单配置、油价配置）/ 系统配置（上传二维码）/ 数据
+// 注：合并 6931a2d/faf7c56 时保留 PRD 导航——加油站台账已移出侧边栏（油价配置页有入口），
+// 油价配置为 PRD 正式页面（web-cities.md），不再隐藏。
 const allMenus = [
   { group: '用户与内容', items: [
     { path: '/users', label: '用户管理', icon: User, permission: 'user:read' },

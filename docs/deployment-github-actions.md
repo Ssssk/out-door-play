@@ -26,13 +26,18 @@ MYSQL_USER=chumen
 MYSQL_PASSWORD=使用随机生成的字母数字密码
 MYSQL_ROOT_PASSWORD=使用随机生成的字母数字密码
 IDENTITY_SUBJECT_HMAC_KEY=至少32个随机字符
-CORS_ORIGINS=https://www.chumenliuliu.cloud,https://chumenliuliu.cloud
-ADMIN_ALLOWED_ORIGINS=https://www.chumenliuliu.cloud,https://chumenliuliu.cloud
-ADMIN_COOKIE_SECURE=true
 WEB_NGINX_CONFIG=/opt/chumen/nginx/production.conf
 TLS_CERT_DIR=/opt/chumen/certs
 ACME_WEBROOT=/opt/chumen/certbot-webroot
 ```
+
+另外在同一个 `production` Environment 中创建以下独立 Secrets；工作流会把它们写入远程 `.env.production`，并覆盖 `DEPLOY_ENV_FILE` 中同名的旧行：
+
+- `CORS_ORIGINS`：`https://www.chumenliuliu.cloud,https://chumenliuliu.cloud`
+- `ADMIN_ALLOWED_ORIGINS`：`https://www.chumenliuliu.cloud,https://chumenliuliu.cloud`
+- `ADMIN_COOKIE_SECURE`：`true`
+- `WECHAT_APP_ID`、`WECHAT_APP_SECRET`：微信登录配置
+- `TENCENT_MAP_KEY`、`TENCENT_MAP_SECRET`：腾讯地图配置；当前工作流要求 `TENCENT_MAP_KEY` 非空
 
 工作流会自动把当前提交 SHA 对应的 `API_IMAGE` 和 `WEB_IMAGE` 写入该文件。不要把宝塔面板密码或 SSH 私钥放入仓库变量、`.env` 文件或日志。
 
