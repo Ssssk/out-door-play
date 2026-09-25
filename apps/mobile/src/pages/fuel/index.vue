@@ -104,7 +104,12 @@ async function navigateToStation(station: FuelStation) {
 .grade, .change { display: block; color: var(--chumen-muted); font-size: 24rpx; }
 .price { margin-right: 8rpx; color: var(--chumen-ink); font-size: 46rpx; font-weight: 900; }
 .unit { font-size: 22rpx; }.change { margin-top: 6rpx; }.up { color: #e5484d; }.down { color: #2ba24c; }
-.station-heading { display: flex; align-items: center; justify-content: space-between; }.station-heading > text:last-child { color: var(--chumen-muted); font-size: 22rpx; }
+/* 站点标题吸顶：与首页 SceneTabs 同模式——安全区做进盒子 padding（单一背景无接缝），
+   等量负 margin 抵消布局高度；油价卡片抬层级避免被上移的盒子背景盖住。 */
+.station-heading { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; margin: calc(36rpx - var(--chumen-top-inset, var(--status-bar-height, 0px))) -32rpx 22rpx; padding: calc(var(--chumen-top-inset, var(--status-bar-height, 0px)) + 16rpx) 32rpx 16rpx; background: var(--chumen-canvas); }
+.station-heading .section-title { margin: 0; }
+.station-heading > text:last-child { color: var(--chumen-muted); font-size: 22rpx; }
+.price-grid, .price-empty { position: relative; z-index: 31; }
 .station-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 220rpx; padding: 28rpx; border: 2rpx solid var(--chumen-line); border-radius: 28rpx; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 24rpx; line-height: 1.6; text-align: center; }
 .station-state text { margin-top: 16rpx; }
 .station-action button { min-width: 180rpx; min-height: 68rpx; margin-top: 22rpx; padding: 0 28rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 24rpx; line-height: 68rpx; }

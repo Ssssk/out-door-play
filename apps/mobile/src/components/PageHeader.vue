@@ -17,7 +17,7 @@ onMounted(() => uni.pageScrollTo({ scrollTop: 0, duration: 0 }))
 // status-bar 高度会导致标题栏偏低），浮在头图上的详情页由页面自己覆盖 inset。
 // --chumen-header-lift / --chumen-capsule-height 由 AppShell 按小程序胶囊实测计算，
 // 让标题与右侧胶囊垂直平级；H5 无此信息时回退为不上移、行高 88rpx。
-.page-header { margin-top: var(--chumen-header-lift, 0px); color: var(--chumen-ink); }
+.page-header { position: relative; z-index: 31; margin-top: var(--chumen-header-lift, 0px); color: var(--chumen-ink); }
 // 返回键与标题在同一行内垂直居中；标题始终水平居中，故返回键绝对定位、不吃掉标题的居中基准
 .header-row { position: relative; display: flex; align-items: center; justify-content: center; min-height: var(--chumen-capsule-height, 88rpx); }
 .page-title { font-size: 32rpx; font-weight: 800; line-height: 1.2; }

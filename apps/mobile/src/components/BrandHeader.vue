@@ -58,7 +58,8 @@ function selectCity(city: City) {
 </script>
 
 <style scoped lang="scss">
-.brand-header { display: flex; align-items: center; width: 100%; padding-top: 16rpx; }
+/* z-index 高于吸顶的 SceneTabs(30)：tab 盒子为覆盖状态栏会上移与头部底部重叠，头部内容需保持可点可见 */
+.brand-header { position: relative; z-index: 31; display: flex; align-items: center; width: 100%; padding-top: 16rpx; }
 .brand-lockup { position: relative; display: inline-flex; min-width: 0; margin-right: auto; flex-direction: column; }
 .brand-title { position: relative; z-index: 1; font-size: 48rpx; line-height: 1.15; font-weight: 900; letter-spacing: -2rpx; color: var(--chumen-ink); white-space: nowrap; }
 .brand-underline { width: 210rpx; height: 18rpx; margin-top: -2rpx; }
