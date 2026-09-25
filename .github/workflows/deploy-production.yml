@@ -109,6 +109,9 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
           DEPLOY_ENV_FILE: ${{ secrets.DEPLOY_ENV_FILE }}
+          CORS_ORIGINS: ${{ secrets.CORS_ORIGINS }}
+          ADMIN_ALLOWED_ORIGINS: ${{ secrets.ADMIN_ALLOWED_ORIGINS }}
+          ADMIN_COOKIE_SECURE: ${{ secrets.ADMIN_COOKIE_SECURE }}
           WECHAT_APP_ID: ${{ secrets.WECHAT_APP_ID }}
           WECHAT_APP_SECRET: ${{ secrets.WECHAT_APP_SECRET }}
           TENCENT_MAP_KEY: ${{ secrets.TENCENT_MAP_KEY || vars.TENCENT_MAP_KEY }}
@@ -123,8 +126,11 @@ jobs:
           test -n "$WECHAT_APP_ID"
           test -n "$WECHAT_APP_SECRET"
           test -n "$TENCENT_MAP_KEY"
-          DEPLOY_ENV_FILE="$(printf '%s\n' "$DEPLOY_ENV_FILE" | sed '/^WECHAT_APP_ID=/d; /^WECHAT_APP_SECRET=/d; /^TENCENT_MAP_KEY=/d; /^TENCENT_MAP_SECRET=/d; /^STATION_SYNC_ENABLED=/d')"
-          DEPLOY_ENV_FILE="$(printf '%s\nWECHAT_APP_ID=%s\nWECHAT_APP_SECRET=%s\nTENCENT_MAP_KEY=%s\nTENCENT_MAP_SECRET=%s\nSTATION_SYNC_ENABLED=false\n' "$DEPLOY_ENV_FILE" "$WECHAT_APP_ID" "$WECHAT_APP_SECRET" "$TENCENT_MAP_KEY" "$TENCENT_MAP_SECRET")"
+          test -n "$CORS_ORIGINS"
+          test -n "$ADMIN_ALLOWED_ORIGINS"
+          test "$ADMIN_COOKIE_SECURE" = "true"
+          DEPLOY_ENV_FILE="$(printf '%s\n' "$DEPLOY_ENV_FILE" | sed '/^WECHAT_APP_ID=/d; /^WECHAT_APP_SECRET=/d; /^TENCENT_MAP_KEY=/d; /^TENCENT_MAP_SECRET=/d; /^STATION_SYNC_ENABLED=/d; /^CORS_ORIGINS=/d; /^ADMIN_ALLOWED_ORIGINS=/d; /^ADMIN_COOKIE_SECURE=/d')"
+          DEPLOY_ENV_FILE="$(printf '%s\nCORS_ORIGINS=%s\nADMIN_ALLOWED_ORIGINS=%s\nADMIN_COOKIE_SECURE=%s\nWECHAT_APP_ID=%s\nWECHAT_APP_SECRET=%s\nTENCENT_MAP_KEY=%s\nTENCENT_MAP_SECRET=%s\nSTATION_SYNC_ENABLED=false\n' "$DEPLOY_ENV_FILE" "$CORS_ORIGINS" "$ADMIN_ALLOWED_ORIGINS" "$ADMIN_COOKIE_SECURE" "$WECHAT_APP_ID" "$WECHAT_APP_SECRET" "$TENCENT_MAP_KEY" "$TENCENT_MAP_SECRET")"
           env_payload="$(printf '%s\nAPI_IMAGE=%s\nWEB_IMAGE=%s\n' "$DEPLOY_ENV_FILE" "$API_IMAGE" "$WEB_IMAGE" | base64 -w0)"
           printf '%s' "$env_payload" | ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "base64 -d > '$deploy_dir/.env.production' && chmod 600 '$deploy_dir/.env.production'"
 
