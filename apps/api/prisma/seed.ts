@@ -85,7 +85,16 @@ async function main() {
     houguanhu: { status: RouteStatus.offline, impressions: 53800, clicks: 11200, rankWeight: 38 },
   }
   for (const item of routeRecords) {
-    const data = { ...item, cityCode: '420100', ...operational[item.id as keyof typeof operational] }
+    // 城市编码按路线自带；operational 未覆盖的记录默认直接在线（扩城种子路线立即可见）
+    const data = {
+      ...item,
+      cityCode: item.cityCode ?? '420100',
+      status: RouteStatus.online,
+      impressions: 32000,
+      clicks: 7600,
+      rankWeight: 52,
+      ...operational[item.id as keyof typeof operational],
+    }
     await prisma.discovery.upsert({ where: { id: item.id }, update: data, create: data })
   }
 
