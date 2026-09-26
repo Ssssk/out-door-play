@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="96" height="96">
+  <!-- 关于：圆圈 i，柠檬绿点 -->
+  <circle cx="24" cy="24" r="16" fill="#ffffff" stroke="#1a1a1a" stroke-width="3.6"/>
+  <circle cx="24" cy="16.5" r="2.6" fill="#ccff00" stroke="#1a1a1a" stroke-width="2"/>
+  <path d="M24 22.5 V32" stroke="#1a1a1a" stroke-width="3.6" stroke-linecap="round"/>
+</svg>

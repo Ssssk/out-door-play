@@ -41,6 +41,10 @@ export const cityRecords = [
   { code: '420100', name: '武汉' }, { code: '110000', name: '北京' }, { code: '310000', name: '上海' },
   { code: '440100', name: '广州' }, { code: '440300', name: '深圳' }, { code: '510100', name: '成都' },
   { code: '330100', name: '杭州' }, { code: '320100', name: '南京' }, { code: '430100', name: '长沙' }, { code: '500000', name: '重庆' },
+  { code: '120000', name: '天津' }, { code: '610100', name: '西安' }, { code: '410100', name: '郑州' },
+  { code: '340100', name: '合肥' }, { code: '350100', name: '福州' }, { code: '350200', name: '厦门' },
+  { code: '370200', name: '青岛' }, { code: '530100', name: '昆明' }, { code: '360100', name: '南昌' },
+  { code: '450100', name: '南宁' }, { code: '450200', name: '柳州' }, { code: '450300', name: '桂林' },
 ]
 
 /**

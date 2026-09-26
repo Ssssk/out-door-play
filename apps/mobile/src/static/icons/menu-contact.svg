@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="96" height="96">
+  <!-- 联系方式：客服耳机 + 柠檬绿耳罩 -->
+  <path d="M11 30 V24 Q11 10 24 10 Q37 10 37 24 V30"
+        fill="none" stroke="#1a1a1a" stroke-width="3.6" stroke-linecap="round"/>
+  <rect x="8" y="26" width="8" height="12" rx="4" fill="#ccff00" stroke="#1a1a1a" stroke-width="3.2"/>
+  <rect x="32" y="26" width="8" height="12" rx="4" fill="#ccff00" stroke="#1a1a1a" stroke-width="3.2"/>
+  <path d="M37 36 Q37 41 30 41" fill="none" stroke="#1a1a1a" stroke-width="3.2" stroke-linecap="round"/>
+</svg>
