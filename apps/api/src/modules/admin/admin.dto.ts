@@ -62,9 +62,9 @@ export class SetCityOilDto {
 }
 
 export class UpdateQrConfigDto {
-  /** 二维码图片 dataURL（运营端已校验 image/* 且 ≤ 2MB） */
-  @IsOptional() @IsString() @MaxLength(3_000_000) fanGroup?: string
-  @IsOptional() @IsString() @MaxLength(3_000_000) contact?: string
+  /** 二维码图片 dataURL（运营端已校验 image/* 且 ≤ 10MB；base64 后约 ≤ 14MB） */
+  @IsOptional() @IsString() @MaxLength(15_000_000) fanGroup?: string
+  @IsOptional() @IsString() @MaxLength(15_000_000) contact?: string
 }
 
 export class UpdateUserNoteDto { @IsOptional() @IsString() @MaxLength(255) adminNote?: string }
