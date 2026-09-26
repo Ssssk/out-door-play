@@ -146,7 +146,7 @@ jobs:
           deploy_port="${DEPLOY_PORT:-22}"
           deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
           release_dir="$deploy_dir/releases/$GITHUB_SHA"
-          tar -czf - .dockerignore package.json pnpm-lock.yaml pnpm-workspace.yaml apps/api apps/admin apps/mobile/package.json docker website \
+          tar -czf - .dockerignore package.json pnpm-lock.yaml pnpm-workspace.yaml apps/api apps/admin apps/mobile/package.json apps/mobile/src/static docker website \
             | ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$release_dir' && tar -xzf - -C '$release_dir'"
 
       - name: Build images on test server
@@ -176,7 +176,7 @@ jobs:
           set -euo pipefail
           deploy_port="${DEPLOY_PORT:-22}"
           deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
-          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api db:deploy && docker compose --env-file .env.production -f compose.prod.yaml up -d --remove-orphans --wait --wait-timeout 120"
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api db:deploy && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api migrate:route-covers && docker compose --env-file .env.production -f compose.prod.yaml up -d --remove-orphans --wait --wait-timeout 120"
 
       - name: Smoke test live fuel POI
         shell: bash

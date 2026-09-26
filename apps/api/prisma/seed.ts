@@ -12,6 +12,7 @@ import {
   UserStatus,
 } from '../src/generated/prisma/client'
 import { cityRecords, fuelStationRecords, routeRecords } from '../src/data/seed'
+import { migrateRouteCoverAssets } from '../src/data/route-cover-assets'
 
 config({ path: ['.env', '.env.development'], quiet: true })
 
@@ -97,6 +98,7 @@ async function main() {
     }
     await prisma.discovery.upsert({ where: { id: item.id }, update: data, create: data })
   }
+  await migrateRouteCoverAssets(prisma)
 
   // 挂牌价正常由 FuelService 按省级指导价覆盖，库内值只是省级源不可用时的回落，故统一注入
   const stationFallbackPrice = { price92: 8.31, price95: 8.89 }

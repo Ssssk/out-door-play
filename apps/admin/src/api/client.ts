@@ -42,6 +42,12 @@ export async function apiPost<T>(url: string, data?: unknown): Promise<T> {
   return unwrap(request.post<Envelope<T>>(url, data))
 }
 
+export async function apiUpload<T>(url: string, file: File, fieldName = 'file'): Promise<T> {
+  const formData = new FormData()
+  formData.append(fieldName, file)
+  return unwrap(request.post<Envelope<T>>(url, formData))
+}
+
 export async function apiPatch<T>(url: string, data?: unknown): Promise<T> {
   return unwrap(request.patch<Envelope<T>>(url, data))
 }

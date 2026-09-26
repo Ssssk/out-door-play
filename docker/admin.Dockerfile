@@ -14,6 +14,7 @@ COPY apps/mobile/package.json apps/mobile/package.json
 RUN pnpm install --frozen-lockfile
 
 COPY apps/admin apps/admin
+COPY apps/mobile/src/static apps/mobile/src/static
 COPY website website
 RUN pnpm --filter @chumen/admin build
 

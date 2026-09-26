@@ -23,6 +23,7 @@ COPY apps/mobile/package.json apps/mobile/package.json
 RUN pnpm install --frozen-lockfile
 
 COPY apps/api apps/api
+COPY apps/mobile/src/static apps/api/seed-assets/static
 RUN DATABASE_URL=mysql://build:build@127.0.0.1:3306/build \
     SHADOW_DATABASE_URL=mysql://build:build@127.0.0.1:3306/build_shadow \
     pnpm --filter @chumen/api build

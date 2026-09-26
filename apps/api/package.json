@@ -19,6 +19,7 @@
     "prisma:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
+    "migrate:route-covers": "tsx scripts/migrate-route-covers.ts",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "preadmin:bootstrap": "prisma generate",

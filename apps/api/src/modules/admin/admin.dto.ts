@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer'
-import { IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator'
+import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsNumber, IsOptional, IsString, Length, Max, MaxLength, Min, MinLength } from 'class-validator'
 
 export class RouteActionDto {
   @IsString() @MinLength(8) @MaxLength(64) actionId!: string
@@ -8,9 +8,39 @@ export class RouteActionDto {
 }
 
 export class UpdateRouteDto {
+  @IsOptional() @IsString() @Length(6, 6) cityCode?: string
   @IsOptional() @IsString() @MaxLength(128) title?: string
   @IsOptional() @IsString() @MaxLength(32) difficulty?: string
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100) rankWeight?: number
+}
+
+export class CreateRouteDto {
+  @IsString() @MinLength(2) @MaxLength(128) title!: string
+  @IsString() @Length(6, 6) cityCode!: string
+  @IsIn(['drive', 'fish']) scene!: 'drive' | 'fish'
+  @IsString() @MinLength(1) @MaxLength(32) difficulty!: string
+  @IsOptional() @IsString() @MaxLength(64) rankTag?: string
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100) rankWeight?: number
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) rank?: number
+  @IsOptional() @IsString() @MaxLength(255) coverImageUrl?: string
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) distanceKm?: number
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) lengthKm?: number
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) elevationM?: number
+  @IsOptional() @IsString() @MaxLength(32) durationLabel?: string
+  @IsOptional() @IsString() @MaxLength(64) bestTime?: string
+  @IsOptional() @IsString() @MaxLength(64) carType?: string
+  @IsOptional() @IsString() @MaxLength(128) startPoint?: string
+  @IsOptional() @IsString() @MaxLength(128) endPoint?: string
+  @IsOptional() @IsString() @MaxLength(128) entryPoint?: string
+  @IsOptional() @IsString() @MaxLength(128) mainArea?: string
+  @IsOptional() @IsString() @MaxLength(128) gear?: string
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) shoreKm?: number
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) depthM?: number
+  @IsOptional() @IsString() @MaxLength(5000) description?: string
+  @IsOptional() @IsArray() @ArrayMaxSize(20) @IsString({ each: true }) tags?: string[]
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(-90) @Max(90) latitude?: number
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(-180) @Max(180) longitude?: number
+  @IsOptional() @IsArray() @ArrayMaxSize(100) @IsNumber({}, { each: true }) elevationPoints?: number[]
 }
 
 export class UpdateRankingDto {

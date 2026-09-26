@@ -1,8 +1,11 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import type { AdminActor } from '../admin-auth/admin-auth.types'
 import { PrismaService } from '../../database/prisma.service'
 import type {
+  CreateRouteDto,
   CreateReportDto,
   RouteActionDto,
   SetCityOilDto,
@@ -19,6 +22,13 @@ const QR_CONFIG_KEY = 'qrcodes'
 
 /** 油价来源口径（与 web-cities.md 对齐）：manual 手动录入 / auto 自动获取 / failed 获取失败 */
 export type CityOilSource = 'manual' | 'auto' | 'failed'
+
+const ROUTE_COVER_MIME_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+}
+const MAX_ROUTE_COVER_BYTES = 5 * 1024 * 1024
 
 @Injectable()
 export class AdminService {
@@ -64,9 +74,73 @@ export class AdminService {
     }))
   }
 
+  async createRoute(input: CreateRouteDto) {
+    const city = await this.prisma.city.findUnique({ where: { code: input.cityCode } })
+    if (!city) throw new NotFoundException('关联城市不存在，请先在城市与位置中维护该城市')
+
+    const scene = input.scene
+    const defaultCoverImageUrl = scene === 'fish' ? '/static/fishing/card-fishing-1.jpg' : '/static/routes/card-route-1.jpg'
+    return this.prisma.discovery.create({
+      data: {
+        id: `route-${randomUUID()}`,
+        cityCode: input.cityCode,
+        scene,
+        title: input.title.trim(),
+        rank: input.rank ?? 0,
+        rankTag: input.rankTag?.trim() || '',
+        distanceKm: input.distanceKm ?? 0,
+        lengthKm: input.lengthKm ?? input.distanceKm ?? 0,
+        elevationM: input.elevationM ?? 0,
+        difficulty: input.difficulty.trim(),
+        coverImageUrl: input.coverImageUrl?.trim() || defaultCoverImageUrl,
+        durationLabel: input.durationLabel?.trim() || '待补充',
+        bestTime: input.bestTime?.trim() || '待补充',
+        carType: input.carType?.trim() || null,
+        startPoint: input.startPoint?.trim() || null,
+        endPoint: input.endPoint?.trim() || null,
+        entryPoint: input.entryPoint?.trim() || null,
+        mainArea: input.mainArea?.trim() || null,
+        gear: input.gear?.trim() || null,
+        shoreKm: input.shoreKm ?? null,
+        depthM: input.depthM ?? null,
+        description: input.description?.trim() || '暂无描述',
+        tags: input.tags ?? [],
+        latitude: input.latitude ?? 0,
+        longitude: input.longitude ?? 0,
+        elevationPoints: input.elevationPoints ?? undefined,
+        status: 'pending',
+        rankWeight: input.rankWeight ?? 50,
+      },
+    })
+  }
+
   async updateRoute(id: string, input: UpdateRouteDto) {
     await this.requireRoute(id)
+    if (input.cityCode) {
+      const city = await this.prisma.city.findUnique({ where: { code: input.cityCode } })
+      if (!city) throw new NotFoundException('关联城市不存在，请先在城市与位置中维护该城市')
+    }
     return this.prisma.discovery.update({ where: { id }, data: input })
+  }
+
+  async saveRouteCover(id: string, file: Express.Multer.File | undefined) {
+    await this.requireRoute(id)
+    if (!file || !Buffer.isBuffer(file.buffer) || file.buffer.length === 0) {
+      throw new BadRequestException({ code: 'ROUTE_COVER_FILE_REQUIRED', message: '请选择路线封面图片' })
+    }
+    const extension = ROUTE_COVER_MIME_EXTENSIONS[file.mimetype]
+    if (!extension) {
+      throw new BadRequestException({ code: 'ROUTE_COVER_TYPE_UNSUPPORTED', message: '路线封面仅支持 JPG / PNG / WebP 格式' })
+    }
+    if (file.size > MAX_ROUTE_COVER_BYTES) {
+      throw new PayloadTooLargeException({ code: 'ROUTE_COVER_FILE_TOO_LARGE', message: '路线封面图片不能超过 5MB' })
+    }
+    const coverDir = join(process.env.UPLOAD_DIR || join(process.cwd(), 'uploads'), 'routes')
+    await mkdir(coverDir, { recursive: true })
+    const filename = `${randomUUID()}.${extension}`
+    await writeFile(join(coverDir, filename), file.buffer)
+    const coverImageUrl = `/v1/uploads/routes/${filename}`
+    return this.prisma.discovery.update({ where: { id }, data: { coverImageUrl } })
   }
 
   async routeAction(id: string, input: RouteActionDto, actor: AdminActor, requestId: string) {

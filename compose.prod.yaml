@@ -25,6 +25,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3100
+      UPLOAD_DIR: /app/uploads
       DATABASE_URL: mysql://${MYSQL_USER:-chumen}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE:-chumen}
       SHADOW_DATABASE_URL: mysql://${MYSQL_USER:-chumen}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE:-chumen}_shadow
       DATABASE_ALLOW_PUBLIC_KEY_RETRIEVAL: "false"
@@ -44,6 +45,8 @@ services:
       STATION_SYNC_ENABLED: ${STATION_SYNC_ENABLED:-false}
       STATION_SYNC_CITIES: ${STATION_SYNC_CITIES:-}
       STATION_SYNC_CALL_BUDGET: ${STATION_SYNC_CALL_BUDGET:-}
+    volumes:
+      - chumen_uploads_prod:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -73,3 +76,4 @@ services:
 
 volumes:
   chumen_mysql_prod_data:
+  chumen_uploads_prod:

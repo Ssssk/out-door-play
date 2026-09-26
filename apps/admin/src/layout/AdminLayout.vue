@@ -14,7 +14,6 @@ const auth = useAuthStore()
 const allMenus = [
   { group: '用户与内容', items: [
     { path: '/users', label: '用户管理', icon: User, permission: 'user:read' },
-    { path: '/feeds', label: '评论与举报', icon: Menu, permission: 'feed:read' },
   ] },
   { group: '路线运营', items: [
     { path: '/routes', label: '路线列表', icon: MapLocation, permission: 'route:read' },

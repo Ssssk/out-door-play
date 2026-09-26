@@ -1,9 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UploadedFile, UseInterceptors } from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiTags } from '@nestjs/swagger'
 import { AdminService } from './admin.service'
 import { CurrentAdmin, CurrentRequestId, RequireAdminPermissions } from '../admin-auth/admin-auth.decorators'
 import type { AdminActor } from '../admin-auth/admin-auth.types'
 import {
+  CreateRouteDto,
   CreateReportDto,
   RouteActionDto,
   SetCityOilDto,
@@ -25,6 +27,8 @@ export class AdminController {
 
   @RequireAdminPermissions('route:read') @Get('stats') stats() { return this.admin.stats() }
   @RequireAdminPermissions('route:read') @Get('routes') routes() { return this.admin.routes() }
+  @RequireAdminPermissions('route:edit') @Post('routes') createRoute(@Body() input: CreateRouteDto) { return this.admin.createRoute(input) }
+  @RequireAdminPermissions('route:edit') @Post('routes/:id/cover') @UseInterceptors(FileInterceptor('file')) uploadRouteCover(@Param('id') id: string, @UploadedFile() file?: Express.Multer.File) { return this.admin.saveRouteCover(id, file) }
   @RequireAdminPermissions('route:edit') @Patch('routes/:id') updateRoute(@Param('id') id: string, @Body() input: UpdateRouteDto) { return this.admin.updateRoute(id, input) }
   @RequireAdminPermissions('route:read') @Post('routes/:id/actions') routeAction(@Param('id') id: string, @Body() input: RouteActionDto, @CurrentAdmin() actor: AdminActor, @CurrentRequestId() requestId: string) { return this.admin.routeAction(id, input, actor, requestId) }
   @RequireAdminPermissions('ranking:read') @Get('rankings') rankings() { return this.admin.rankings() }
