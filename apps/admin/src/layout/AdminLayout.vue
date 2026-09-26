@@ -2,15 +2,15 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { DataAnalysis, Location, MapLocation, Menu, PieChart, Postcard, Tickets, User } from '@element-plus/icons-vue'
+import { DataAnalysis, MapLocation, Menu, PieChart, Postcard, Tickets, User } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
-// 导航分组与命名严格对齐 PRD（prototypes/web-dashboard.html 侧边栏）：
-// 用户与内容 / 路线运营（路线列表、热门榜单配置、油价配置）/ 系统配置（上传二维码）/ 数据
-// 注：合并 6931a2d/faf7c56 时保留 PRD 导航——加油站台账已移出侧边栏（油价配置页有入口），
-// 油价配置为 PRD 正式页面（web-cities.md），不再隐藏。
+// 导航分组对齐 PRD（prototypes/web-dashboard.html 侧边栏）：
+// 用户与内容 / 路线运营 / 系统配置 / 数据。
+// 「油价配置」与「加油站与油价」按运营决策暂不在侧边栏展示（路由保留可直达）；
+// 城市启用状态只存于数据库，隐藏入口不影响小程序端城市/油价/场景展示。
 const allMenus = [
   { group: '用户与内容', items: [
     { path: '/users', label: '用户管理', icon: User, permission: 'user:read' },
@@ -19,7 +19,6 @@ const allMenus = [
   { group: '路线运营', items: [
     { path: '/routes', label: '路线列表', icon: MapLocation, permission: 'route:read' },
     { path: '/rankings', label: '热门榜单配置', icon: DataAnalysis, permission: 'ranking:read' },
-    { path: '/cities', label: '油价配置', icon: Location, permission: 'city:read' },
   ] },
   { group: '系统配置', items: [
     { path: '/system-config', label: '上传二维码', icon: Postcard, permission: 'config:read' },
