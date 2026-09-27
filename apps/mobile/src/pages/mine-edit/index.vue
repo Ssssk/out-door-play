@@ -31,8 +31,8 @@ import { goBack } from '@/common/router'
 import { outdoorApi } from '@/api/outdoor'
 import { userFacingError } from '@/common/apiErrors'
 import { isWechatMiniProgram } from '@/common/identityProvider'
+import { onShareAppMessage } from '@dcloudio/uni-app'
 import { requireAuth } from '@/common/requireAuth'
-import { useAppShare } from '@/common/appShare'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
@@ -42,7 +42,7 @@ const error = ref('')
 const saving = ref(false)
 const uploadingAvatar = ref(false)
 
-useAppShare('粗门溜溜 · 出门溜溜小程序', '/pages/mine-edit/index')
+onShareAppMessage(() => ({ title: '粗门溜溜 · 出门溜溜小程序', path: '/pages/mine-edit/index' }))
 
 onShow(async () => {
   if (!await requireAuth()) return

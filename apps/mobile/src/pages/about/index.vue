@@ -24,14 +24,14 @@
 <script setup lang="ts">
 import AppShell from '@/components/AppShell.vue'
 import PageHeader from '@/components/PageHeader.vue'
-import { useAppShare } from '@/common/appShare'
+import { onShareAppMessage } from '@dcloudio/uni-app'
 const features = [
   { title: '路线探索', description: '精选城市周边路线，沿途风景和海拔一目了然', icon: '/static/icons/feature-road.svg', tone: 'tone-lime' },
   { title: '钓点地图', description: '全城钓点一图掌握，季节鱼种随时查', icon: '/static/icons/feature-fish.svg', tone: 'tone-amber' },
   { title: '加油服务', description: '实时油价 + 附近加油站，路上不慌', icon: '/static/icons/feature-fuel.svg', tone: 'tone-sky' },
 ]
 
-useAppShare('关于粗门溜溜 · 出门溜溜小程序', '/pages/about/index')
+onShareAppMessage(() => ({ title: '关于粗门溜溜 · 出门溜溜小程序', path: '/pages/about/index' }))
 </script>
 
 <style scoped lang="scss">

@@ -59,8 +59,8 @@
 import AppShell from '@/components/AppShell.vue'
 import BrandHeader from '@/components/BrandHeader.vue'
 import { formatDistanceKm } from '@/common/location'
+import { onShareAppMessage } from '@dcloudio/uni-app'
 import { openNavigation } from '@/common/mapNavigation'
-import { useAppShare } from '@/common/appShare'
 import { cities as localCities } from '@/data/mock'
 import { outdoorApi } from '@/api/outdoor'
 import type { City, FuelStation } from '@/types/domain'
@@ -104,7 +104,7 @@ async function navigateToStation(station: FuelStation) {
   catch { uni.showToast({ title: '当前环境无法唤起地图', icon: 'none' }) }
 }
 
-useAppShare('今日油价 · 附近加油站｜粗门溜溜', '/pages/fuel/index')
+onShareAppMessage(() => ({ title: '今日油价 · 附近加油站｜粗门溜溜', path: '/pages/fuel/index' }))
 </script>
 
 <style scoped lang="scss">
