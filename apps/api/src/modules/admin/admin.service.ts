@@ -37,7 +37,10 @@ export class AdminService {
   async stats() {
     const dayAgo = new Date(Date.now() - 24 * 3600 * 1000)
     const monthAgo = new Date(Date.now() - 30 * 24 * 3600 * 1000)
-    const [onShelfCount, pendingAuditCount, routeAggregate, userCount, bannedUsers, dau, mau, stationCount, feedPending] = await Promise.all([
+    // 今日 00:00 与昨日区间（本地时区），用于用户管理「今日/昨日新增」
+    const startOfToday = new Date(new Date().setHours(0, 0, 0, 0))
+    const startOfYesterday = new Date(startOfToday.getTime() - 24 * 3600 * 1000)
+    const [onShelfCount, pendingAuditCount, routeAggregate, userCount, bannedUsers, dau, mau, todayNew, yesterdayNew, stationCount, feedPending] = await Promise.all([
       this.prisma.discovery.count({ where: { status: 'online' } }),
       this.prisma.discovery.count({ where: { status: 'pending' } }),
       this.prisma.discovery.aggregate({ _sum: { impressions: true, clicks: true } }),
@@ -45,6 +48,8 @@ export class AdminService {
       this.prisma.user.count({ where: { status: 'banned' } }),
       this.prisma.user.count({ where: { lastActiveAt: { gte: dayAgo } } }),
       this.prisma.user.count({ where: { lastActiveAt: { gte: monthAgo } } }),
+      this.prisma.user.count({ where: { createdAt: { gte: startOfToday } } }),
+      this.prisma.user.count({ where: { createdAt: { gte: startOfYesterday, lt: startOfToday } } }),
       this.prisma.fuelStation.count({ where: { enabled: true } }),
       this.prisma.feed.count({ where: { status: 'pending' } }),
     ])
@@ -52,7 +57,7 @@ export class AdminService {
     const clicks = routeAggregate._sum.clicks || 0
     return {
       routes: { onShelfCount, monthImpressions: impressions, ctr: impressions ? clicks / impressions : 0, pendingAuditCount },
-      users: { total: userCount, banned: bannedUsers, dau, mau },
+      users: { total: userCount, banned: bannedUsers, dau, mau, todayNew, yesterdayNew },
       fuel: { stations: stationCount },
       content: { pending: feedPending },
     }

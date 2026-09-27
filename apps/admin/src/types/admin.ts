@@ -9,7 +9,7 @@ export interface RouteItem {
 
 export interface AdminStats {
   routes: { onShelfCount: number; monthImpressions: number; ctr: number; pendingAuditCount: number }
-  users: { total: number; banned: number; dau: number; mau: number }
+  users: { total: number; banned: number; dau: number; mau: number; todayNew: number; yesterdayNew: number }
   fuel: { stations: number }
   content: { pending: number }
 }

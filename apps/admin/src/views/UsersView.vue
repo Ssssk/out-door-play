@@ -31,10 +31,25 @@ const filtered = computed(() => items.value.filter((item) => {
 }))
 const kpis = computed(() => [
   { label: '总用户', value: stats.value?.total ?? items.value.length, delta: '数据库总量' },
-  { label: '日活 DAU', value: stats.value?.dau ?? '—', delta: '近 24h 活跃' },
-  { label: '月活 MAU', value: stats.value?.mau ?? '—', delta: '近 30 天活跃' },
-  { label: '封禁中', value: stats.value?.banned ?? items.value.filter((item) => item.status === 'banned').length, delta: '需关注', warn: true },
+  { label: '今日新增', value: stats.value?.todayNew ?? '—', delta: '今日 00:00 起' },
+  { label: '昨日新增', value: stats.value?.yesterdayNew ?? '—', delta: '完整一个自然日' },
 ])
+
+/** 最后活跃相对时间（对齐 PRD 原型：「2 小时前」「昨天 21:14」「3 天前」） */
+function relativeActive(value: string) {
+  const time = new Date(value)
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const diffMinutes = Math.floor((now.getTime() - time.getTime()) / 60000)
+  if (diffMinutes < 1) return '刚刚'
+  if (diffMinutes < 60) return `${diffMinutes} 分钟前`
+  const hhmm = time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+  if (time >= startOfToday) return `今天 ${hhmm}`
+  if (time >= new Date(startOfToday.getTime() - 24 * 3600 * 1000)) return `昨天 ${hhmm}`
+  const diffDays = Math.floor((startOfToday.getTime() - new Date(time.getFullYear(), time.getMonth(), time.getDate()).getTime()) / (24 * 3600 * 1000))
+  if (diffDays < 7) return `${diffDays} 天前`
+  return time.toLocaleDateString('zh-CN')
+}
 
 async function load() {
   loading.value = true
@@ -131,8 +146,7 @@ onMounted(load)
       <el-table-column prop="phone" label="手机号" width="140" />
       <el-table-column prop="cityName" label="城市" width="100" />
       <el-table-column label="注册时间" width="120"><template #default="{ row }">{{ formatDate(row.createdAt) }}</template></el-table-column>
-      <el-table-column label="最后活跃" width="170"><template #default="{ row }">{{ formatDateTime(row.lastActiveAt) }}</template></el-table-column>
-      <el-table-column label="动态 / 收藏" width="110"><template #default="{ row }">{{ row.postCount }} / {{ row.favoriteCount }}</template></el-table-column>
+      <el-table-column label="最后活跃" width="140"><template #default="{ row }">{{ relativeActive(row.lastActiveAt) }}</template></el-table-column>
       <el-table-column label="状态" width="95">
         <template #default="{ row }"><el-tag :type="row.status === 'normal' ? 'success' : 'danger'">{{ row.status === 'normal' ? '正常' : '已封禁' }}</el-tag></template>
       </el-table-column>
