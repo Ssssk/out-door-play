@@ -8,7 +8,7 @@
       <view v-else-if="loadError" class="state error-state"><text>{{ loadError }}</text><button @click="load">重试</button></view>
       <view v-else-if="items.length" class="favorite-list">
         <button v-for="item in items" :key="item.id" class="favorite-card card-surface" @click="openItem(item)">
-          <image :src="item.thumbUrl" mode="aspectFill" />
+          <image :src="resolveAssetUrl(item.thumbUrl)" mode="aspectFill" />
           <view class="favorite-copy"><text>{{ item.title }}</text><text>{{ item.subtitle }}</text></view>
           <wd-icon class="heart" name="heart-filled" size="22px" color="#f2545b" />
         </button>
@@ -25,6 +25,7 @@ import AppShell from '@/components/AppShell.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import SceneTabs from '@/components/SceneTabs.vue'
 import { outdoorApi } from '@/api/outdoor'
+import { resolveAssetUrl } from '@/common/assetUrl'
 import { userFacingError } from '@/common/apiErrors'
 import { navigate } from '@/common/router'
 import { requireAuth } from '@/common/requireAuth'

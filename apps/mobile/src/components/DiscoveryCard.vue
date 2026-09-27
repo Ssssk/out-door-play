@@ -1,6 +1,6 @@
 <template>
   <view class="discovery-card" role="button" tabindex="0" :aria-label="`${item.title}，距你${formatDistanceKm(item.distanceKm)}公里`" @click="activate" @keyup.enter="activate" @keyup.space="activate">
-    <image class="cover" :src="item.coverImageUrl" mode="aspectFill" />
+    <image class="cover" :src="resolveAssetUrl(item.coverImageUrl)" mode="aspectFill" />
     <view class="overlay" />
     <view class="card-top">
       <view class="rank"><image src="/static/icons/bolt.svg" mode="aspectFit" /><text>{{ item.rankTag }} Top {{ item.rank }}</text></view>
@@ -19,6 +19,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { resolveAssetUrl } from '@/common/assetUrl'
 import { formatDistanceKm } from '@/common/location'
 import type { RouteCard } from '@/types/domain'
 const props = defineProps<{ item: RouteCard }>()
