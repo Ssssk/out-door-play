@@ -21,6 +21,8 @@ export class UpdateRouteDto {
   @IsOptional() @IsString() @MaxLength(64) carType?: string
   @IsOptional() @IsString() @MaxLength(128) startPoint?: string
   @IsOptional() @IsString() @MaxLength(128) endPoint?: string
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(-180) @Max(180) longitude?: number
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(-90) @Max(90) latitude?: number
   @IsOptional() @Type(() => Number) @IsNumber() @Min(-180) @Max(180) endLongitude?: number
   @IsOptional() @Type(() => Number) @IsNumber() @Min(-90) @Max(90) endLatitude?: number
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(1000) shoreKm?: number
