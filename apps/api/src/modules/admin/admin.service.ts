@@ -121,6 +121,7 @@ export class AdminService {
         lengthKm: input.lengthKm ?? input.distanceKm ?? 0,
         elevationM: input.elevationM ?? 0,
         difficulty: input.difficulty.trim(),
+        level: input.level ?? null,
         coverImageUrl: input.coverImageUrl?.trim() || defaultCoverImageUrl,
         durationLabel: input.durationLabel?.trim() || '待补充',
         bestTime: input.bestTime?.trim() || '待补充',
@@ -136,6 +137,8 @@ export class AdminService {
         tags: input.tags ?? [],
         latitude: input.latitude ?? 0,
         longitude: input.longitude ?? 0,
+        endLongitude: input.endLongitude ?? null,
+        endLatitude: input.endLatitude ?? null,
         elevationPoints: input.elevationPoints ?? undefined,
         // PRD v1.0.0：新建路线直接上线（无待审核中间态，操作列仅编辑/删除）
         status: 'online',

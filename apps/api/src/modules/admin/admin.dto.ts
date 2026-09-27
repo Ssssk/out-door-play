@@ -11,6 +11,7 @@ export class UpdateRouteDto {
   @IsOptional() @IsString() @Length(6, 6) cityCode?: string
   @IsOptional() @IsString() @MaxLength(128) title?: string
   @IsOptional() @IsString() @MaxLength(32) difficulty?: string
+  @IsOptional() @IsIn(['easy', 'normal', 'hard']) level?: 'easy' | 'normal' | 'hard'
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100) rankWeight?: number
   @IsOptional() @IsString() @MaxLength(64) bestTime?: string
   @IsOptional() @IsString() @MaxLength(32) durationLabel?: string
@@ -20,6 +21,8 @@ export class UpdateRouteDto {
   @IsOptional() @IsString() @MaxLength(64) carType?: string
   @IsOptional() @IsString() @MaxLength(128) startPoint?: string
   @IsOptional() @IsString() @MaxLength(128) endPoint?: string
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(-180) @Max(180) endLongitude?: number
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(-90) @Max(90) endLatitude?: number
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(1000) shoreKm?: number
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(1000) depthM?: number
   @IsOptional() @IsString() @MaxLength(128) entryPoint?: string
@@ -39,6 +42,7 @@ export class CreateRouteDto {
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) distanceKm?: number
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) lengthKm?: number
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) elevationM?: number
+  @IsOptional() @IsIn(['easy', 'normal', 'hard']) level?: 'easy' | 'normal' | 'hard'
   @IsOptional() @IsString() @MaxLength(32) durationLabel?: string
   @IsOptional() @IsString() @MaxLength(64) bestTime?: string
   @IsOptional() @IsString() @MaxLength(64) carType?: string
@@ -54,6 +58,8 @@ export class CreateRouteDto {
   @IsOptional() @Type(() => Number) @IsNumber() @Min(-90) @Max(90) latitude?: number
   @IsOptional() @Type(() => Number) @IsNumber() @Min(-180) @Max(180) longitude?: number
   @IsOptional() @IsArray() @ArrayMaxSize(100) @IsNumber({}, { each: true }) elevationPoints?: number[]
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(-180) @Max(180) endLongitude?: number
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(-90) @Max(90) endLatitude?: number
 }
 
 export class UpdateRankingDto {

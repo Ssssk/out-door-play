@@ -7,6 +7,7 @@ export interface RouteItem {
   impressions: number; clicks: number; favoriteCount: number; coverImageUrl: string
   createdAt: string; boundRankings: number
   bestTime: string; durationLabel: string; description: string
+  level: string | null; longitude: number; latitude: number; endLongitude: number | null; endLatitude: number | null
   lengthKm: number; elevationM: number; carType: string | null; startPoint: string | null; endPoint: string | null
   shoreKm: number | null; depthM: number | null; entryPoint: string | null; mainArea: string | null; gear: string | null
 }

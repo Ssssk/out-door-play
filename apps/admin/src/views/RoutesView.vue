@@ -37,15 +37,18 @@ const saving = ref(false)
 const editingId = ref<string | null>(null)
 const lockedScene = ref<Scene>('drive')
 interface RouteForm {
-  title: string; scene: Scene; cityCode: string; difficulty: string
+  title: string; scene: Scene; cityCode: string; difficulty: string; level: string
   bestTime: string; durationLabel: string; description: string
+  startLng: number | null; startLat: number | null
   lengthKm: number | null; elevationM: number | null; carType: string; startPoint: string; endPoint: string
+  endLng: number | null; endLat: number | null
   shoreKm: number | null; depthM: number | null; entryPoint: string; mainArea: string; gear: string
 }
 const emptyForm = (scene: Scene): RouteForm => ({
-  title: '', scene, cityCode: '', difficulty: '入门级',
+  title: '', scene, cityCode: '', difficulty: '入门级', level: 'easy',
   bestTime: '', durationLabel: '', description: '',
-  lengthKm: null, elevationM: null, carType: '', startPoint: '', endPoint: '',
+  startLng: null, startLat: null,
+  lengthKm: null, elevationM: null, carType: '', startPoint: '', endPoint: '', endLng: null, endLat: null,
   shoreKm: null, depthM: null, entryPoint: '', mainArea: '', gear: '',
 })
 const form = ref<RouteForm>(emptyForm('drive'))
@@ -109,8 +112,8 @@ function onCoverSelected(event: Event) {
     input.value = ''
     return
   }
-  if (file.size > 5 * 1024 * 1024) {
-    ElMessage.error('封面图片不能超过 5MB，请压缩后重试')
+  if (file.size > 2 * 1024 * 1024) {
+    ElMessage.error('封面图片不能超过 2MB，请压缩后重试')
     input.value = ''
     return
   }
@@ -134,10 +137,12 @@ function openEdit(tableRow: unknown) {
   clearCoverSelection()
   editCoverUrl.value = item.coverImageUrl || ''
   form.value = {
-    title: item.title, scene: item.scene, cityCode: item.cityCode, difficulty: item.difficulty,
+    title: item.title, scene: item.scene, cityCode: item.cityCode, difficulty: item.difficulty, level: item.level || 'easy',
     bestTime: item.bestTime || '', durationLabel: item.durationLabel || '', description: item.description || '',
+    startLng: item.longitude ?? null, startLat: item.latitude ?? null,
     lengthKm: item.lengthKm ?? null, elevationM: item.elevationM ?? null,
     carType: item.carType || '', startPoint: item.startPoint || '', endPoint: item.endPoint || '',
+    endLng: item.endLongitude ?? null, endLat: item.endLatitude ?? null,
     shoreKm: item.shoreKm ?? null, depthM: item.depthM ?? null,
     entryPoint: item.entryPoint || '', mainArea: item.mainArea || '', gear: item.gear || '',
   }
@@ -150,9 +155,12 @@ function collectPayload() {
     scene: form.value.scene,
     cityCode: form.value.cityCode,
     difficulty: form.value.difficulty || '入门级',
+    level: (form.value.level || undefined) as 'easy' | 'normal' | 'hard' | undefined,
     bestTime: form.value.bestTime,
     durationLabel: form.value.durationLabel.trim(),
     description: form.value.description.trim(),
+    latitude: form.value.startLat ?? undefined,
+    longitude: form.value.startLng ?? undefined,
   }
   const sceneFields = form.value.scene === 'fish'
     ? {
@@ -162,6 +170,7 @@ function collectPayload() {
     : {
       lengthKm: form.value.lengthKm ?? undefined, elevationM: form.value.elevationM ?? undefined,
       carType: form.value.carType.trim(), startPoint: form.value.startPoint.trim(), endPoint: form.value.endPoint.trim(),
+      endLongitude: form.value.endLng ?? undefined, endLatitude: form.value.endLat ?? undefined,
     }
   return { ...base, ...sceneFields }
 }
@@ -286,7 +295,15 @@ onBeforeUnmount(clearCoverSelection)
           <div class="field-hint">未开通城市不可选</div>
         </el-form-item>
         <el-form-item label="难度">
-          <el-select v-model="form.difficulty" style="width: 100%"><el-option v-for="level in LEVEL_OPTIONS" :key="level" :label="level" :value="level" /></el-select>
+          <el-select v-model="form.difficulty" style="width: 100%"><el-option v-for="opt in LEVEL_OPTIONS" :key="opt" :label="opt" :value="opt" /></el-select>
+        </el-form-item>
+        <el-form-item label="难度等级">
+          <el-select v-model="form.level" style="width: 100%">
+            <el-option label="入门（easy）" value="easy" />
+            <el-option label="一般（normal）" value="normal" />
+            <el-option label="困难（hard）" value="hard" />
+          </el-select>
+          <div class="field-hint">字段同 mobile-home.route.level（小程序端用于路线卡片徽章）</div>
         </el-form-item>
         <el-form-item label="建议时段">
           <el-select v-model="form.bestTime" filterable allow-create default-first-option style="width: 100%">
@@ -300,6 +317,13 @@ onBeforeUnmount(clearCoverSelection)
         <el-form-item label="环湖岸线 (km)"><el-input-number v-model="form.shoreKm" :min="0" :precision="1" style="width: 100%" /></el-form-item>
         <el-form-item label="平均水深 (m)"><el-input-number v-model="form.depthM" :min="0" :precision="1" style="width: 100%" /></el-form-item>
         <el-form-item label="钓点入口"><el-input v-model="form.entryPoint" placeholder="例：梁子湖码头" /></el-form-item>
+        <el-form-item label="钓点坐标" class="grid-span-2">
+          <div class="coord-row">
+            <el-input-number v-model="form.startLng" :min="-180" :max="180" :precision="6" placeholder="经度 lng" controls-position="right" />
+            <el-input-number v-model="form.startLat" :min="-90" :max="90" :precision="6" placeholder="纬度 lat" controls-position="right" />
+          </div>
+          <div class="field-hint">用于小程序端「立即出发」唤起地图导航；可从 高德坐标拾取器 获取（GCJ-02 火星坐标）</div>
+        </el-form-item>
         <el-form-item label="主钓区"><el-input v-model="form.mainArea" placeholder="例：北岸深水区" /></el-form-item>
         <el-form-item label="装备建议" class="grid-span-2"><el-input v-model="form.gear" placeholder="例：路亚竿·手竿 2.7m / 4 号主线" /></el-form-item>
       </div>
@@ -307,8 +331,21 @@ onBeforeUnmount(clearCoverSelection)
         <el-form-item label="路线长 (km)"><el-input-number v-model="form.lengthKm" :min="0" :precision="1" style="width: 100%" /></el-form-item>
         <el-form-item label="落差 (m)"><el-input-number v-model="form.elevationM" :min="0" style="width: 100%" /></el-form-item>
         <el-form-item label="车型"><el-input v-model="form.carType" placeholder="SUV/轿车" /></el-form-item>
-        <el-form-item label="起点"><el-input v-model="form.startPoint" /></el-form-item>
-        <el-form-item label="终点" class="grid-span-2"><el-input v-model="form.endPoint" /></el-form-item>
+        <el-form-item label="起点"><el-input v-model="form.startPoint" placeholder="例：八分山森林公园停车场" /></el-form-item>
+        <el-form-item label="起点坐标" class="grid-span-2">
+          <div class="coord-row">
+            <el-input-number v-model="form.startLng" :min="-180" :max="180" :precision="6" placeholder="经度 lng" controls-position="right" />
+            <el-input-number v-model="form.startLat" :min="-90" :max="90" :precision="6" placeholder="纬度 lat" controls-position="right" />
+          </div>
+        </el-form-item>
+        <el-form-item label="终点"><el-input v-model="form.endPoint" placeholder="例：八分山山顶观景台" /></el-form-item>
+        <el-form-item label="终点坐标" class="grid-span-2">
+          <div class="coord-row">
+            <el-input-number v-model="form.endLng" :min="-180" :max="180" :precision="6" placeholder="经度 lng" controls-position="right" />
+            <el-input-number v-model="form.endLat" :min="-90" :max="90" :precision="6" placeholder="纬度 lat" controls-position="right" />
+          </div>
+          <div class="field-hint">用于小程序端「立即出发」唤起地图导航（优先终点，缺失时回落起点）；可从 高德坐标拾取器 获取（GCJ-02 火星坐标）</div>
+        </el-form-item>
       </div>
 
       <div class="route-cover-uploader">

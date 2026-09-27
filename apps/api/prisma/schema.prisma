@@ -103,12 +103,17 @@ model Discovery {
   lengthKm        Float       @map("length_km")
   elevationM      Int         @map("elevation_m")
   difficulty      String      @db.VarChar(32)
+  /// 难度等级（PRD 路线表单「难度等级」：easy/normal/hard），与 difficulty（入门级等文案）并存
+  level           String?     @map("level") @db.VarChar(16)
   coverImageUrl   String      @map("cover_image_url") @db.VarChar(255)
   durationLabel   String      @map("duration_label") @db.VarChar(32)
   bestTime        String      @map("best_time") @db.VarChar(64)
   carType         String?     @map("car_type") @db.VarChar(64)
   startPoint      String?     @map("start_point") @db.VarChar(128)
   endPoint        String?     @map("end_point") @db.VarChar(128)
+  /// 终点坐标（GCJ-02）：小程序「立即出发」优先终点导航，缺失回落起点
+  endLongitude    Float?      @map("end_longitude")
+  endLatitude     Float?      @map("end_latitude")
   entryPoint      String?     @map("entry_point") @db.VarChar(128)
   mainArea        String?     @map("main_area") @db.VarChar(128)
   gear            String?     @db.VarChar(128)
