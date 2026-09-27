@@ -320,7 +320,7 @@ export class AdminService {
       data: {
         code: input.code,
         name: input.name.trim(),
-        scenes: input.scenes && input.scenes.length ? input.scenes : ['drive', 'fuel'],
+        scenes: input.scenes && input.scenes.length ? input.scenes : ['drive'],
         enabled: input.enabled ?? true,
       },
     })
@@ -359,7 +359,7 @@ export class AdminService {
   async updateCityScenes(code: string, scenes: string[]) {
     const found = await this.prisma.city.findUnique({ where: { code } })
     if (!found) throw new NotFoundException('城市不存在')
-    const allowed = ['drive', 'fish', 'fuel'] as const
+    const allowed = ['drive', 'fish'] as const
     const filtered = allowed.filter((scene) => scenes.includes(scene))
     return this.prisma.city.update({ where: { code }, data: { scenes: filtered } })
   }

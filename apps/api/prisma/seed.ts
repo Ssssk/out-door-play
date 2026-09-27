@@ -72,7 +72,7 @@ async function main() {
     const data = {
       ...city,
       enabled: !disabledCities.has(city.code),
-      scenes: fishingCities.has(city.code) ? ['drive', 'fish', 'fuel'] : ['drive', 'fuel'],
+      scenes: fishingCities.has(city.code) ? ['drive', 'fish'] : ['drive'],
     }
     await prisma.city.upsert({ where: { code: city.code }, update: data, create: data })
   }

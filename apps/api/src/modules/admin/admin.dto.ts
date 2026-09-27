@@ -67,19 +67,19 @@ export class ToggleCityDto { @IsBoolean() enabled!: boolean }
 export class CreateCityDto {
   @IsString() @Length(6, 6) code!: string
   @IsString() @MinLength(1) @MaxLength(32) name!: string
-  @IsOptional() @IsArray() @IsIn(['drive', 'fish', 'fuel'], { each: true }) scenes?: string[]
+  @IsOptional() @IsArray() @IsIn(['drive', 'fish'], { each: true }) scenes?: string[]
   @IsOptional() @IsBoolean() enabled?: boolean
 }
 
 /** 编辑城市：名称/场景/启用均可调整 */
 export class UpdateCityDto {
   @IsOptional() @IsString() @MinLength(1) @MaxLength(32) name?: string
-  @IsOptional() @IsArray() @IsIn(['drive', 'fish', 'fuel'], { each: true }) scenes?: string[]
+  @IsOptional() @IsArray() @IsIn(['drive', 'fish'], { each: true }) scenes?: string[]
   @IsOptional() @IsBoolean() enabled?: boolean
 }
 
 export class UpdateCityScenesDto {
-  @IsArray() @IsIn(['drive', 'fish', 'fuel'], { each: true }) scenes!: string[]
+  @IsArray() @IsIn(['drive', 'fish'], { each: true }) scenes!: string[]
 }
 
 export class UpdateQrConfigDto {

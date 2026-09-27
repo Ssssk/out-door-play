@@ -23,7 +23,6 @@ const form = ref({ code: '', name: '', scenes: [] as string[], enabled: true })
 const SCENES = [
   { value: 'drive', label: '溜车' },
   { value: 'fish', label: '钓鱼' },
-  { value: 'fuel', label: '加油' },
 ]
 const sceneLabel = (value: string) => SCENES.find((scene) => scene.value === value)?.label || value
 
@@ -121,7 +120,7 @@ onMounted(load)
       <el-table-column prop="code" label="adcode" width="110" />
       <el-table-column label="场景" min-width="200">
         <template #default="{ row }">
-          <el-tag v-for="scene in (row as CityItem).scenes" :key="scene" size="small" effect="plain" class="scene-tag">{{ sceneLabel(scene) }}</el-tag>
+          <el-tag v-for="scene in (row as CityItem).scenes.filter((s: string) => s !== 'fuel')" :key="scene" size="small" effect="plain" class="scene-tag">{{ sceneLabel(scene) }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="routeCount" label="路线数" width="100" align="center" />
