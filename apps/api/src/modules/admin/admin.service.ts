@@ -377,13 +377,15 @@ export class AdminService {
     if (!found) throw new NotFoundException('城市不存在')
     const price92 = input.price92 ?? found.oilPrice92
     const price95 = input.price95 ?? found.oilPrice95
+    const price98 = input.price98 ?? found.oilPrice98
     const price0 = input.price0 ?? found.oilPrice0
-    if (price92 == null && price95 == null && price0 == null) throw new BadRequestException('至少填写一档油价')
+    if (price92 == null && price95 == null && price98 == null && price0 == null) throw new BadRequestException('至少填写一档油价')
     return this.prisma.city.update({
       where: { code },
       data: {
         oilPrice92: price92,
         oilPrice95: price95,
+        oilPrice98: price98,
         oilPrice0: price0,
         oilSource: 'manual',
         oilUpdatedAt: new Date(),
@@ -412,12 +414,14 @@ export class AdminService {
     const jitter = () => Math.round((Math.random() * 0.1 - 0.05) * 100) / 100
     const base92 = found.oilPrice92 ?? 7.6
     const base95 = found.oilPrice95 ?? 8.2
+    const base98 = found.oilPrice98 ?? 9.2
     const base0 = found.oilPrice0 ?? 7.3
     return this.prisma.city.update({
       where: { code },
       data: {
         oilPrice92: Math.max(5, Math.round((base92 + jitter()) * 100) / 100),
         oilPrice95: Math.max(5, Math.round((base95 + jitter()) * 100) / 100),
+        oilPrice98: Math.max(5, Math.round((base98 + jitter()) * 100) / 100),
         oilPrice0: Math.max(5, Math.round((base0 + jitter()) * 100) / 100),
         oilSource: 'auto',
         oilUpdatedAt: new Date(),

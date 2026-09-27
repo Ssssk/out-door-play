@@ -85,6 +85,7 @@ export class UpdateCityScenesDto {
 export class SetCityOilDto {
   @IsOptional() @Type(() => Number) @Min(0) @Max(20) price92?: number
   @IsOptional() @Type(() => Number) @Min(0) @Max(20) price95?: number
+  @IsOptional() @Type(() => Number) @Min(0) @Max(20) price98?: number
   @IsOptional() @Type(() => Number) @Min(0) @Max(20) price0?: number
   @IsOptional() @IsString() @MaxLength(200) note?: string
 }

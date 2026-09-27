@@ -22,13 +22,14 @@ export class FuelService {
     // 后台维护的城市级油价优先（manual 手动录入 / auto 自动获取），与小程序实时同源
     const city = await this.prisma.city.findUnique({
       where: { code: cityCode },
-      select: { name: true, oilPrice92: true, oilPrice95: true, oilPrice0: true, oilSource: true, oilUpdatedAt: true },
+      select: { name: true, oilPrice92: true, oilPrice95: true, oilPrice98: true, oilPrice0: true, oilSource: true, oilUpdatedAt: true },
     })
     if (city && (city.oilSource === 'manual' || city.oilSource === 'auto')) {
       // 只返回后台已录入的档位（手动填写允许部分档位留空，留空档位不编造价格）
       const items = [
         { grade: '92#', price: city.oilPrice92 },
         { grade: '95#', price: city.oilPrice95 },
+        { grade: '98#', price: city.oilPrice98 },
         { grade: '0#', price: city.oilPrice0 },
       ]
         .filter((item): item is { grade: string; price: number } => item.price != null && item.price > 0)

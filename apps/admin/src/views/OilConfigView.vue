@@ -18,7 +18,7 @@ const canWrite = auth.hasPermission('city:write')
 const oilDialog = ref(false)
 const oilSaving = ref(false)
 const oilTarget = ref<CityItem | null>(null)
-const oilForm = ref({ price92: '', price95: '', price0: '', note: '' })
+const oilForm = ref({ price92: '', price95: '', price98: '', price0: '', note: '' })
 
 const filtered = computed(() => items.value.filter((city) =>
   !keyword.value.trim() || `${city.name}${city.code}`.includes(keyword.value.trim()),
@@ -83,6 +83,7 @@ function openOilDialog(tableRow: unknown) {
   oilForm.value = {
     price92: row.oilPrice92?.toFixed(2) ?? '',
     price95: row.oilPrice95?.toFixed(2) ?? '',
+    price98: row.oilPrice98?.toFixed(2) ?? '',
     price0: row.oilPrice0?.toFixed(2) ?? '',
     note: '',
   }
@@ -94,12 +95,13 @@ async function saveOil() {
   if (!target) return
   const price92 = oilForm.value.price92 === '' ? undefined : Number(oilForm.value.price92)
   const price95 = oilForm.value.price95 === '' ? undefined : Number(oilForm.value.price95)
+  const price98 = oilForm.value.price98 === '' ? undefined : Number(oilForm.value.price98)
   const price0 = oilForm.value.price0 === '' ? undefined : Number(oilForm.value.price0)
-  if (price92 === undefined && price95 === undefined && price0 === undefined) {
+  if (price92 === undefined && price95 === undefined && price98 === undefined && price0 === undefined) {
     ElMessage.warning('请至少填写一种油品价格')
     return
   }
-  for (const price of [price92, price95, price0]) {
+  for (const price of [price92, price95, price98, price0]) {
     if (price !== undefined && (!Number.isFinite(price) || price <= 0 || price > 20)) {
       ElMessage.warning('油价需在 0-20 元/升之间')
       return
@@ -107,7 +109,7 @@ async function saveOil() {
   }
   oilSaving.value = true
   try {
-    const updated = await apiPatch<CityItem>(`/admin/cities/${target.code}/oil`, { price92, price95, price0, note: oilForm.value.note })
+    const updated = await apiPatch<CityItem>(`/admin/cities/${target.code}/oil`, { price92, price95, price98, price0, note: oilForm.value.note })
     Object.assign(target, updated)
     oilDialog.value = false
     ElMessage.success(`已保存：${target.name} 油价（手动）`)
@@ -168,6 +170,7 @@ onMounted(load)
     <el-form label-width="120px">
       <el-form-item label="92# 汽油 (¥/L)"><el-input v-model="oilForm.price92" placeholder="例：7.85" /></el-form-item>
       <el-form-item label="95# 汽油 (¥/L)"><el-input v-model="oilForm.price95" placeholder="例：8.35" /></el-form-item>
+      <el-form-item label="98# 汽油 (¥/L)"><el-input v-model="oilForm.price98" placeholder="例：9.10" /></el-form-item>
       <el-form-item label="0# 柴油 (¥/L)"><el-input v-model="oilForm.price0" placeholder="例：7.50" /></el-form-item>
       <el-form-item label="备注"><el-input v-model="oilForm.note" type="textarea" :rows="2" maxlength="200" placeholder="例：今天上午四川区域调价 0.05 元" /></el-form-item>
     </el-form>

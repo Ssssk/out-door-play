@@ -81,6 +81,7 @@ model City {
   // 城市级油价（管理后台维护）：manual 手动录入优先，auto 自动获取，failed 获取失败保留旧值
   oilPrice92   Float?        @map("oil_price_92")
   oilPrice95   Float?        @map("oil_price_95")
+  oilPrice98   Float?        @map("oil_price_98")
   oilPrice0    Float?        @map("oil_price_0")
   oilSource    String?       @map("oil_source") @db.VarChar(8)
   oilUpdatedAt DateTime?     @map("oil_updated_at")
