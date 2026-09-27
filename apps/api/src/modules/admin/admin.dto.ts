@@ -10,6 +10,7 @@ export class RouteActionDto {
 export class UpdateRouteDto {
   @IsOptional() @IsString() @Length(6, 6) cityCode?: string
   @IsOptional() @IsString() @MaxLength(128) title?: string
+  @IsOptional() @IsIn(['drive', 'fish']) scene?: 'drive' | 'fish'
   @IsOptional() @IsString() @MaxLength(32) difficulty?: string
   @IsOptional() @IsIn(['easy', 'normal', 'hard']) level?: 'easy' | 'normal' | 'hard'
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100) rankWeight?: number
