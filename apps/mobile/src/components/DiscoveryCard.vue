@@ -3,8 +3,8 @@
     <image class="cover" :src="resolveAssetUrl(item.coverImageUrl)" mode="aspectFill" />
     <view class="overlay" />
     <view class="card-top">
-      <view class="rank"><image src="/static/icons/bolt.svg" mode="aspectFit" /><text>{{ item.rankTag }} Top {{ item.rank }}</text></view>
-      <view class="distance"><image src="/static/icons/pin-light.svg" mode="aspectFit" /><text>距你 {{ formatDistanceKm(item.distanceKm) }}km</text></view>
+      <view v-if="item.rankTag && item.rank > 0" class="rank"><image src="/static/icons/bolt.svg" mode="aspectFit" /><text>{{ item.rankTag }} Top {{ item.rank }}</text></view>
+      <view v-if="item.distanceKm > 0" class="distance"><image src="/static/icons/pin-light.svg" mode="aspectFit" /><text>距你 {{ formatDistanceKm(item.distanceKm) }}km</text></view>
     </view>
     <view class="card-bottom">
       <text class="card-title">{{ item.title }}</text>

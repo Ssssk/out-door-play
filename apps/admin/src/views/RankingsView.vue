@@ -30,7 +30,7 @@ const dragIndex = ref(-1)
 const sceneLabel = (value: string) => (value === 'fish' ? '钓鱼' : value === 'drive' ? '溜车' : value)
 const filtered = computed(() => rankings.value.filter((item) => {
   const hitScene = !sceneFilter.value || item.scene === sceneFilter.value
-  const hitKeyword = !keyword.value.trim() || item.name.includes(keyword.value.trim())
+  const hitKeyword = !keyword.value.trim() || (item.name || '').includes(keyword.value.trim())
   return hitScene && hitKeyword
 }))
 const onlineRoutes = computed(() => routes.value.filter((route) => route.status !== 'offline'))
@@ -107,7 +107,7 @@ async function save() {
 
 async function remove(tableRow: unknown) {
   const item = tableRow as RankingItem
-  const bound = item.coverRouteIds.map((id) => routes.value.find((route) => route.id === id)?.title).filter(Boolean)
+  const bound = (item.coverRouteIds || []).map((id) => routes.value.find((route) => route.id === id)?.title).filter(Boolean)
   const body = bound.length
     ? `确认删除榜单「${item.name}」？<br/>将被以下路线移除榜单绑定（不影响路线本身）：<br/><b style="color:#909399">${bound.join('、')}</b><br/><span style="color:#909399;font-size:12px">删除后无法恢复。</span>`
     : `确认删除榜单「${item.name}」？<br/><span style="color:#909399;font-size:12px">删除后无法恢复。</span>`

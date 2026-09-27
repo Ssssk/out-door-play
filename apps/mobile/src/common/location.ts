@@ -88,7 +88,9 @@ export function distanceInKm(from: GeoPoint, to: GeoPoint): number {
  */
 export function resolveDistanceKm(item: GeoLocated, point?: GeoPoint | null): number | null {
   const target = toPoint(item.latitude, item.longitude)
-  if (isValidPoint(point) && target) {
+  // 后台创建的路线可能未填坐标（落库为 0,0），视同无坐标，不计算跨洋距离
+  const hasTarget = Boolean(target) && !(target?.latitude === 0 && target?.longitude === 0)
+  if (isValidPoint(point) && hasTarget) {
     const distance = distanceInKm(point, target)
     if (Number.isFinite(distance) && distance <= MAX_REASONABLE_KM) return distance
   }
