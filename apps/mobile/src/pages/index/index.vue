@@ -45,6 +45,7 @@ import BrandHeader from '@/components/BrandHeader.vue'
 import DiscoveryCard from '@/components/DiscoveryCard.vue'
 import SceneTabs from '@/components/SceneTabs.vue'
 import { navigate } from '@/common/router'
+import { useAppShare } from '@/common/appShare'
 import type { RouteCard } from '@/types/domain'
 import { useDiscovery } from './useDiscovery'
 
@@ -65,6 +66,8 @@ function openDetail(item: RouteCard) {
   const path = item.scene === 'fish' ? '/pages/fishing-detail/index' : '/pages/route-detail/index'
   void navigate(path, item.scene === 'fish' ? { spotId: item.id } : { routeId: item.id })
 }
+
+useAppShare('粗门溜溜 · 周末一起出门溜溜', '/pages/index/index')
 </script>
 
 <style scoped lang="scss">

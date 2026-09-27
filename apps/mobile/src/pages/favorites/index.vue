@@ -28,6 +28,7 @@ import { outdoorApi } from '@/api/outdoor'
 import { userFacingError } from '@/common/apiErrors'
 import { navigate } from '@/common/router'
 import { requireAuth } from '@/common/requireAuth'
+import { useAppShare } from '@/common/appShare'
 import type { FavoriteItem, Scene } from '@/types/domain'
 
 const scene = ref<Scene>('drive')
@@ -52,6 +53,8 @@ function openItem(item: FavoriteItem) {
   void navigate(path, item.type === 'spot' ? { spotId: item.id } : { routeId: item.id })
 }
 function goExplore() { void navigate('/pages/index/index') }
+
+useAppShare('我的收藏 · 好去处一起溜｜粗门溜溜', '/pages/favorites/index')
 </script>
 
 <style scoped lang="scss">

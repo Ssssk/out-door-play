@@ -36,6 +36,7 @@ import { outdoorApi } from '@/api/outdoor'
 import { userFacingError } from '@/common/apiErrors'
 import { isWechatMiniProgram } from '@/common/identityProvider'
 import { requireAuth } from '@/common/requireAuth'
+import { useAppShare } from '@/common/appShare'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
@@ -46,6 +47,8 @@ const error = ref('')
 const phoneError = ref('')
 const saving = ref(false)
 const uploadingAvatar = ref(false)
+
+useAppShare('粗门溜溜 · 出门溜溜小程序', '/pages/mine-edit/index')
 
 onShow(async () => {
   if (!await requireAuth()) return
