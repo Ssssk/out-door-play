@@ -15,7 +15,7 @@ const allMenus = [
   { group: '路线运营', items: [
     { path: '/routes', label: '路线列表', icon: MapLocation, permission: 'route:read' },
     { path: '/rankings', label: '热门榜单配置', icon: DataAnalysis, permission: 'ranking:read' },
-    { path: '/cities', label: '城市与位置', icon: Location, permission: 'city:read' },
+    { path: '/cities', label: '城市管理', icon: Location, permission: 'city:read' },
   ] },
   { group: '系统配置', items: [
     { path: '/system-config', label: '上传二维码', icon: Postcard, permission: 'config:read' },

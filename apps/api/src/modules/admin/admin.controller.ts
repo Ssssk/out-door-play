@@ -9,7 +9,8 @@ import {
   CreateReportDto,
   RouteActionDto,
   SetCityOilDto,
-  ToggleCityDto,
+  CreateCityDto,
+  UpdateCityDto,
   UpdateCityScenesDto,
   UpdateFeedStatusDto,
   UpdateFuelStationDto,
@@ -37,7 +38,9 @@ export class AdminController {
   @RequireAdminPermissions('ranking:write') @Patch('rankings/:id') updateRanking(@Param('id') id: string, @Body() input: UpsertRankingDto) { return this.admin.updateRanking(id, input) }
   @RequireAdminPermissions('ranking:write') @Delete('rankings/:id') deleteRanking(@Param('id') id: string) { return this.admin.deleteRanking(id) }
   @RequireAdminPermissions('city:read') @Get('cities') cities() { return this.admin.cities() }
-  @RequireAdminPermissions('city:write') @Patch('cities/:code') toggleCity(@Param('code') code: string, @Body() input: ToggleCityDto) { return this.admin.toggleCity(code, input.enabled) }
+  @RequireAdminPermissions('city:write') @Post('cities') createCity(@Body() input: CreateCityDto) { return this.admin.createCity(input) }
+  @RequireAdminPermissions('city:write') @Patch('cities/:code') updateCity(@Param('code') code: string, @Body() input: UpdateCityDto) { return this.admin.updateCity(code, input) }
+  @RequireAdminPermissions('city:write') @Delete('cities/:code') deleteCity(@Param('code') code: string) { return this.admin.deleteCity(code) }
   @RequireAdminPermissions('city:write') @Patch('cities/:code/scenes') updateCityScenes(@Param('code') code: string, @Body() input: UpdateCityScenesDto) { return this.admin.updateCityScenes(code, input.scenes) }
   @RequireAdminPermissions('city:write') @Patch('cities/:code/oil') setCityOil(@Param('code') code: string, @Body() input: SetCityOilDto) { return this.admin.setCityOil(code, input) }
   @RequireAdminPermissions('city:write') @Post('cities/:code/oil/refresh') refreshCityOil(@Param('code') code: string) { return this.admin.refreshCityOil(code) }

@@ -5,10 +5,12 @@ import { join } from 'node:path'
 import type { AdminActor } from '../admin-auth/admin-auth.types'
 import { PrismaService } from '../../database/prisma.service'
 import type {
+  CreateCityDto,
   CreateRouteDto,
   CreateReportDto,
   RouteActionDto,
   SetCityOilDto,
+  UpdateCityDto,
   UpdateFeedStatusDto,
   UpdateFuelStationDto,
   UpdateQrConfigDto,
@@ -315,6 +317,49 @@ export class AdminService {
     const found = await this.prisma.city.findUnique({ where: { code } })
     if (!found) throw new NotFoundException('城市不存在')
     return this.prisma.city.update({ where: { code }, data: { enabled } })
+  }
+
+  /** 新增城市（PRD 城市管理）：adcode 唯一，默认开通溜车+加油场景并启用 */
+  async createCity(input: CreateCityDto) {
+    const exists = await this.prisma.city.findUnique({ where: { code: input.code } })
+    if (exists) throw new BadRequestException(`adcode ${input.code} 已存在城市「${exists.name}」`)
+    return this.prisma.city.create({
+      data: {
+        code: input.code,
+        name: input.name.trim(),
+        scenes: input.scenes && input.scenes.length ? input.scenes : ['drive', 'fuel'],
+        enabled: input.enabled ?? true,
+      },
+    })
+  }
+
+  /** 编辑城市：名称/场景/启用（场景关闭后 C 端对应场景数据不再返回） */
+  async updateCity(code: string, input: UpdateCityDto) {
+    const found = await this.prisma.city.findUnique({ where: { code } })
+    if (!found) throw new NotFoundException('城市不存在')
+    return this.prisma.city.update({
+      where: { code },
+      data: {
+        ...(input.name !== undefined ? { name: input.name.trim() } : {}),
+        ...(input.scenes !== undefined ? { scenes: input.scenes } : {}),
+        ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
+      },
+    })
+  }
+
+  /** 删除城市：存在路线/加油站/用户关联数据时拦截，防止误删运营数据 */
+  async deleteCity(code: string) {
+    const found = await this.prisma.city.findUnique({
+      where: { code },
+      include: { _count: { select: { discoveries: true, fuelStations: true, users: true } } },
+    })
+    if (!found) throw new NotFoundException('城市不存在')
+    const { discoveries, fuelStations, users } = found._count
+    if (discoveries > 0 || fuelStations > 0 || users > 0) {
+      throw new BadRequestException(`该城市存在关联数据（路线 ${discoveries} 条、加油站 ${fuelStations} 个、用户 ${users} 位），无法删除；如需下线请改为「停用」`)
+    }
+    await this.prisma.city.delete({ where: { code } })
+    return { code }
   }
 
   /** 场景开关：关闭后 C 端该城市对应场景数据不再返回 */

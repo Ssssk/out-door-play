@@ -63,6 +63,21 @@ export class UpdateRankingDto {
 
 export class ToggleCityDto { @IsBoolean() enabled!: boolean }
 
+/** 新增城市（PRD 城市管理：adcode 6 位 + 名称 + 场景 + 启用） */
+export class CreateCityDto {
+  @IsString() @Length(6, 6) code!: string
+  @IsString() @MinLength(1) @MaxLength(32) name!: string
+  @IsOptional() @IsArray() @IsIn(['drive', 'fish', 'fuel'], { each: true }) scenes?: string[]
+  @IsOptional() @IsBoolean() enabled?: boolean
+}
+
+/** 编辑城市：名称/场景/启用均可调整 */
+export class UpdateCityDto {
+  @IsOptional() @IsString() @MinLength(1) @MaxLength(32) name?: string
+  @IsOptional() @IsArray() @IsIn(['drive', 'fish', 'fuel'], { each: true }) scenes?: string[]
+  @IsOptional() @IsBoolean() enabled?: boolean
+}
+
 export class UpdateCityScenesDto {
   @IsArray() @IsIn(['drive', 'fish', 'fuel'], { each: true }) scenes!: string[]
 }

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { apiGet, apiPatch, apiPost } from '../api/client'
+import { apiDelete, apiGet, apiPatch, apiPost } from '../api/client'
+import KpiGrid, { type KpiItem } from '../components/KpiGrid.vue'
 import PageHeader from '../components/PageHeader.vue'
 import type { CityItem } from '../types/admin'
 import { useAuthStore } from '../stores/auth'
@@ -9,183 +10,167 @@ import { useAuthStore } from '../stores/auth'
 const auth = useAuthStore()
 const items = ref<CityItem[]>([])
 const loading = ref(true)
-const refreshing = ref(false)
-const refreshingCode = ref('')
 const keyword = ref('')
+const statusFilter = ref<'' | 'enabled' | 'disabled'>('')
 const canWrite = auth.hasPermission('city:write')
 
-// 手动填写油价模态（PRD：手动录入后标记「手动」，覆盖下一次自动获取结果）
-const oilDialog = ref(false)
-const oilSaving = ref(false)
-const oilTarget = ref<CityItem | null>(null)
-const oilForm = ref({ price92: '', price95: '', price0: '', note: '' })
+// 新增/编辑城市模态
+const dialogVisible = ref(false)
+const saving = ref(false)
+const editingCode = ref<string | null>(null)
+const form = ref({ code: '', name: '', scenes: [] as string[], enabled: true })
 
-const filtered = computed(() => items.value.filter((city) =>
-  !keyword.value.trim() || `${city.name}${city.code}`.includes(keyword.value.trim()),
-))
-const lastRefreshLabel = computed(() => {
-  const times = items.value.map((city) => city.oilUpdatedAt).filter(Boolean) as string[]
-  if (!times.length) return '未刷新'
-  const latest = new Date(Math.max(...times.map((time) => new Date(time).getTime())))
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${latest.getHours() === 0 && latest.getMinutes() === 0 ? '' : ''}${latest.getFullYear()}-${pad(latest.getMonth() + 1)}-${pad(latest.getDate())} ${pad(latest.getHours())}:${pad(latest.getMinutes())}`
-})
+const SCENES = [
+  { value: 'drive', label: '溜车' },
+  { value: 'fish', label: '钓鱼' },
+  { value: 'fuel', label: '加油' },
+]
+const sceneLabel = (value: string) => SCENES.find((scene) => scene.value === value)?.label || value
 
-function formatPrice(value: number | null) {
-  return value == null ? '—' : `¥${value.toFixed(2)}`
-}
-function formatTime(value: string | null) {
-  if (!value) return '—'
-  const d = new Date(value)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-function sourceBadge(city: CityItem): { label: string; type: 'success' | 'warning' | 'danger' | 'info' } {
-  if (city.oilSource === 'manual') return { label: '手动', type: 'warning' }
-  if (city.oilSource === 'auto') return { label: '自动', type: 'success' }
-  if (city.oilSource === 'failed') return { label: '失败', type: 'danger' }
-  return { label: '未获取', type: 'info' }
-}
+const filtered = computed(() => items.value.filter((city) => {
+  const hitKeyword = !keyword.value.trim() || `${city.name}${city.code}`.includes(keyword.value.trim())
+  const hitStatus = !statusFilter.value || (statusFilter.value === 'enabled' ? city.enabled : !city.enabled)
+  return hitKeyword && hitStatus
+}))
+const kpis = computed<KpiItem[]>(() => [
+  { label: '总城市', value: items.value.length, delta: '数据库总量' },
+  { label: '已启用', value: items.value.filter((city) => city.enabled).length, delta: '小程序可见' },
+  { label: '已停用', value: items.value.filter((city) => !city.enabled).length, delta: '已隐藏', warn: items.value.some((city) => !city.enabled) },
+])
 
 async function load() {
   loading.value = true
   try { items.value = await apiGet<CityItem[]>('/admin/cities') } finally { loading.value = false }
 }
 
-async function refreshOne(tableRow: unknown) {
-  const row = tableRow as CityItem
-  refreshingCode.value = row.code
-  try {
-    const updated = await apiPost<CityItem>(`/admin/cities/${row.code}/oil/refresh`)
-    Object.assign(row, updated)
-    if (updated.oilSource === 'failed') ElMessage.warning(`${row.name}：${updated.oilError || '获取失败'}`)
-    else ElMessage.success(`${row.name}油价已更新（自动）`)
-  } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '油价获取失败')
-  } finally { refreshingCode.value = '' }
+function openCreate() {
+  editingCode.value = null
+  form.value = { code: '', name: '', scenes: ['drive', 'fuel'], enabled: true }
+  dialogVisible.value = true
 }
 
-async function refreshAll() {
-  await ElMessageBox.confirm(`将批量重新获取 ${items.value.filter((city) => city.enabled).length} 个启用城市的油价（第三方接口，可能部分失败），继续？`, '刷新油价', { type: 'warning' })
-  refreshing.value = true
+function openEdit(tableRow: unknown) {
+  const row = tableRow as CityItem
+  editingCode.value = row.code
+  form.value = { code: row.code, name: row.name, scenes: [...row.scenes], enabled: row.enabled }
+  dialogVisible.value = true
+}
+
+async function save() {
+  if (!editingCode.value && !/^\d{6}$/.test(form.value.code)) { ElMessage.warning('adcode 需为 6 位数字（如 450100）'); return }
+  if (!form.value.name.trim()) { ElMessage.warning('请填写城市名称'); return }
+  if (form.value.scenes.length === 0) { ElMessage.warning('请至少选择一个场景'); return }
+  saving.value = true
   try {
-    await apiPost('/admin/cities/refresh-oil')
-    ElMessage.success('批量刷新完成')
+    if (editingCode.value) {
+      await apiPatch(`/admin/cities/${editingCode.value}`, { name: form.value.name.trim(), scenes: form.value.scenes, enabled: form.value.enabled })
+      ElMessage.success(`${form.value.name}已更新`)
+    } else {
+      await apiPost('/admin/cities', { code: form.value.code, name: form.value.name.trim(), scenes: form.value.scenes, enabled: form.value.enabled })
+      ElMessage.success(`城市「${form.value.name}」已新增`)
+    }
+    dialogVisible.value = false
     await load()
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '批量刷新失败')
-  } finally { refreshing.value = false }
-}
-
-function openOilDialog(tableRow: unknown) {
-  const row = tableRow as CityItem
-  oilTarget.value = row
-  oilForm.value = {
-    price92: row.oilPrice92?.toFixed(2) ?? '',
-    price95: row.oilPrice95?.toFixed(2) ?? '',
-    price0: row.oilPrice0?.toFixed(2) ?? '',
-    note: '',
-  }
-  oilDialog.value = true
-}
-
-async function saveOil() {
-  const target = oilTarget.value
-  if (!target) return
-  const price92 = oilForm.value.price92 === '' ? undefined : Number(oilForm.value.price92)
-  const price95 = oilForm.value.price95 === '' ? undefined : Number(oilForm.value.price95)
-  const price0 = oilForm.value.price0 === '' ? undefined : Number(oilForm.value.price0)
-  if (price92 === undefined && price95 === undefined && price0 === undefined) {
-    ElMessage.warning('请至少填写一种油品价格')
-    return
-  }
-  for (const price of [price92, price95, price0]) {
-    if (price !== undefined && (!Number.isFinite(price) || price <= 0 || price > 20)) {
-      ElMessage.warning('油价需在 0-20 元/升之间')
-      return
-    }
-  }
-  oilSaving.value = true
-  try {
-    const updated = await apiPatch<CityItem>(`/admin/cities/${target.code}/oil`, { price92, price95, price0, note: oilForm.value.note })
-    Object.assign(target, updated)
-    oilDialog.value = false
-    ElMessage.success(`已保存：${target.name} 油价（手动）`)
-  } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '保存失败')
-  } finally { oilSaving.value = false }
+  } finally { saving.value = false }
+}
+
+async function remove(tableRow: unknown) {
+  const row = tableRow as CityItem
+  try {
+    await ElMessageBox.confirm(
+      `确认删除城市「${row.name}」？<br/><span style="color:#909399;font-size:12px">存在路线/加油站/用户关联数据时会被拦截，届时建议改为「停用」。</span>`,
+      '删除城市',
+      { type: 'warning', dangerouslyUseHTMLString: true, confirmButtonText: '确认删除', cancelButtonText: '取消' },
+    )
+  } catch { return }
+  try {
+    await apiDelete(`/admin/cities/${row.code}`)
+    ElMessage.success(`已删除：${row.name}`)
+    await load()
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '删除失败')
+  }
 }
 
 onMounted(load)
 </script>
 
 <template>
-  <PageHeader title="油价配置" group="路线运营" description="城市油价自动获取 + 手动兜底；手动录入不会被自动覆盖">
-    <span class="fetch-status"><span class="dot" :class="{ ok: lastRefreshLabel !== '未刷新' }" />{{ lastRefreshLabel }}</span>
-    <el-button v-if="canWrite" type="primary" :loading="refreshing" @click="refreshAll">↻ 刷新油价</el-button>
+  <PageHeader title="城市管理" group="路线运营" description="城市开关与场景配置实时影响小程序端可见范围">
+    <RouterLink class="oil-entry" to="/oil-config">油价配置 →</RouterLink>
+    <el-button v-if="canWrite" type="primary" @click="openCreate">+ 新增城市</el-button>
   </PageHeader>
+
+  <KpiGrid :items="kpis" :loading="loading" />
 
   <section class="panel">
     <div class="panel__toolbar">
-      <el-input v-model="keyword" clearable placeholder="搜索城市名或 adcode…" style="width: 220px" />
-      <span class="muted">共 {{ filtered.length }} 城</span>
+      <div class="panel__filters">
+        <el-select v-model="statusFilter" clearable placeholder="全部状态" style="width: 120px">
+          <el-option label="启用" value="enabled" />
+          <el-option label="停用" value="disabled" />
+        </el-select>
+        <el-input v-model="keyword" clearable placeholder="搜索城市名/adcode…" style="width: 220px" />
+      </div>
+      <span class="muted">{{ filtered.length }} 城</span>
     </div>
 
     <el-table v-loading="loading" :data="filtered">
-      <el-table-column label="城市" width="130">
+      <el-table-column prop="name" label="城市" width="120" />
+      <el-table-column prop="code" label="adcode" width="110" />
+      <el-table-column label="场景" min-width="200">
         <template #default="{ row }">
-          <strong>{{ (row as CityItem).name }}</strong>
-          <span v-if="!(row as CityItem).enabled" class="muted small"> 已停用</span>
+          <el-tag v-for="scene in (row as CityItem).scenes" :key="scene" size="small" effect="plain" class="scene-tag">{{ sceneLabel(scene) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="code" label="adcode" width="110"><template #default="{ row }"><code>{{ (row as CityItem).code }}</code></template></el-table-column>
-      <el-table-column label="92# (¥/L)" width="110"><template #default="{ row }">{{ formatPrice((row as CityItem).oilPrice92) }}</template></el-table-column>
-      <el-table-column label="95# (¥/L)" width="110"><template #default="{ row }">{{ formatPrice((row as CityItem).oilPrice95) }}</template></el-table-column>
-      <el-table-column label="0# 柴油" width="110"><template #default="{ row }">{{ formatPrice((row as CityItem).oilPrice0) }}</template></el-table-column>
-      <el-table-column label="数据来源" width="130">
-        <template #default="{ row }">
-          <el-tooltip v-if="(row as CityItem).oilSource === 'failed' && (row as CityItem).oilError" :content="(row as CityItem).oilError || ''" placement="top">
-            <el-tag :type="sourceBadge(row as CityItem).type" effect="light">{{ sourceBadge(row as CityItem).label }}</el-tag>
-          </el-tooltip>
-          <el-tag v-else :type="sourceBadge(row as CityItem).type" effect="light">{{ sourceBadge(row as CityItem).label }}</el-tag>
-        </template>
+      <el-table-column prop="routeCount" label="路线数" width="100" align="center" />
+      <el-table-column prop="stationCount" label="加油站" width="100" align="center" />
+      <el-table-column label="状态" width="90">
+        <template #default="{ row }"><el-tag :type="(row as CityItem).enabled ? 'success' : 'danger'" effect="light">{{ (row as CityItem).enabled ? '启用' : '停用' }}</el-tag></template>
       </el-table-column>
-      <el-table-column label="更新时间" width="160"><template #default="{ row }"><span class="muted small">{{ formatTime((row as CityItem).oilUpdatedAt) }}</span></template></el-table-column>
-      <el-table-column label="操作" width="220" fixed="right">
+      <el-table-column label="操作" width="170" fixed="right">
         <template #default="{ row }">
-          <el-button v-if="canWrite" size="small" :disabled="!(row as CityItem).enabled" :loading="refreshingCode === (row as CityItem).code" @click="refreshOne(row)">↻ 重新获取</el-button>
-          <el-button v-if="canWrite" size="small" @click="openOilDialog(row)">手动填写</el-button>
+          <el-button v-if="canWrite" size="small" @click="openEdit(row)">编辑</el-button>
+          <el-button v-if="canWrite" size="small" type="danger" plain @click="remove(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
   </section>
 
-  <el-dialog v-model="oilDialog" :title="`手动填写油价 · ${oilTarget?.name || ''}`" width="480px">
-    <div class="city-bar">
-      城市：<b>{{ oilTarget?.name }}</b>　·　adcode <code>{{ oilTarget?.code }}</code>　·　当前来源：
-      <el-tag v-if="oilTarget" :type="sourceBadge(oilTarget).type" effect="light" size="small">{{ sourceBadge(oilTarget).label }}</el-tag>
-    </div>
-    <el-form label-width="120px">
-      <el-form-item label="92# 汽油 (¥/L)"><el-input v-model="oilForm.price92" placeholder="例：7.85" /></el-form-item>
-      <el-form-item label="95# 汽油 (¥/L)"><el-input v-model="oilForm.price95" placeholder="例：8.35" /></el-form-item>
-      <el-form-item label="0# 柴油 (¥/L)"><el-input v-model="oilForm.price0" placeholder="例：7.50" /></el-form-item>
-      <el-form-item label="备注"><el-input v-model="oilForm.note" type="textarea" :rows="2" maxlength="200" placeholder="例：今天上午四川区域调价 0.05 元" /></el-form-item>
+  <el-dialog v-model="dialogVisible" :title="editingCode ? `编辑城市 · ${form.name}` : '新增城市'" width="460px">
+    <el-form label-width="90px">
+      <el-form-item label="adcode" required>
+        <el-input v-model="form.code" :disabled="Boolean(editingCode)" placeholder="6 位数字，如 450100" maxlength="6" />
+        <div class="field-hint">高德行政区划编码，小程序端按前两位映射省级油价</div>
+      </el-form-item>
+      <el-form-item label="城市名称" required>
+        <el-input v-model="form.name" maxlength="32" placeholder="例：南宁" />
+      </el-form-item>
+      <el-form-item label="场景" required>
+        <el-checkbox-group v-model="form.scenes">
+          <el-checkbox v-for="scene in SCENES" :key="scene.value" :value="scene.value" :label="scene.value">{{ scene.label }}</el-checkbox>
+        </el-checkbox-group>
+        <div class="field-hint">关闭的场景在小程序端不可见（影响首页 tab 与列表）</div>
+      </el-form-item>
+      <el-form-item label="启用">
+        <el-switch v-model="form.enabled" />
+        <span class="field-hint inline">停用后小程序端不再返回该城市数据</span>
+      </el-form-item>
     </el-form>
-    <p class="muted small">提交后此条数据来源将标记为 <b class="warn-text">手动</b>，覆盖下一次自动获取结果。</p>
     <template #footer>
-      <el-button @click="oilDialog = false">取消</el-button>
-      <el-button type="primary" :loading="oilSaving" @click="saveOil">保存</el-button>
+      <el-button @click="dialogVisible = false">取消</el-button>
+      <el-button type="primary" :loading="saving" @click="save">保存</el-button>
     </template>
   </el-dialog>
 </template>
 
 <style scoped>
-.fetch-status { display: inline-flex; align-items: center; gap: 6px; color: var(--el-text-color-secondary); font-size: 12px; }
-.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--el-color-info-light-5); }
-.dot.ok { background: var(--el-color-success); }
+.panel__filters { display: flex; gap: 10px; align-items: center; }
+.oil-entry { margin-right: 4px; color: var(--el-color-primary); font-size: 13px; text-decoration: none; }
+.scene-tag { margin-right: 6px; }
 .muted { color: var(--el-text-color-secondary); }
-.small { font-size: 12px; }
-.city-bar { margin-bottom: 14px; padding: 10px 12px; border-radius: 6px; background: var(--el-fill-color-light); color: var(--el-text-color-secondary); font-size: 12px; }
-.city-bar b { color: var(--el-text-color-primary); }
-.warn-text { color: #b86e00; }
+.field-hint { margin-top: 4px; color: var(--el-text-color-secondary); font-size: 12px; line-height: 1.5; }
+.field-hint.inline { display: inline-block; margin: 0 0 0 10px; }
 </style>
