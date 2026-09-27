@@ -15,7 +15,7 @@ describe('DiscoveryCard', () => {
       elevationM: null,
       depthM: 8,
       difficulty: '进阶级' as const,
-      coverImageUrl: '/cover.jpg',
+      coverImageUrl: '/v1/uploads/routes/card-fishing-1.jpg',
     }
     const wrapper = mount(DiscoveryCard, { props: { item } })
 
@@ -23,6 +23,7 @@ describe('DiscoveryCard', () => {
     expect(wrapper.text()).toContain('8M')
     expect(wrapper.text()).toContain('平均水深')
     expect(wrapper.get('[role="button"]').attributes('aria-label')).toContain('距你')
+    expect(wrapper.get('.cover').attributes('src')).toContain('/v1/uploads/routes/card-fishing-1.jpg')
 
     await wrapper.get('[role="button"]').trigger('keyup', { key: 'Enter' })
     expect(wrapper.emitted('click')).toEqual([[item]])

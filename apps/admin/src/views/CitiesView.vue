@@ -157,7 +157,7 @@ async function saveOil() {
 onMounted(load)
 </script>
 <template>
-  <PageHeader title="油价配置" group="路线运营" description="城市油价自动获取 + 手动兜底；场景开关影响小程序端可见性">
+  <PageHeader title="城市与位置" group="路线运营" description="城市与场景管理；场景开关影响小程序端可见性">
     <div class="header-actions">
       <RouterLink class="fuel-entry" to="/fuel">加油站与油价管理 →</RouterLink>
       <el-button :loading="loading" @click="load">刷新</el-button>
