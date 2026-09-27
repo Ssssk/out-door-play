@@ -16,8 +16,8 @@
       <view class="menu-list">
         <button class="menu-row" @click="open('/pages/favorites/index')"><view class="menu-icon red"><image class="menu-glyph" src="/static/icons/menu-favorite.png" /></view><text>我的收藏</text><text class="arrow">›</text></button>
         <button class="menu-row" @click="fanDrawer = true"><view class="menu-icon green"><image class="menu-glyph" src="/static/icons/menu-fans.png" /></view><view class="menu-copy"><text>官方粉丝群</text><text>扫码加入官方粉丝群</text></view><text class="arrow">›</text></button>
-        <button class="menu-row" @click="openContact"><view class="menu-icon green"><image class="menu-glyph" src="/static/icons/menu-contact.png" /></view><view class="menu-copy"><text>联系方式</text><text>商务合作与问题反馈</text></view><text class="arrow">›</text></button>
-        <button class="menu-row" @click="open('/pages/about/index')"><view class="menu-icon green"><image class="menu-glyph" src="/static/icons/menu-about.png" /></view><text>关于粗门溜溜</text><text class="arrow">›</text></button>
+        <button class="menu-row" @click="openContact"><view class="menu-icon sky"><image class="menu-glyph" src="/static/icons/menu-contact.png" /></view><view class="menu-copy"><text>联系方式</text><text>商务合作与问题反馈</text></view><text class="arrow">›</text></button>
+        <button class="menu-row" @click="open('/pages/about/index')"><view class="menu-icon amber"><image class="menu-glyph" src="/static/icons/menu-about.png" /></view><text>关于粗门溜溜</text><text class="arrow">›</text></button>
       </view>
     </view>
 
@@ -126,7 +126,7 @@ function copyGroupCode() { copy('粗门溜溜-武汉户外', '群口令已复制
 .identity { flex: 1; min-width: 0; padding: 0 24rpx; }.nickname,.user-label { display: block; }.nickname { color: var(--chumen-ink); font-size: 36rpx; font-weight: 900; }.user-label { margin-top: 8rpx; color: var(--chumen-muted); font-size: 22rpx; }
 .edit-button { min-width: 132rpx; min-height: 68rpx; margin: 0; padding: 0 24rpx; border-radius: 999rpx; background: var(--chumen-ink); color: #fff; font-size: 24rpx; line-height: 68rpx; }
 .menu-list { margin-top: 20rpx; }.menu-row { display: flex; align-items: center; width: 100%; min-height: 134rpx; margin: 0 0 22rpx; padding: 20rpx 28rpx; border: 2rpx solid var(--chumen-line); border-radius: 28rpx; background: #fff; color: var(--chumen-ink); font-size: 28rpx; text-align: left; line-height: 1.3; }
-.menu-icon { display: flex; align-items: center; justify-content: center; width: 72rpx; height: 72rpx; margin-right: 24rpx; border-radius: 20rpx; }.menu-icon.red { background: #ffe7e8; color: #ef5d66; }.menu-icon.green { background: #ddf6e8; color: #1b8f62; }.menu-glyph { width: 40rpx; height: 40rpx; }
+.menu-icon { display: flex; align-items: center; justify-content: center; width: 72rpx; height: 72rpx; margin-right: 24rpx; border-radius: 20rpx; }.menu-icon.red { background: #ffe7e8; }.menu-icon.green { background: #ddf6e8; }.menu-icon.sky { background: #cde7ff; }.menu-icon.amber { background: #ffe9b0; }.menu-glyph { width: 40rpx; height: 40rpx; }
 .menu-copy { flex: 1; }.menu-copy text { display: block; }.menu-copy text:last-child { margin-top: 8rpx; color: var(--chumen-muted); font-size: 22rpx; }.arrow { margin-left: auto; color: var(--chumen-muted); font-size: 38rpx; }
 .fan-sheet { display: flex; flex-direction: column; align-items: center; padding: 52rpx 40rpx 36rpx; text-align: center; }.fan-mark { display: flex; align-items: center; justify-content: center; width: 132rpx; height: 132rpx; border-radius: 34rpx; background: var(--chumen-lime); color: var(--chumen-ink); font-size: 44rpx; font-weight: 900; }.fan-title { margin-top: 24rpx; font-size: 34rpx; font-weight: 900; }.fan-tip { margin: 14rpx 0 32rpx; color: var(--chumen-muted); font-size: 24rpx; }.qr-image { width: 320rpx; height: 320rpx; border-radius: 20rpx; background: #fff; }
 .load-error { display: block; margin: -10rpx 0 18rpx; color: #d83b42; font-size: 23rpx; }
