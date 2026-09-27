@@ -23,13 +23,9 @@ export interface RankingItem {
   seq: number; coverageCount: number; coverRouteIds: string[]; status: RouteStatus
 }
 
-export type CityOilSource = 'manual' | 'auto' | 'failed' | ''
-
 export interface CityItem {
   code: string; name: string; enabled: boolean; scenes: string[]; routeCount: number
   stationCount: number
-  oilPrice92: number | null; oilPrice95: number | null; oilPrice98: number | null; oilPrice0: number | null
-  oilSource: CityOilSource; oilUpdatedAt: string | null; oilError: string | null
 }
 
 export interface QrConfig {

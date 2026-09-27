@@ -99,7 +99,6 @@ onMounted(load)
 
 <template>
   <PageHeader title="城市管理" group="路线运营" description="城市开关与场景配置实时影响小程序端可见范围">
-    <RouterLink class="oil-entry" to="/oil-config">油价配置 →</RouterLink>
     <el-button v-if="canWrite" type="primary" @click="openCreate">+ 新增城市</el-button>
   </PageHeader>
 
@@ -168,7 +167,6 @@ onMounted(load)
 
 <style scoped>
 .panel__filters { display: flex; gap: 10px; align-items: center; }
-.oil-entry { margin-right: 4px; color: var(--el-color-primary); font-size: 13px; text-decoration: none; }
 .scene-tag { margin-right: 6px; }
 .muted { color: var(--el-text-color-secondary); }
 .field-hint { margin-top: 4px; color: var(--el-text-color-secondary); font-size: 12px; line-height: 1.5; }

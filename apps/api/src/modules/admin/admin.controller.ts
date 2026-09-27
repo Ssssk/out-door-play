@@ -8,7 +8,6 @@ import {
   CreateRouteDto,
   CreateReportDto,
   RouteActionDto,
-  SetCityOilDto,
   CreateCityDto,
   UpdateCityDto,
   UpdateCityScenesDto,
@@ -42,9 +41,6 @@ export class AdminController {
   @RequireAdminPermissions('city:write') @Patch('cities/:code') updateCity(@Param('code') code: string, @Body() input: UpdateCityDto) { return this.admin.updateCity(code, input) }
   @RequireAdminPermissions('city:write') @Delete('cities/:code') deleteCity(@Param('code') code: string) { return this.admin.deleteCity(code) }
   @RequireAdminPermissions('city:write') @Patch('cities/:code/scenes') updateCityScenes(@Param('code') code: string, @Body() input: UpdateCityScenesDto) { return this.admin.updateCityScenes(code, input.scenes) }
-  @RequireAdminPermissions('city:write') @Patch('cities/:code/oil') setCityOil(@Param('code') code: string, @Body() input: SetCityOilDto) { return this.admin.setCityOil(code, input) }
-  @RequireAdminPermissions('city:write') @Post('cities/:code/oil/refresh') refreshCityOil(@Param('code') code: string) { return this.admin.refreshCityOil(code) }
-  @RequireAdminPermissions('city:write') @Post('cities/refresh-oil') refreshAllCityOil() { return this.admin.refreshAllCityOil() }
   @RequireAdminPermissions('user:read') @Get('users') users() { return this.admin.users() }
   @RequireAdminPermissions('user:read') @Get('users/:id') userDetail(@Param('id') id: string) { return this.admin.userDetail(id) }
   @RequireAdminPermissions('user:ban') @Patch('users/:id/status') updateUserStatus(@Param('id') id: string, @Body() input: UpdateUserStatusDto) { return this.admin.updateUserStatus(id, input) }

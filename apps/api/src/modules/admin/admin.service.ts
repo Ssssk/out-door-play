@@ -9,7 +9,6 @@ import type {
   CreateRouteDto,
   CreateReportDto,
   RouteActionDto,
-  SetCityOilDto,
   UpdateCityDto,
   UpdateFeedStatusDto,
   UpdateFuelStationDto,
@@ -304,12 +303,6 @@ export class AdminService {
       scenes: Array.isArray(city.scenes) ? city.scenes : [],
       routeCount: city._count.discoveries,
       stationCount: city._count.fuelStations,
-      oilPrice92: city.oilPrice92,
-      oilPrice95: city.oilPrice95,
-      oilPrice0: city.oilPrice0,
-      oilSource: city.oilSource,
-      oilUpdatedAt: city.oilUpdatedAt,
-      oilError: city.oilError,
     }))
   }
 
@@ -371,79 +364,8 @@ export class AdminService {
     return this.prisma.city.update({ where: { code }, data: { scenes: filtered } })
   }
 
-  /** 手动录入油价：运营优先，不会被自动获取覆盖（web-cities.md §3.1） */
-  async setCityOil(code: string, input: SetCityOilDto) {
-    const found = await this.prisma.city.findUnique({ where: { code } })
-    if (!found) throw new NotFoundException('城市不存在')
-    const price92 = input.price92 ?? found.oilPrice92
-    const price95 = input.price95 ?? found.oilPrice95
-    const price98 = input.price98 ?? found.oilPrice98
-    const price0 = input.price0 ?? found.oilPrice0
-    if (price92 == null && price95 == null && price98 == null && price0 == null) throw new BadRequestException('至少填写一档油价')
-    return this.prisma.city.update({
-      where: { code },
-      data: {
-        oilPrice92: price92,
-        oilPrice95: price95,
-        oilPrice98: price98,
-        oilPrice0: price0,
-        oilSource: 'manual',
-        oilUpdatedAt: new Date(),
-        oilError: null,
-      },
-    })
-  }
 
-  /**
-   * 自动获取油价（第三方接口 mock）：约 70% 成功率，成功在现价基础上 ±0.05 抖动；
-   * 失败保留原价格、标记 failed + 错误信息，运营可「重新获取」或「手动填写」恢复。
-   */
-  async refreshCityOil(code: string) {
-    const found = await this.prisma.city.findUnique({ where: { code } })
-    if (!found) throw new NotFoundException('城市不存在')
-    if (!found.enabled) throw new BadRequestException('城市未启用，无法获取油价')
-    await new Promise((resolve) => setTimeout(resolve, 400))
 
-    const success = Math.random() < 0.7
-    if (!success) {
-      return this.prisma.city.update({
-        where: { code },
-        data: { oilSource: 'failed', oilError: '第三方油价接口超时，请稍后重试或手动填写' },
-      })
-    }
-    const jitter = () => Math.round((Math.random() * 0.1 - 0.05) * 100) / 100
-    const base92 = found.oilPrice92 ?? 7.6
-    const base95 = found.oilPrice95 ?? 8.2
-    const base98 = found.oilPrice98 ?? 9.2
-    const base0 = found.oilPrice0 ?? 7.3
-    return this.prisma.city.update({
-      where: { code },
-      data: {
-        oilPrice92: Math.max(5, Math.round((base92 + jitter()) * 100) / 100),
-        oilPrice95: Math.max(5, Math.round((base95 + jitter()) * 100) / 100),
-        oilPrice98: Math.max(5, Math.round((base98 + jitter()) * 100) / 100),
-        oilPrice0: Math.max(5, Math.round((base0 + jitter()) * 100) / 100),
-        oilSource: 'auto',
-        oilUpdatedAt: new Date(),
-        oilError: null,
-      },
-    })
-  }
-
-  /** 批量刷新所有启用城市的油价 */
-  async refreshAllCityOil() {
-    const cities = await this.prisma.city.findMany({ where: { enabled: true }, select: { code: true } })
-    const results = []
-    for (const city of cities) {
-      try {
-        const updated = await this.refreshCityOil(city.code)
-        results.push({ code: city.code, source: updated.oilSource })
-      } catch {
-        results.push({ code: city.code, source: 'failed' })
-      }
-    }
-    return { total: cities.length, results }
-  }
 
   /** 小程序「我的」页二维码配置（官方粉丝群 / 个人微信） */
   async qrcodes() {

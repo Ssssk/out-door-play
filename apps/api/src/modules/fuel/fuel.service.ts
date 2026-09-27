@@ -5,44 +5,19 @@ import { ProvinceFuelPriceProvider, regionFromCityCode } from './province-price.
 import { STATION_PAGE_SIZE, STATION_PAGE_SIZE_MAX } from './fuel.dto'
 import type { GeoPoint } from '../../common/geo'
 import type { ProvinceFuelPrice } from './province-price.provider'
-import { PrismaService } from '../../database/prisma.service'
 
-/** 油价数据来源：城市配置（后台维护，manual 手动 / auto 自动）/ 省级官方参考价 / 暂无 */
-export type FuelPriceSource = 'city-manual' | 'city-auto' | 'province' | 'empty'
+/** 油价数据来源：省级官方参考价（含 92/95/98/0 四档）/ 暂无 */
+export type FuelPriceSource = 'province' | 'empty'
 
 @Injectable()
 export class FuelService {
   constructor(
     private readonly tencent: TencentStationProvider,
     private readonly provincePrice: ProvinceFuelPriceProvider,
-    private readonly prisma: PrismaService,
   ) {}
 
   async prices(cityCode: string) {
-    // 后台维护的城市级油价优先（manual 手动录入 / auto 自动获取），与小程序实时同源
-    const city = await this.prisma.city.findUnique({
-      where: { code: cityCode },
-      select: { name: true, oilPrice92: true, oilPrice95: true, oilPrice98: true, oilPrice0: true, oilSource: true, oilUpdatedAt: true },
-    })
-    if (city && (city.oilSource === 'manual' || city.oilSource === 'auto')) {
-      // 只返回后台已录入的档位（手动填写允许部分档位留空，留空档位不编造价格）
-      const items = [
-        { grade: '92#', price: city.oilPrice92 },
-        { grade: '95#', price: city.oilPrice95 },
-        { grade: '98#', price: city.oilPrice98 },
-        { grade: '0#', price: city.oilPrice0 },
-      ]
-        .filter((item): item is { grade: string; price: number } => item.price != null && item.price > 0)
-        .map((item) => ({ ...item, change: 0 }))
-      if (items.length > 0) {
-        return {
-          items,
-          updatedAt: city.oilUpdatedAt ? this.formatDay(city.oilUpdatedAt) : '',
-          source: (city.oilSource === 'manual' ? 'city-manual' : 'city-auto') satisfies FuelPriceSource,
-          region: city.name,
-        }
-      }
-    }
+    // 油价统一走省级官方源（含 92/95/98/0 四档），运营不再在后台维护城市价格；
     // 返回 region 以便界面标注「XX省参考价」，避免把省级价当成该城市的价
     const province = await this.fetchProvincePrice(cityCode)
     if (!province) {

@@ -82,14 +82,6 @@ export class UpdateCityScenesDto {
   @IsArray() @IsIn(['drive', 'fish', 'fuel'], { each: true }) scenes!: string[]
 }
 
-export class SetCityOilDto {
-  @IsOptional() @Type(() => Number) @Min(0) @Max(20) price92?: number
-  @IsOptional() @Type(() => Number) @Min(0) @Max(20) price95?: number
-  @IsOptional() @Type(() => Number) @Min(0) @Max(20) price98?: number
-  @IsOptional() @Type(() => Number) @Min(0) @Max(20) price0?: number
-  @IsOptional() @IsString() @MaxLength(200) note?: string
-}
-
 export class UpdateQrConfigDto {
   /** 二维码图片 dataURL（运营端已校验 image/* 且 ≤ 10MB；base64 后约 ≤ 14MB） */
   @IsOptional() @IsString() @MaxLength(15_000_000) fanGroup?: string

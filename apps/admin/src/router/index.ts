@@ -16,8 +16,6 @@ const router = createRouter({
       { path: 'routes', name: 'Routes', component: () => import('../views/RoutesView.vue'), meta: { title: '路线列表', group: '路线运营', permission: 'route:read' } },
       { path: 'rankings', name: 'Rankings', component: () => import('../views/RankingsView.vue'), meta: { title: '热门榜单配置', group: '路线运营', permission: 'ranking:read' } },
       { path: 'cities', name: 'Cities', component: () => import('../views/CitiesView.vue'), meta: { title: '城市管理', group: '路线运营', permission: 'city:read' } },
-      // 油价配置按运营决策不在侧边栏展示，由「城市管理」页的「油价配置 →」入口进入
-      { path: 'oil-config', name: 'OilConfig', component: () => import('../views/OilConfigView.vue'), meta: { title: '油价配置', group: '路线运营', permission: 'city:read' } },
       // 加油站台账不在 PRD 侧边栏中，由「油价配置」页的「加油站与油价管理」入口进入
       { path: 'fuel', name: 'Fuel', component: () => import('../views/FuelView.vue'), meta: { title: '加油站与油价管理', group: '路线运营', permission: 'fuel:read' } },
       { path: 'users', name: 'Users', component: () => import('../views/UsersView.vue'), meta: { title: '用户管理', group: '用户与内容', permission: 'user:read' } },
