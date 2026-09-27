@@ -14,7 +14,7 @@ import {
   UpdateFeedStatusDto,
   UpdateFuelStationDto,
   UpdateQrConfigDto,
-  UpdateRankingDto,
+  UpsertRankingDto,
   UpdateRouteDto,
   UpdateUserNoteDto,
   UpdateUserStatusDto,
@@ -27,12 +27,15 @@ export class AdminController {
 
   @RequireAdminPermissions('route:read') @Get('stats') stats() { return this.admin.stats() }
   @RequireAdminPermissions('route:read') @Get('routes') routes() { return this.admin.routes() }
+  @RequireAdminPermissions('route:edit') @Delete('routes/:id') deleteRoute(@Param('id') id: string) { return this.admin.deleteRoute(id) }
   @RequireAdminPermissions('route:edit') @Post('routes') createRoute(@Body() input: CreateRouteDto) { return this.admin.createRoute(input) }
   @RequireAdminPermissions('route:edit') @Post('routes/:id/cover') @UseInterceptors(FileInterceptor('file')) uploadRouteCover(@Param('id') id: string, @UploadedFile() file?: Express.Multer.File) { return this.admin.saveRouteCover(id, file) }
   @RequireAdminPermissions('route:edit') @Patch('routes/:id') updateRoute(@Param('id') id: string, @Body() input: UpdateRouteDto) { return this.admin.updateRoute(id, input) }
   @RequireAdminPermissions('route:read') @Post('routes/:id/actions') routeAction(@Param('id') id: string, @Body() input: RouteActionDto, @CurrentAdmin() actor: AdminActor, @CurrentRequestId() requestId: string) { return this.admin.routeAction(id, input, actor, requestId) }
   @RequireAdminPermissions('ranking:read') @Get('rankings') rankings() { return this.admin.rankings() }
-  @RequireAdminPermissions('ranking:write') @Patch('rankings/:id') updateRanking(@Param('id') id: string, @Body() input: UpdateRankingDto) { return this.admin.updateRanking(id, input) }
+  @RequireAdminPermissions('ranking:write') @Post('rankings') createRanking(@Body() input: UpsertRankingDto) { return this.admin.createRanking(input) }
+  @RequireAdminPermissions('ranking:write') @Patch('rankings/:id') updateRanking(@Param('id') id: string, @Body() input: UpsertRankingDto) { return this.admin.updateRanking(id, input) }
+  @RequireAdminPermissions('ranking:write') @Delete('rankings/:id') deleteRanking(@Param('id') id: string) { return this.admin.deleteRanking(id) }
   @RequireAdminPermissions('city:read') @Get('cities') cities() { return this.admin.cities() }
   @RequireAdminPermissions('city:write') @Patch('cities/:code') toggleCity(@Param('code') code: string, @Body() input: ToggleCityDto) { return this.admin.toggleCity(code, input.enabled) }
   @RequireAdminPermissions('city:write') @Patch('cities/:code/scenes') updateCityScenes(@Param('code') code: string, @Body() input: UpdateCityScenesDto) { return this.admin.updateCityScenes(code, input.scenes) }

@@ -5,6 +5,10 @@ export interface RouteItem {
   id: string; listRank: number; title: string; cityName: string; cityCode: string; difficulty: string
   status: RouteStatus; scene: Scene; rankWeight: number; rankTag: string; tags: string[]
   impressions: number; clicks: number; favoriteCount: number; coverImageUrl: string
+  createdAt: string; boundRankings: number
+  bestTime: string; durationLabel: string; description: string
+  lengthKm: number; elevationM: number; carType: string | null; startPoint: string | null; endPoint: string | null
+  shoreKm: number | null; depthM: number | null; entryPoint: string | null; mainArea: string | null; gear: string | null
 }
 
 export interface AdminStats {
@@ -15,8 +19,8 @@ export interface AdminStats {
 }
 
 export interface RankingItem {
-  id: string; name: string; scene: Scene; coverageCount: number; weight: number
-  status: RouteStatus; city: { name: string } | null
+  id: string; name: string; scene: Scene; cityCode: string | null; cityName: string
+  seq: number; coverageCount: number; coverRouteIds: string[]; status: RouteStatus
 }
 
 export type CityOilSource = 'manual' | 'auto' | 'failed' | ''

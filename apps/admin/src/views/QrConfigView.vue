@@ -13,8 +13,9 @@ const loading = ref(true)
 const saving = ref(false)
 const dirty = ref(false)
 const draft = reactive({ fanGroup: '', contact: '' })
-const MAX_QR_IMAGE_BYTES = 10 * 1024 * 1024
-const MAX_QR_IMAGE_LABEL = '10MB'
+// 与后端 UpdateQrConfigDto（dataURL ≤ 3,000,000 字符 ≈ 2MB 原图）及 PRD AC-QR-007 一致
+const MAX_QR_IMAGE_BYTES = 2 * 1024 * 1024
+const MAX_QR_IMAGE_LABEL = '2MB'
 
 const canWrite = auth.hasPermission('config:write')
 
@@ -180,7 +181,7 @@ onMounted(load)
                 <input type="file" accept="image/jpeg,image/png,image/webp" hidden @change="onPick(card.key, $event)" />
                 选择图片
               </label>
-              <el-button type="danger" plain :disabled="!draft[card.key]" @click="clearOne(card.key)">移除</el-button>
+              <el-button type="danger" plain :disabled="!draft[card.key]" @click="clearOne(card.key)">清除</el-button>
             </div>
           </div>
         </div>

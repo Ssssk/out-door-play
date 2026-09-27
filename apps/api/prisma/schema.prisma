@@ -238,6 +238,8 @@ model Ranking {
   coverageCount Int           @map("coverage_count")
   weight        Int
   status        RankingStatus @default(pending)
+  /// 榜单封面路线 id 列表（Discovery.id），与路线的「已绑榜单数」互为冗余口径
+  coverRouteIds Json?         @map("cover_route_ids")
   city          City?         @relation(fields: [cityCode], references: [code], onDelete: SetNull)
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")

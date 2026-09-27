@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer'
-import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsNumber, IsOptional, IsString, Length, Max, MaxLength, Min, MinLength } from 'class-validator'
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsIn, IsInt, IsNumber, IsOptional, IsString, Length, Max, MaxLength, Min, MinLength } from 'class-validator'
 
 export class RouteActionDto {
   @IsString() @MinLength(8) @MaxLength(64) actionId!: string
@@ -12,6 +12,19 @@ export class UpdateRouteDto {
   @IsOptional() @IsString() @MaxLength(128) title?: string
   @IsOptional() @IsString() @MaxLength(32) difficulty?: string
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100) rankWeight?: number
+  @IsOptional() @IsString() @MaxLength(64) bestTime?: string
+  @IsOptional() @IsString() @MaxLength(32) durationLabel?: string
+  @IsOptional() @IsString() @MaxLength(5000) description?: string
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(1000) lengthKm?: number
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100000) elevationM?: number
+  @IsOptional() @IsString() @MaxLength(64) carType?: string
+  @IsOptional() @IsString() @MaxLength(128) startPoint?: string
+  @IsOptional() @IsString() @MaxLength(128) endPoint?: string
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(1000) shoreKm?: number
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(1000) depthM?: number
+  @IsOptional() @IsString() @MaxLength(128) entryPoint?: string
+  @IsOptional() @IsString() @MaxLength(128) mainArea?: string
+  @IsOptional() @IsString() @MaxLength(128) gear?: string
 }
 
 export class CreateRouteDto {
@@ -81,5 +94,13 @@ export class CreateReportDto {
   @IsIn(['route', 'user', 'fuel', 'ugc']) type!: 'route' | 'user' | 'fuel' | 'ugc'
   @IsString() @MaxLength(64) dateRange!: string
   @IsString() @MaxLength(32) dimension!: string
+}
+
+/** 新建/编辑榜单：封面路线至少 1 条（web-rankings.md RULE-RANK-004） */
+export class UpsertRankingDto {
+  @IsString() @MinLength(1) @MaxLength(128) name!: string
+  @IsIn(['drive', 'fish']) scene!: 'drive' | 'fish'
+  @IsOptional() @IsString() @MinLength(6) @MaxLength(6) cityCode?: string
+  @IsArray() @ArrayMinSize(1) @IsString({ each: true }) coverRouteIds!: string[]
 }
 

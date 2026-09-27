@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { apiGet, apiPatch, apiPost, apiUpload } from '../api/client'
-import KpiGrid, { type KpiItem } from '../components/KpiGrid.vue'
+import { apiDelete, apiGet, apiPatch, apiPost, apiUpload } from '../api/client'
 import PageHeader from '../components/PageHeader.vue'
-import type { AdminStats, CityItem, RouteItem, RouteStatus, Scene } from '../types/admin'
+import type { CityItem, RouteItem, Scene } from '../types/admin'
 import { useAuthStore } from '../stores/auth'
 import routeCover1 from '../../../mobile/src/static/routes/card-route-1.jpg'
 import routeCover2 from '../../../mobile/src/static/routes/card-route-2.jpg'
@@ -23,62 +23,74 @@ const bundledCoverImages: Record<string, string> = {
 }
 
 const auth = useAuthStore()
+const router = useRouter()
 const loading = ref(true)
 const routes = ref<RouteItem[]>([])
-const stats = ref<AdminStats>()
-const keyword = ref('')
-const status = ref<RouteStatus | ''>('')
-const scene = ref<Scene | ''>('')
-const editVisible = ref(false)
-const createVisible = ref(false)
-const savingCreate = ref(false)
 const cities = ref<CityItem[]>([])
+const keyword = ref('')
+const sceneFilter = ref<Scene | ''>('')
+const canEdit = auth.hasPermission('route:edit')
+
+// 编辑/新建共用表单模态（PRD：新建入口锁定场景；编辑展示场景专属字段）
+const dialogVisible = ref(false)
+const saving = ref(false)
+const editingId = ref<string | null>(null)
+const lockedScene = ref<Scene>('drive')
+interface RouteForm {
+  title: string; scene: Scene; cityCode: string; difficulty: string
+  bestTime: string; durationLabel: string; description: string
+  lengthKm: number | null; elevationM: number | null; carType: string; startPoint: string; endPoint: string
+  shoreKm: number | null; depthM: number | null; entryPoint: string; mainArea: string; gear: string
+}
+const emptyForm = (scene: Scene): RouteForm => ({
+  title: '', scene, cityCode: '', difficulty: '入门级',
+  bestTime: '', durationLabel: '', description: '',
+  lengthKm: null, elevationM: null, carType: '', startPoint: '', endPoint: '',
+  shoreKm: null, depthM: null, entryPoint: '', mainArea: '', gear: '',
+})
+const form = ref<RouteForm>(emptyForm('drive'))
+
 const coverFile = ref<File | undefined>()
 const coverPreviewUrl = ref('')
 const coverInput = ref<HTMLInputElement>()
 const editCoverUrl = ref('')
-const editForm = ref({ id: '', cityCode: '', title: '', difficulty: '', rankWeight: 50 })
-const createForm = ref({
-  title: '', cityCode: '', scene: 'drive' as Scene, difficulty: '入门级', rankTag: '', rankWeight: 50,
-  distanceKm: 0, lengthKm: 0, elevationM: 0, durationLabel: '', bestTime: '', description: '', tags: '', latitude: 0, longitude: 0,
-})
+
+const LEVEL_OPTIONS = ['入门级', '轻松级', '进阶级', '挑战级']
+const BESTTIME_OPTIONS = ['全天', '清晨 04:30-09:30', '上午 08:30-12:00', '下午 13:00-17:00', '傍晚 16:00-19:30（日落）', '夜间 19:00-23:00', '清晨+傍晚 05:00-10:00 / 16:00-19:00']
 
 const filtered = computed(() => routes.value.filter((item) => {
   const text = `${item.title}${item.cityName}${item.tags.join('')}`.toLowerCase()
-  return (!keyword.value || text.includes(keyword.value.trim().toLowerCase())) && (!status.value || item.status === status.value) && (!scene.value || item.scene === scene.value)
+  const hitKeyword = !keyword.value.trim() || text.includes(keyword.value.trim().toLowerCase())
+  const hitScene = !sceneFilter.value || item.scene === sceneFilter.value
+  return hitKeyword && hitScene
 }))
-const kpis = computed<KpiItem[]>(() => [
-  { label: '在架路线', value: stats.value?.routes.onShelfCount ?? '—', delta: '+6 本周' },
-  { label: '本月曝光', value: formatWan(stats.value?.routes.monthImpressions), delta: '+12.4%' },
-  { label: '详情点击率', value: formatPercent(stats.value?.routes.ctr), delta: '+1.2pp' },
-  { label: '待审核', value: stats.value?.routes.pendingAuditCount ?? '—', delta: '需处理', warn: true },
-])
+const enabledCities = computed(() => cities.value.filter((city) => city.enabled))
 
-function formatWan(value?: number) { return value === undefined ? '—' : value >= 10000 ? `${(value / 10000).toFixed(1)}w` : String(value) }
-function formatPercent(value?: number) { return value === undefined ? '—' : `${(value * 100).toFixed(1)}%` }
-function statusLabel(value: RouteStatus) { return { online: '在线', pending: '待审核', offline: '已下线' }[value] }
+const sceneLabel = (value: string) => (value === 'fish' ? '钓鱼' : value === 'drive' ? '溜车' : value)
+const statusLabel = (value: string) => ({ online: '正常', pending: '待审核', offline: '下架' }[value] || value)
+function formatCreatedAt(value?: string) {
+  if (!value) return '—'
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return value
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+function coverImageSrc(url: string) {
+  return bundledCoverImages[url] || (url.startsWith('/v1/uploads/') || url.startsWith('https://') || url.startsWith('http://') ? url : '')
+}
 
 async function load() {
   loading.value = true
   try {
-    const [loadedStats, loadedRoutes, loadedCities] = await Promise.all([
-      apiGet<AdminStats>('/admin/stats'),
+    const [loadedRoutes, loadedCities] = await Promise.all([
       apiGet<RouteItem[]>('/admin/routes'),
       auth.hasPermission('city:read') ? apiGet<CityItem[]>('/admin/cities') : Promise.resolve([] as CityItem[]),
     ])
-    stats.value = loadedStats
     routes.value = loadedRoutes
     cities.value = loadedCities
   }
   catch { ElMessage.error('后台数据加载失败，请检查 API 与 MySQL') }
   finally { loading.value = false }
-}
-
-function resetCreateForm() {
-  createForm.value = {
-    title: '', cityCode: '', scene: 'drive', difficulty: '入门级', rankTag: '', rankWeight: 50,
-    distanceKm: 0, lengthKm: 0, elevationM: 0, durationLabel: '', bestTime: '', description: '', tags: '', latitude: 0, longitude: 0,
-  }
 }
 
 function clearCoverSelection() {
@@ -87,21 +99,12 @@ function clearCoverSelection() {
   coverPreviewUrl.value = ''
   if (coverInput.value) coverInput.value.value = ''
 }
-
-function coverImageSrc(url: string) {
-  return bundledCoverImages[url] || (url.startsWith('/v1/uploads/') || url.startsWith('https://') || url.startsWith('http://') ? url : '')
-}
-
-function chooseCover() {
-  coverInput.value?.click()
-}
-
+function chooseCover() { coverInput.value?.click() }
 function onCoverSelected(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
-  if (!allowedTypes.includes(file.type)) {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
     ElMessage.error('封面图片仅支持 JPG、PNG 或 WebP 格式')
     input.value = ''
     return
@@ -116,85 +119,99 @@ function onCoverSelected(event: Event) {
   coverPreviewUrl.value = URL.createObjectURL(file)
 }
 
-function openCreate() {
+function openCreate(scene: Scene) {
+  lockedScene.value = scene
+  editingId.value = null
   clearCoverSelection()
-  resetCreateForm()
-  createVisible.value = true
+  editCoverUrl.value = ''
+  form.value = emptyForm(scene)
+  dialogVisible.value = true
 }
 
 function openEdit(tableRow: unknown) {
   const item = tableRow as RouteItem
+  editingId.value = item.id
   clearCoverSelection()
   editCoverUrl.value = item.coverImageUrl || ''
-  editForm.value = { id: item.id, cityCode: item.cityCode, title: item.title, difficulty: item.difficulty, rankWeight: item.rankWeight }
-  editVisible.value = true
-}
-
-async function saveEdit() {
-  let metadataSaved = false
-  try {
-    await apiPatch(`/admin/routes/${editForm.value.id}`, { cityCode: editForm.value.cityCode, title: editForm.value.title, difficulty: editForm.value.difficulty, rankWeight: editForm.value.rankWeight })
-    metadataSaved = true
-    if (coverFile.value) await apiUpload(`/admin/routes/${editForm.value.id}/cover`, coverFile.value)
-    ElMessage.success('路线资料与封面已写入数据库')
-    editVisible.value = false
-    clearCoverSelection()
-    await load()
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : '请重试'
-    ElMessage.error(metadataSaved ? `路线资料已保存，但封面上传失败：${detail}` : `路线保存失败：${detail}`)
+  form.value = {
+    title: item.title, scene: item.scene, cityCode: item.cityCode, difficulty: item.difficulty,
+    bestTime: item.bestTime || '', durationLabel: item.durationLabel || '', description: item.description || '',
+    lengthKm: item.lengthKm ?? null, elevationM: item.elevationM ?? null,
+    carType: item.carType || '', startPoint: item.startPoint || '', endPoint: item.endPoint || '',
+    shoreKm: item.shoreKm ?? null, depthM: item.depthM ?? null,
+    entryPoint: item.entryPoint || '', mainArea: item.mainArea || '', gear: item.gear || '',
   }
+  dialogVisible.value = true
 }
 
-async function saveCreate() {
-  if (!createForm.value.title.trim()) { ElMessage.warning('请填写路线名称'); return }
-  if (!createForm.value.cityCode) { ElMessage.warning('请选择关联城市'); return }
-  savingCreate.value = true
-  let created: RouteItem | undefined
-  try {
-    const tags = createForm.value.tags.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean)
-    created = await apiPost<RouteItem>('/admin/routes', {
-      ...createForm.value,
-      title: createForm.value.title.trim(),
-      difficulty: createForm.value.difficulty.trim() || '入门级',
-      rankTag: createForm.value.rankTag.trim(),
-      description: createForm.value.description.trim(),
-      tags,
-    })
-    if (coverFile.value) await apiUpload(`/admin/routes/${created.id}/cover`, coverFile.value)
-    ElMessage.success(coverFile.value ? '路线与封面已创建，当前状态为待审核' : '路线已创建，当前状态为待审核')
-    createVisible.value = false
-    clearCoverSelection()
-    await load()
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : '请重试'
-    if (created) {
-      createVisible.value = false
-      clearCoverSelection()
-      await load()
-      ElMessage.error(`路线已创建，但封面上传失败：${detail}。可在列表中编辑路线后补传封面`)
-    } else {
-      ElMessage.error(`路线创建失败：${detail}`)
+function collectPayload() {
+  const base = {
+    title: form.value.title.trim(),
+    scene: form.value.scene,
+    cityCode: form.value.cityCode,
+    difficulty: form.value.difficulty || '入门级',
+    bestTime: form.value.bestTime,
+    durationLabel: form.value.durationLabel.trim(),
+    description: form.value.description.trim(),
+  }
+  const sceneFields = form.value.scene === 'fish'
+    ? {
+      shoreKm: form.value.shoreKm ?? undefined, depthM: form.value.depthM ?? undefined,
+      entryPoint: form.value.entryPoint.trim(), mainArea: form.value.mainArea.trim(), gear: form.value.gear.trim(),
     }
-  } finally {
-    savingCreate.value = false
+    : {
+      lengthKm: form.value.lengthKm ?? undefined, elevationM: form.value.elevationM ?? undefined,
+      carType: form.value.carType.trim(), startPoint: form.value.startPoint.trim(), endPoint: form.value.endPoint.trim(),
+    }
+  return { ...base, ...sceneFields }
+}
+
+async function save() {
+  if (!form.value.title.trim()) { ElMessage.warning('请填写路线名'); return }
+  if (!form.value.cityCode) { ElMessage.warning('请选择关联城市'); return }
+  saving.value = true
+  let metadataSaved = false
+  let createdId = editingId.value
+  try {
+    const payload = collectPayload()
+    if (editingId.value) {
+      await apiPatch(`/admin/routes/${editingId.value}`, payload)
+    } else {
+      const created = await apiPost<RouteItem>('/admin/routes', payload)
+      createdId = created.id
+    }
+    metadataSaved = true
+    if (coverFile.value && createdId) await apiUpload(`/admin/routes/${createdId}/cover`, coverFile.value)
+    ElMessage.success(editingId.value ? '路线资料已写入数据库' : `路线已创建并上线：${payload.title}`)
+    dialogVisible.value = false
+    clearCoverSelection()
+    await load()
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : '请重试'
+    ElMessage.error(metadataSaved ? `路线已保存，但封面上传失败：${detail}。可在列表中编辑路线后补传封面` : `保存失败：${detail}`)
+  } finally { saving.value = false }
+}
+
+async function remove(tableRow: unknown) {
+  const item = tableRow as RouteItem
+  try {
+    await ElMessageBox.confirm(
+      `确认删除路线「${item.title}」？<br/><span style="color:#909399;font-size:12px">删除后无法恢复；若该路线被榜单引用为封面路线，会被拦截并提示先移除。</span>`,
+      '删除路线',
+      { type: 'warning', dangerouslyUseHTMLString: true, confirmButtonText: '确认删除', cancelButtonText: '取消' },
+    )
+  } catch { return }
+  try {
+    await apiDelete(`/admin/routes/${item.id}`)
+    ElMessage.success(`已删除：${item.title}`)
+    await load()
+  } catch (error) {
+    // 服务端拦截：被榜单引用为封面路线时返回具体榜单名
+    ElMessage.error(error instanceof Error ? error.message : '删除失败')
   }
 }
 
-async function action(tableRow: unknown, type: 'audit-pass' | 'audit-reject' | 'shelf-on' | 'shelf-off') {
-  const item = tableRow as RouteItem
-  const labels = { 'audit-pass': '审核通过', 'audit-reject': '驳回并下线', 'shelf-on': '重新上架', 'shelf-off': '下架' }
-  let note = ''
-  if (type.startsWith('audit')) {
-    const result = await ElMessageBox.prompt(`确认对「${item.title}」执行${labels[type]}？`, '路线审核', { inputPlaceholder: '审核备注（可选，最多 200 字）', inputValidator: (value) => value.length <= 200 || '备注不能超过 200 字', confirmButtonText: labels[type], cancelButtonText: '取消' })
-    note = result.value
-  } else {
-    await ElMessageBox.confirm(`确认${labels[type]}「${item.title}」？`, '状态变更', { type: 'warning' })
-  }
-  await apiPost(`/admin/routes/${item.id}/actions`, { actionId: crypto.randomUUID(), action: type, note })
-  ElMessage.success(`${labels[type]}成功，已同步数据库`)
-  await load()
-}
+function goRankings() { router.push('/rankings') }
 
 onMounted(load)
 onBeforeUnmount(clearCoverSelection)
@@ -203,46 +220,97 @@ onBeforeUnmount(clearCoverSelection)
 <template>
   <input ref="coverInput" class="route-cover-input" type="file" accept="image/jpeg,image/png,image/webp" @change="onCoverSelected" />
   <PageHeader title="路线列表" group="路线运营" description="路线、钓点与小程序展示数据同源">
-    <el-button v-if="auth.hasPermission('route:edit')" class="lime-button" @click="openCreate">+ 新增路线</el-button>
-    <el-button :loading="loading" @click="load">刷新数据</el-button>
+    <el-input v-model="keyword" clearable placeholder="搜索路线名、标签、城市…" style="width: 280px" />
   </PageHeader>
-  <KpiGrid :items="kpis" :loading="loading" />
+
   <section class="panel">
     <div class="panel__toolbar">
-      <div class="panel__filters">
-        <el-input v-model="keyword" clearable placeholder="搜索路线名、标签、城市…" style="width: 280px" />
-        <el-select v-model="status" placeholder="全部状态" clearable style="width: 130px"><el-option label="在线" value="online" /><el-option label="待审核" value="pending" /><el-option label="已下线" value="offline" /></el-select>
-        <el-select v-model="scene" placeholder="全部场景" clearable style="width: 130px"><el-option label="溜车" value="drive" /><el-option label="钓鱼" value="fish" /></el-select>
+      <div class="scene-tabs">
+        <button v-for="tab in [{ value: '', label: '全部' }, { value: 'drive', label: '溜车' }, { value: 'fish', label: '钓鱼' }]" :key="tab.value"
+          class="scene-tab" :class="{ active: sceneFilter === tab.value }" role="tab" :aria-selected="sceneFilter === tab.value"
+          @click="sceneFilter = tab.value as Scene | ''">{{ tab.label }}</button>
       </div>
-      <span class="muted">共 {{ filtered.length }} 条</span>
+      <div class="spacer" />
+      <template v-if="canEdit">
+        <el-button type="primary" @click="openCreate('drive')">+ 新建溜车路线</el-button>
+        <el-button type="info" plain @click="openCreate('fish')">+ 新建钓鱼路线</el-button>
+      </template>
     </div>
+
     <el-table v-loading="loading" :data="filtered" row-key="id">
-      <el-table-column prop="listRank" label="排名" width="76" align="center" />
-      <el-table-column label="路线名称" min-width="290">
-        <template #default="{ row }"><div class="route-name"><el-image v-if="coverImageSrc(row.coverImageUrl)" class="route-thumb route-thumb-image" :src="coverImageSrc(row.coverImageUrl)" :preview-src-list="[coverImageSrc(row.coverImageUrl)]" preview-teleported hide-on-click-modal fit="cover" :alt="`${row.title}封面，点击预览`" /><span v-else class="route-thumb" :class="row.scene" aria-label="暂无路线封面" /><div><strong>{{ row.title }}</strong><small>{{ row.scene === 'drive' ? '溜车' : '钓鱼' }} · {{ row.rankTag }}</small></div></div></template>
+      <el-table-column prop="listRank" label="排名" width="66" align="center"><template #default="{ row }"><strong>#{{ (row as RouteItem).listRank }}</strong></template></el-table-column>
+      <el-table-column label="路线名称" min-width="270">
+        <template #default="{ row }">
+          <div class="route-name">
+            <el-image v-if="coverImageSrc((row as RouteItem).coverImageUrl)" class="route-thumb route-thumb-image" :src="coverImageSrc((row as RouteItem).coverImageUrl)" :preview-src-list="[coverImageSrc((row as RouteItem).coverImageUrl)]" preview-teleported hide-on-click-modal fit="cover" :alt="`${(row as RouteItem).title}封面，点击预览`" />
+            <span v-else class="route-thumb" :class="(row as RouteItem).scene" aria-label="暂无路线封面" />
+            <div><strong>{{ (row as RouteItem).title }}</strong><small>{{ sceneLabel((row as RouteItem).scene) }} · {{ (row as RouteItem).rankTag }}</small></div>
+          </div>
+        </template>
       </el-table-column>
-      <el-table-column prop="cityName" label="所在城市" width="110" />
-      <el-table-column prop="difficulty" label="难度" width="110" />
-      <el-table-column prop="rankWeight" label="榜单权重" width="110" align="center" />
-      <el-table-column label="状态" width="110"><template #default="{ row }"><el-tag :type="row.status === 'online' ? 'success' : row.status === 'pending' ? 'warning' : 'info'" effect="light"><span class="status-dot" :class="`status-${row.status}`" />{{ statusLabel(row.status) }}</el-tag></template></el-table-column>
-      <el-table-column label="操作" width="270" fixed="right">
-        <template #default="{ row }"><div class="table-actions">
-          <el-button v-if="auth.hasPermission('route:edit')" size="small" @click="openEdit(row)">编辑</el-button>
-          <template v-if="row.status === 'online'"><el-button v-if="auth.hasPermission('route:edit')" size="small" type="primary" @click="openEdit(row)">配置榜单</el-button><el-button v-if="auth.hasPermission('route:shelf')" size="small" type="danger" plain @click="action(row, 'shelf-off')">下架</el-button></template>
-          <template v-else-if="row.status === 'pending' && auth.hasPermission('route:audit')"><el-button size="small" type="success" @click="action(row, 'audit-pass')">通过</el-button><el-button size="small" type="danger" plain @click="action(row, 'audit-reject')">驳回</el-button></template>
-          <el-button v-else-if="row.status === 'offline' && auth.hasPermission('route:shelf')" size="small" class="lime-button" @click="action(row, 'shelf-on')">重新上架</el-button>
-        </div></template>
+      <el-table-column prop="cityName" label="所在城市" width="100" />
+      <el-table-column prop="difficulty" label="难度" width="100" />
+      <el-table-column label="状态" width="100">
+        <template #default="{ row }"><el-tag :type="(row as RouteItem).status === 'online' ? 'success' : (row as RouteItem).status === 'pending' ? 'warning' : 'info'" effect="light">{{ statusLabel((row as RouteItem).status) }}</el-tag></template>
+      </el-table-column>
+      <el-table-column label="创建时间" width="150"><template #default="{ row }"><span class="muted small">{{ formatCreatedAt((row as RouteItem).createdAt) }}</span></template></el-table-column>
+      <el-table-column label="已绑榜单" width="110">
+        <template #default="{ row }">
+          <el-link v-if="(row as RouteItem).boundRankings > 0" type="primary" :underline="false" title="点击跳到榜单配置" @click="goRankings">{{ (row as RouteItem).boundRankings }} 个榜单</el-link>
+          <span v-else class="muted">0 个榜单</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="160" fixed="right">
+        <template #default="{ row }">
+          <el-button v-if="canEdit" size="small" @click="openEdit(row)">编辑</el-button>
+          <el-button v-if="canEdit" size="small" type="danger" plain @click="remove(row)">删除</el-button>
+        </template>
       </el-table-column>
     </el-table>
   </section>
-  <el-dialog v-model="editVisible" title="编辑路线与榜单配置" width="620px">
+
+  <el-dialog v-model="dialogVisible" :title="editingId ? `编辑路线 · ${form.title}` : `新建${sceneLabel(form.scene)}路线`" width="680px">
+    <p v-if="!editingId" class="field-hint">场景已由入口按钮锁定为「{{ sceneLabel(form.scene) }}」，如需切换场景请关闭后选择对应按钮</p>
     <el-form label-position="top">
       <div class="route-form-grid">
-        <el-form-item label="关联城市" required><el-select v-model="editForm.cityCode" filterable placeholder="请选择城市" style="width:100%"><el-option v-for="city in cities" :key="city.code" :label="city.enabled ? city.name : `${city.name}（未启用）`" :value="city.code" /></el-select></el-form-item>
-        <el-form-item label="路线名称"><el-input v-model="editForm.title" maxlength="128" show-word-limit /></el-form-item>
+        <el-form-item label="路线名" required>
+          <el-input v-model="form.title" maxlength="128" show-word-limit :placeholder="form.scene === 'fish' ? '例：梁子湖翘嘴鲌野钓基地' : '例：八分山日落自驾观光线'" />
+        </el-form-item>
+        <el-form-item label="场景" required>
+          <el-select v-model="form.scene" :disabled="!editingId" style="width: 100%"><el-option label="溜车" value="drive" /><el-option label="钓鱼" value="fish" /></el-select>
+        </el-form-item>
+        <el-form-item label="城市" required>
+          <el-select v-model="form.cityCode" filterable placeholder="请选择城市" style="width: 100%">
+            <el-option v-for="city in cities" :key="city.code" :label="city.enabled ? city.name : `${city.name}（未开通）`" :value="city.code" :disabled="!city.enabled" />
+          </el-select>
+          <div class="field-hint">未开通城市不可选</div>
+        </el-form-item>
+        <el-form-item label="难度">
+          <el-select v-model="form.difficulty" style="width: 100%"><el-option v-for="level in LEVEL_OPTIONS" :key="level" :label="level" :value="level" /></el-select>
+        </el-form-item>
+        <el-form-item label="建议时段">
+          <el-select v-model="form.bestTime" filterable allow-create default-first-option style="width: 100%">
+            <el-option v-for="option in BESTTIME_OPTIONS" :key="option" :label="option" :value="option" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="耗时"><el-input v-model="form.durationLabel" placeholder="约 1.5 小时" /></el-form-item>
       </div>
-      <el-form-item label="难度"><el-input v-model="editForm.difficulty" /></el-form-item>
-      <el-form-item label="榜单权重"><el-slider v-model="editForm.rankWeight" show-input /></el-form-item>
+
+      <div v-if="form.scene === 'fish'" class="route-form-grid">
+        <el-form-item label="环湖岸线 (km)"><el-input-number v-model="form.shoreKm" :min="0" :precision="1" style="width: 100%" /></el-form-item>
+        <el-form-item label="平均水深 (m)"><el-input-number v-model="form.depthM" :min="0" :precision="1" style="width: 100%" /></el-form-item>
+        <el-form-item label="钓点入口"><el-input v-model="form.entryPoint" placeholder="例：梁子湖码头" /></el-form-item>
+        <el-form-item label="主钓区"><el-input v-model="form.mainArea" placeholder="例：北岸深水区" /></el-form-item>
+        <el-form-item label="装备建议" class="grid-span-2"><el-input v-model="form.gear" placeholder="例：路亚竿·手竿 2.7m / 4 号主线" /></el-form-item>
+      </div>
+      <div v-else class="route-form-grid">
+        <el-form-item label="路线长 (km)"><el-input-number v-model="form.lengthKm" :min="0" :precision="1" style="width: 100%" /></el-form-item>
+        <el-form-item label="落差 (m)"><el-input-number v-model="form.elevationM" :min="0" style="width: 100%" /></el-form-item>
+        <el-form-item label="车型"><el-input v-model="form.carType" placeholder="SUV/轿车" /></el-form-item>
+        <el-form-item label="起点"><el-input v-model="form.startPoint" /></el-form-item>
+        <el-form-item label="终点" class="grid-span-2"><el-input v-model="form.endPoint" /></el-form-item>
+      </div>
+
       <div class="route-cover-uploader">
         <div class="route-cover-preview">
           <el-image v-if="coverPreviewUrl" class="route-cover-preview-image" :src="coverPreviewUrl" :preview-src-list="[coverPreviewUrl]" preview-teleported hide-on-click-modal fit="contain" alt="待上传的路线封面，点击预览" />
@@ -250,41 +318,31 @@ onBeforeUnmount(clearCoverSelection)
           <span v-else>暂无封面</span>
         </div>
         <div class="route-cover-copy">
-          <strong>路线封面图</strong>
-          <span>上传后后台与小程序读取同一份图片数据</span>
-          <small>支持 JPG / PNG / WebP，单张不超过 5MB</small>
-          <div class="route-cover-actions"><el-button size="small" @click="chooseCover">{{ coverFile ? '重新选择' : '选择图片' }}</el-button><el-button v-if="coverFile" size="small" link @click="clearCoverSelection">移除待上传图片</el-button></div>
+          <strong>封面图</strong>
+          <span>供小程序详情页头图与列表缩略图使用</span>
+          <small>支持 JPG / PNG / WebP，建议 800×600，不超过 2MB</small>
+          <div class="route-cover-actions">
+            <el-button size="small" @click="chooseCover">{{ coverFile ? '重新选择' : '选择图片' }}</el-button>
+            <el-button v-if="coverFile" size="small" link @click="clearCoverSelection">移除待上传图片</el-button>
+          </div>
         </div>
       </div>
+
+      <el-form-item label="简介"><el-input v-model="form.description" type="textarea" :rows="3" :placeholder="form.scene === 'fish' ? '请填写具体的钓点详情' : '请填写具体的路线详情'" /></el-form-item>
     </el-form>
-    <template #footer><el-button @click="editVisible = false">取消</el-button><el-button v-if="auth.hasPermission('route:edit')" type="primary" @click="saveEdit">保存到数据库</el-button></template>
-  </el-dialog>
-  <el-dialog v-model="createVisible" title="新增路线" width="720px">
-    <el-form label-position="top">
-      <div class="route-form-grid">
-        <el-form-item label="路线名称" required><el-input v-model="createForm.title" maxlength="128" show-word-limit placeholder="请输入路线或钓点名称" /></el-form-item>
-        <el-form-item label="关联城市" required><el-select v-model="createForm.cityCode" filterable placeholder="请选择城市" style="width:100%"><el-option v-for="city in cities" :key="city.code" :label="city.enabled ? city.name : `${city.name}（未启用）`" :value="city.code" /></el-select></el-form-item>
-        <el-form-item label="场景" required><el-select v-model="createForm.scene" style="width:100%"><el-option label="溜车" value="drive" /><el-option label="钓鱼" value="fish" /></el-select></el-form-item>
-        <el-form-item label="难度" required><el-input v-model="createForm.difficulty" placeholder="如：入门级、进阶级" /></el-form-item>
-        <el-form-item label="榜单标签"><el-input v-model="createForm.rankTag" maxlength="64" placeholder="如：周末热门榜" /></el-form-item>
-        <el-form-item label="榜单权重"><el-input-number v-model="createForm.rankWeight" :min="0" :max="100" style="width:100%" /></el-form-item>
-        <el-form-item label="参考距离（km）"><el-input-number v-model="createForm.distanceKm" :min="0" :precision="1" style="width:100%" /></el-form-item>
-        <el-form-item label="路线长度（km）"><el-input-number v-model="createForm.lengthKm" :min="0" :precision="1" style="width:100%" /></el-form-item>
-        <el-form-item label="预计时长"><el-input v-model="createForm.durationLabel" maxlength="32" placeholder="如：约 2h" /></el-form-item>
-        <el-form-item label="最佳时段"><el-input v-model="createForm.bestTime" maxlength="64" placeholder="如：清晨、日落前" /></el-form-item>
-      </div>
-      <div class="route-cover-uploader">
-        <div class="route-cover-preview"><el-image v-if="coverPreviewUrl" class="route-cover-preview-image" :src="coverPreviewUrl" :preview-src-list="[coverPreviewUrl]" preview-teleported hide-on-click-modal fit="contain" alt="待上传的路线封面，点击预览" /><span v-else>选择图片后预览</span></div>
-        <div class="route-cover-copy">
-          <strong>路线封面图</strong>
-          <span>保存后会写入服务端，小程序端自动读取同一地址</span>
-          <small>支持 JPG / PNG / WebP，单张不超过 5MB；图片过大或格式不支持会明确提示</small>
-          <div class="route-cover-actions"><el-button size="small" @click="chooseCover">{{ coverFile ? '重新选择' : '选择图片' }}</el-button><el-button v-if="coverFile" size="small" link @click="clearCoverSelection">移除待上传图片</el-button></div>
-        </div>
-      </div>
-      <el-form-item label="标签"><el-input v-model="createForm.tags" placeholder="多个标签用逗号分隔，如：山景，日落" /></el-form-item>
-      <el-form-item label="描述"><el-input v-model="createForm.description" type="textarea" :rows="3" maxlength="5000" show-word-limit placeholder="补充路线特色、注意事项等信息" /></el-form-item>
-    </el-form>
-    <template #footer><el-button @click="createVisible = false">取消</el-button><el-button v-if="auth.hasPermission('route:edit')" type="primary" :loading="savingCreate" @click="saveCreate">创建并提交审核</el-button></template>
+    <template #footer>
+      <el-button @click="dialogVisible = false">取消</el-button>
+      <el-button v-if="canEdit" type="primary" :loading="saving" @click="save">保存</el-button>
+    </template>
   </el-dialog>
 </template>
+
+<style scoped>
+.spacer { flex: 1; }
+.scene-tabs { display: inline-flex; gap: 6px; }
+.scene-tab { min-height: 32px; padding: 0 16px; border: 1px solid var(--el-border-color); border-radius: 999px; background: #fff; color: var(--el-text-color-regular); font-size: 13px; cursor: pointer; }
+.scene-tab.active { border-color: var(--el-color-primary); background: var(--el-color-primary-light-9); color: var(--el-color-primary); font-weight: 600; }
+.field-hint { margin: 4px 0 12px; color: var(--el-text-color-secondary); font-size: 12px; }
+.muted { color: var(--el-text-color-secondary); }
+.small { font-size: 12px; }
+</style>

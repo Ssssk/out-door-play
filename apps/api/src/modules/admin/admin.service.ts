@@ -12,10 +12,10 @@ import type {
   UpdateFeedStatusDto,
   UpdateFuelStationDto,
   UpdateQrConfigDto,
-  UpdateRankingDto,
   UpdateRouteDto,
   UpdateUserNoteDto,
   UpdateUserStatusDto,
+  UpsertRankingDto,
 } from './admin.dto'
 
 const QR_CONFIG_KEY = 'qrcodes'
@@ -64,19 +64,42 @@ export class AdminService {
   }
 
   async routes() {
-    const records = await this.prisma.discovery.findMany({
-      include: { city: { select: { name: true } }, _count: { select: { favorites: true } } },
-      orderBy: [{ rankWeight: 'desc' }, { rank: 'desc' }],
-    })
+    const [records, rankings] = await Promise.all([
+      this.prisma.discovery.findMany({
+        include: { city: { select: { name: true } }, _count: { select: { favorites: true } } },
+        orderBy: [{ rankWeight: 'desc' }, { rank: 'desc' }],
+      }),
+      this.prisma.ranking.findMany({ select: { coverRouteIds: true } }),
+    ])
+    // 已绑榜单数 = 各榜单 coverRouteIds 引用该路线的次数（与榜单编辑器双向同步）
+    const boundCount = new Map<string, number>()
+    for (const ranking of rankings) {
+      const ids = Array.isArray(ranking.coverRouteIds) ? (ranking.coverRouteIds as string[]) : []
+      for (const id of ids) boundCount.set(id, (boundCount.get(id) || 0) + 1)
+    }
     return records.map((item, index) => ({
       ...item,
       listRank: index + 1,
       cityName: item.city.name,
       favoriteCount: item._count.favorites,
+      boundRankings: boundCount.get(item.id) || 0,
       tags: Array.isArray(item.tags) ? item.tags : [],
       city: undefined,
       _count: undefined,
     }))
+  }
+
+  /** 删除路线（PRD：若被榜单引用为封面路线则拦截并提示；物理删除无法恢复） */
+  async deleteRoute(id: string) {
+    await this.requireRoute(id)
+    const usedBy = (await this.prisma.ranking.findMany({ select: { name: true, coverRouteIds: true } }))
+      .filter((ranking) => Array.isArray(ranking.coverRouteIds) && (ranking.coverRouteIds as string[]).includes(id))
+      .map((ranking) => ranking.name)
+    if (usedBy.length) {
+      throw new BadRequestException(`该路线被以下榜单引用为封面路线，请先到「热门榜单配置」移除：${usedBy.join('、')}`)
+    }
+    await this.prisma.discovery.delete({ where: { id } })
+    return { id }
   }
 
   async createRoute(input: CreateRouteDto) {
@@ -113,7 +136,8 @@ export class AdminService {
         latitude: input.latitude ?? 0,
         longitude: input.longitude ?? 0,
         elevationPoints: input.elevationPoints ?? undefined,
-        status: 'pending',
+        // PRD v1.0.0：新建路线直接上线（无待审核中间态，操作列仅编辑/删除）
+        status: 'online',
         rankWeight: input.rankWeight ?? 50,
       },
     })
@@ -190,14 +214,78 @@ export class AdminService {
     })
   }
 
-  rankings() {
-    return this.prisma.ranking.findMany({ include: { city: { select: { name: true } } }, orderBy: [{ weight: 'desc' }, { id: 'asc' }] })
+  async rankings() {
+    const records = await this.prisma.ranking.findMany({ include: { city: { select: { name: true } } }, orderBy: [{ weight: 'desc' }, { id: 'asc' }] })
+    return records.map((ranking) => ({
+      ...ranking,
+      // seq 与 weight 共用同一字段（PRD v1.0.0 取消权重概念，榜单顺序即 seq）
+      seq: ranking.weight,
+      cityName: ranking.city?.name || '',
+      coverRouteIds: Array.isArray(ranking.coverRouteIds) ? ranking.coverRouteIds : [],
+    }))
   }
 
-  async updateRanking(id: string, input: UpdateRankingDto) {
+  /** 新建/编辑榜单共用校验：封面路线必须存在且同场景（指定城市时还要同城市，RULE-RANK-004） */
+  private async validateCoverRoutes(scene: 'drive' | 'fish', cityCode: string | undefined, coverRouteIds: string[]) {
+    const routes = await this.prisma.discovery.findMany({
+      where: { id: { in: coverRouteIds } },
+      select: { id: true, scene: true, cityCode: true, status: true, title: true },
+    })
+    if (routes.length !== coverRouteIds.length) throw new BadRequestException('封面路线中存在不存在的路线，请刷新后重试')
+    const offline = routes.filter((route) => route.status === 'offline')
+    if (offline.length) throw new BadRequestException(`以下路线已下架，不能作为封面：${offline.map((route) => route.title).join('、')}`)
+    const wrongScene = routes.filter((route) => route.scene !== scene)
+    if (wrongScene.length) throw new BadRequestException(`封面路线场景须与榜单一致（${scene === 'fish' ? '钓鱼' : '溜车'}）：${wrongScene.map((route) => route.title).join('、')}`)
+    if (cityCode) {
+      const wrongCity = routes.filter((route) => route.cityCode !== cityCode)
+      if (wrongCity.length) throw new BadRequestException(`封面路线须与榜单城市一致：${wrongCity.map((route) => route.title).join('、')}`)
+    }
+  }
+
+  async createRanking(input: UpsertRankingDto) {
+    await this.validateCoverRoutes(input.scene, input.cityCode, input.coverRouteIds)
+    if (input.cityCode) {
+      const city = await this.prisma.city.findUnique({ where: { code: input.cityCode } })
+      if (!city) throw new NotFoundException('榜单城市不存在')
+    }
+    const max = await this.prisma.ranking.aggregate({ _max: { weight: true } })
+    return this.prisma.ranking.create({
+      data: {
+        id: `ranking-${randomUUID()}`,
+        name: input.name.trim(),
+        scene: input.scene,
+        cityCode: input.cityCode || null,
+        coverRouteIds: input.coverRouteIds,
+        coverageCount: input.coverRouteIds.length,
+        weight: (max._max.weight || 0) + 1,
+        // PRD v1.0.0：榜单状态恒为 online（无 draft/offline 中间态）
+        status: 'online',
+      },
+    })
+  }
+
+  async updateRanking(id: string, input: UpsertRankingDto) {
     const found = await this.prisma.ranking.findUnique({ where: { id } })
     if (!found) throw new NotFoundException('榜单不存在')
-    return this.prisma.ranking.update({ where: { id }, data: input })
+    await this.validateCoverRoutes(input.scene, input.cityCode, input.coverRouteIds)
+    return this.prisma.ranking.update({
+      where: { id },
+      data: {
+        name: input.name.trim(),
+        scene: input.scene,
+        cityCode: input.cityCode || null,
+        coverRouteIds: input.coverRouteIds,
+        coverageCount: input.coverRouteIds.length,
+      },
+    })
+  }
+
+  /** 删除榜单（PRD：二次确认后物理删除，路线的「已绑榜单数」同步减少） */
+  async deleteRanking(id: string) {
+    const found = await this.prisma.ranking.findUnique({ where: { id } })
+    if (!found) throw new NotFoundException('榜单不存在')
+    await this.prisma.ranking.delete({ where: { id } })
+    return { id }
   }
 
   async cities() {
