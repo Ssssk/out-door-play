@@ -27,7 +27,7 @@ request.interceptors.response.use(undefined, (error: unknown) => {
 export function unwrapEnvelope<T>(envelope: Envelope<T>): T {
   if (envelope.code !== 0) {
     // 参数校验失败时把具体字段带出来，避免只看到笼统的「请求参数不符合要求」
-    const details = envelope.details as Array<{ field?: string; rules?: string[] }> | undefined
+    const details = (envelope as { details?: Array<{ field?: string; rules?: string[] }> }).details
     const fieldHint = Array.isArray(details) && details.length
       ? `（字段：${details.map((detail) => detail.field).filter(Boolean).join('、')}）`
       : ''
