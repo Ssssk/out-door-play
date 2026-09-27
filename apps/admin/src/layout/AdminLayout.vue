@@ -23,6 +23,8 @@ const allMenus = [
 ]
 const menus = computed(() => allMenus.map((section) => ({ ...section, items: section.items.filter((item) => auth.hasPermission(item.permission)) })).filter((section) => section.items.length))
 const activePath = computed(() => route.path)
+// 环境徽标按构建模式自动显示，避免线上误显「本地环境」造成「部署未生效」的误判
+const envLabel = import.meta.env.PROD ? '生产环境' : '开发环境'
 async function logout() { try { await auth.logout() } finally { await router.replace({ name: 'Login' }) } }
 </script>
 
@@ -45,7 +47,7 @@ async function logout() { try { await auth.logout() } finally { await router.rep
     </aside>
     <main class="workspace">
       <div class="topbar">
-        <div><span class="env-badge">本地环境</span><span class="topbar__hint">数据与小程序实时同源</span></div>
+        <div><span class="env-badge" :class="{ prod: envLabel === '生产环境' }">{{ envLabel }}</span><span class="topbar__hint">数据与小程序实时同源</span></div>
         <div class="operator"><span class="operator__avatar">{{ auth.actor?.displayName.slice(0, 1) }}</span><div><strong>{{ auth.actor?.displayName }}</strong><small>{{ auth.actor?.roles.join(' · ') }}</small></div><el-button text @click="logout">退出</el-button></div>
       </div>
       <div class="content"><RouterView /></div>

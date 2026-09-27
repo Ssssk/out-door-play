@@ -32,6 +32,7 @@ button, input { font: inherit; }
 .workspace { width: calc(100% - 232px); min-height: 100vh; margin-left: 232px; }
 .topbar { height: 66px; padding: 0 32px; background: rgba(255,255,255,.92); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); }
 .env-badge { padding: 5px 9px; color: #526b00; background: #edffc0; border: 1px solid #d5ef91; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.env-badge.prod { color: #6b3d00; background: #ffe9b0; border-color: #f2d488; }
 .topbar__hint { margin-left: 10px; color: var(--muted); font-size: 12px; }
 .operator { display: flex; align-items: center; gap: 9px; }
 .operator__avatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: var(--ink); background: var(--lime); font-weight: 800; }
