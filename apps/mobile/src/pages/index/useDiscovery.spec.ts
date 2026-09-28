@@ -85,6 +85,26 @@ describe('useDiscovery', () => {
     expect(state.availableCities.value.length).toBeGreaterThan(0)
   })
 
+  it('orders cards by distance to the device, nearest first', async () => {
+    const origin = { latitude: 30.5928, longitude: 114.3055 }
+    vi.stubGlobal('uni', {
+      stopPullDownRefresh: vi.fn(),
+      showToast: vi.fn(),
+      getLocation: ({ success }: { success: (result: { latitude: number; longitude: number }) => void }) => success(origin),
+    })
+    api.routes.mockResolvedValueOnce([
+      { ...card('far', 'drive'), latitude: 30.9, longitude: 114.3 },
+      { ...card('unknown', 'drive'), distanceKm: Number.NaN },
+      { ...card('near', 'drive'), latitude: 30.5935, longitude: 114.306 },
+    ])
+    const state = useDiscovery()
+    await lifecycle.load?.()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(useAppStore().location).toEqual(origin)
+
+    expect(state.routes.value.map((item) => item.id)).toEqual(['near', 'far', 'unknown'])
+  })
+
   it('shares one in-flight request for the same city and scene', async () => {
     api.routes.mockResolvedValueOnce([card('initial-drive', 'drive')])
     const state = useDiscovery()

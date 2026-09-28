@@ -10,6 +10,11 @@ import type { City, RouteCard, Scene } from '@/types/domain'
 
 export type DiscoveryStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'fallback' | 'error'
 
+/** 排序用距离：无距离（定位未授权且数据未带距离）按无穷远处理，排在最后。 */
+function sortableDistance(distanceKm: number | null | undefined) {
+  return typeof distanceKm === 'number' && Number.isFinite(distanceKm) ? distanceKm : Number.POSITIVE_INFINITY
+}
+
 export function useDiscovery() {
   const appStore = useAppStore()
   const { ensureLocation } = useUserLocation()
@@ -25,13 +30,18 @@ export function useDiscovery() {
   let pendingKey: string | undefined
   let pendingRequest: Promise<void> | undefined
 
-  // 拿到设备定位后按真实经纬度重算「距你」距离；无定位时沿用数据自带距离。
-  const routes = computed(() =>
-    rawRoutes.value.map((item) => {
+  // 拿到设备定位后按真实经纬度重算「距你」距离，并按距离由近到远排序；无定位时沿用数据自带距离。
+  const routes = computed(() => {
+    const items = rawRoutes.value.map((item) => {
       const distance = resolveDistanceKm(item, appStore.location)
       return distance === null ? item : { ...item, distanceKm: distance }
-    }),
-  )
+    })
+    // 没有可用距离（界面显示「-」）的条目视为无穷远，保持原序沉底；距离相同的沿用榜单顺序
+    return items
+      .map((item, index) => ({ item, index, distance: sortableDistance(item.distanceKm) }))
+      .sort((left, right) => left.distance - right.distance || left.index - right.index)
+      .map((entry) => entry.item)
+  })
 
   async function loadLocation() {
     await ensureLocation()
