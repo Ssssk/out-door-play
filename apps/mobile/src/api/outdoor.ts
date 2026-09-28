@@ -18,7 +18,8 @@ export const outdoorApi = {
   me: () => request<UserProfile>('/user/me', { auth: 'required' }),
   // 运营后台「上传二维码」配置；未配置时返回空串，页面回退默认入口
   qrcodes: () => request<{ fanGroup: string; contact: string; fanGroupAt: string | null; contactAt: string | null }>('/config/qrcodes'),
-  saveMe: (data: { nickname: string; avatarUrl?: string; phone?: string }) => request<UserProfile>('/user/me', { method: 'PATCH', data, auth: 'required' }),
+  // 微信小程序 wx.request 不支持 PATCH（会直接 fail 成网络错误），故走服务端保留的 POST /user/me 兼容入口
+  saveMe: (data: { nickname: string; avatarUrl?: string; phone?: string }) => request<UserProfile>('/user/me', { method: 'POST', data, auth: 'required' }),
   uploadAvatar: (filePath: string) => uploadFile<UserProfile>('/user/avatar', filePath),
   favorites: (scene: 'drive' | 'fish') => request<FavoriteItem[]>(`/user/favorites?scene=${scene}`, { auth: 'required' }),
   addFavorite: (discoveryId: string) => request<{ discoveryId: string; favorited: true }>('/user/favorites', { method: 'POST', data: { discoveryId }, auth: 'required' }),

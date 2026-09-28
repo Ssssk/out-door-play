@@ -45,7 +45,8 @@ function send<T>(path: string, options: RequestOptions, accessToken?: string): P
   return new Promise((resolve, reject) => {
     uni.request({
       url: `${BASE_URL}${path}`,
-      // 当前 @dcloudio/types 的联合类型遗漏 PATCH，uni.request 运行时与服务端均支持。
+      // PATCH 仅为 H5 保留：微信小程序 wx.request 不支持该方法，会直接 fail 成网络错误，
+      // 小程序端需要改写时请使用服务端提供的 POST 兼容入口（如 POST /user/me）。
       method: (options.method || 'GET') as UniApp.RequestOptions['method'],
       data: options.data,
       timeout: options.timeout || 5000,
