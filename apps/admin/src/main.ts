@@ -1,6 +1,10 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
+// JS 调用的组件（ElMessage/ElMessageBox/ElNotification）走手动 import，绕过了
+// ElementPlusResolver 的按需样式注入，必须全局引入完整样式，否则弹窗无样式
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
 import './styles/main.css'
 import { pinia } from './stores/pinia'
 import { useAuthStore } from './stores/auth'
@@ -16,4 +20,4 @@ configureAuthTransport({ onUnauthorized: () => {
   }
 } })
 
-createApp(App).use(pinia).use(router).mount('#app')
+createApp(App).use(pinia).use(router).use(ElementPlus).mount('#app')
