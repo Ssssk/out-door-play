@@ -42,16 +42,19 @@ async function load() {
   try { items.value = await apiGet<CityItem[]>('/admin/cities') } finally { loading.value = false }
 }
 
+// 城市 scenes 合法值与 CreateCityDto/UpdateCityDto 对齐，避免历史 fuel 残留导致 422
+const CITY_SCENES = ['drive', 'fish'] as const
+
 function openCreate() {
   editingCode.value = null
-  form.value = { code: '', name: '', scenes: ['drive', 'fuel'], enabled: true }
+  form.value = { code: '', name: '', scenes: ['drive'], enabled: true }
   dialogVisible.value = true
 }
 
 function openEdit(tableRow: unknown) {
   const row = tableRow as CityItem
   editingCode.value = row.code
-  form.value = { code: row.code, name: row.name, scenes: [...row.scenes], enabled: row.enabled }
+  form.value = { code: row.code, name: row.name, scenes: row.scenes.filter((s) => (CITY_SCENES as readonly string[]).includes(s)), enabled: row.enabled }
   dialogVisible.value = true
 }
 
