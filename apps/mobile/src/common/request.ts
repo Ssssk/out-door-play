@@ -101,6 +101,18 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 export async function uploadFile<T>(path: string, filePath: string, name = 'file'): Promise<T> {
   const accessToken = await authSession.prepareAccessToken()
   if (!accessToken) throw new ApiError('AUTH_REQUIRED', '请先登录', 401)
+  try {
+    return await uploadOnce<T>(path, filePath, name, accessToken)
+  } catch (error) {
+    // 真机上 chooseAvatar 等来源的临时文件落盘与首次 uploadFile 存在竞态，常表现为
+    // 第一次 fail、第二次成功；这里对本地 fail 延时后自动重试一次，HTTP/业务错误不重试。
+    if (!(error instanceof ApiError) || error.code !== 'COMMON_NETWORK_ERROR') throw error
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    return uploadOnce<T>(path, filePath, name, accessToken)
+  }
+}
+
+function uploadOnce<T>(path: string, filePath: string, name: string, accessToken: string): Promise<T> {
   return new Promise((resolve, reject) => {
     uni.uploadFile({
       url: `${BASE_URL}${path}`,
@@ -118,7 +130,10 @@ export async function uploadFile<T>(path: string, filePath: string, name = 'file
           reject(new ApiError(`HTTP_${response.statusCode}`, `上传失败（${response.statusCode}）`, response.statusCode))
         }
       },
-      fail: (error) => reject(new ApiError('COMMON_NETWORK_ERROR', error.errMsg || '上传失败')),
+      fail: (error) => {
+        console.warn('[uploadFile] fail:', error.errMsg)
+        reject(new ApiError('COMMON_NETWORK_ERROR', error.errMsg || '上传失败'))
+      },
     })
   })
 }
