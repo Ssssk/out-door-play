@@ -29,7 +29,7 @@ import { userFacingError } from '@/common/apiErrors'
 import { launchLock } from '@/common/launchLock'
 import { openNavigation } from '@/common/mapNavigation'
 import { withRealDistance } from '@/common/location'
-import { requireAuth } from '@/common/requireAuth'
+import { requireAuthThen } from '@/common/requireAuth'
 import { useUserLocation } from '@/common/userLocation'
 import { fishingSpots } from '@/data/mock'
 import { useAuthStore } from '@/stores/auth'
@@ -76,13 +76,18 @@ async function loadSpot() {
   await loadFavorite()
 }
 async function toggleFavorite() {
-  if (!spot.value || favoritePending.value) return
-  if (!authStore.isAuthenticated && !await requireAuth()) return
+  const item = spot.value
+  if (!item || favoritePending.value) return
   favoritePending.value = true
   try {
-    if (isFavorite.value) await outdoorApi.removeFavorite(spot.value.id)
-    else await outdoorApi.addFavorite(spot.value.id)
-    isFavorite.value = !isFavorite.value
+    // 游客：先静默登录，登录成功后自动完成本次收藏，无需再点一次
+    const result = await requireAuthThen(async () => {
+      if (isFavorite.value) await outdoorApi.removeFavorite(item.id)
+      else await outdoorApi.addFavorite(item.id)
+      return !isFavorite.value
+    })
+    if (!result.ok) return
+    isFavorite.value = result.value
     uni.showToast({ title: isFavorite.value ? '已收藏' : '已取消收藏', icon: 'none' })
   } catch (error) {
     uni.showToast({ title: userFacingError(error, '收藏操作失败，请重试'), icon: 'none' })
