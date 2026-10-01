@@ -10,5 +10,5 @@ export class WeatherController {
 
   @Get('weather/current')
   @ApiOperation({ operationId: 'getCurrentWeather' })
-  current(@Query() query: CurrentWeatherDto) { return this.weather.current(query.cityCode) }
+  async current(@Query() query: CurrentWeatherDto) { return this.weather.current(query.cityCode) }
 }

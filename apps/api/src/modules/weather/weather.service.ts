@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common'
+import { TencentWeatherProvider, type WeatherObservation } from './tencent-weather.provider'
 
 export interface CurrentWeather {
   cityCode: string
@@ -19,11 +20,10 @@ export interface CurrentWeather {
 type WeatherSnapshot = Omit<CurrentWeather, 'cityCode'>
 
 /**
- * 真实天气服务接入前的占位实现。
+ * 实时天气取腾讯位置服务（按城市 adcode 查询），失败或未配置 key 时降级到静态快照。
  *
- * 需求側（v1.1.0）约定本期为静态数据、接口先行，因此这里按城市编码返回稳定快照，
- * 保证小程序端不再拿到 404；后续接入第三方天气服务时只需替换本文件的取数逻辑，
- * 保持 `GET /v1/weather/current?cityCode=` 的响应结构不变。
+ * 降级快照只在「拿不到真实数据」时使用，保证 `GET /v1/weather/current` 永远有稳定结构，
+ * 小程序端不需要为天气失败单独兜底。
  */
 const SNAPSHOTS = new Map<string, WeatherSnapshot>([
   ['420100', { temp: 28, desc: '晴朗', wind: '微风 3 级', air: '空气优', tip: '适宜出行', icon: 'weather-sun.svg' }],
@@ -40,9 +40,84 @@ const SNAPSHOTS = new Map<string, WeatherSnapshot>([
 
 const FALLBACK: WeatherSnapshot = { temp: 28, desc: '晴朗', wind: '微风 3 级', air: '空气优', tip: '适宜出行', icon: 'weather-sun.svg' }
 
+/** 天气缓存时长：腾讯天气短时间内不会变，且个人开发者额度有限 */
+const CACHE_TTL_MS = 10 * 60 * 1000
+/** 取数失败后的重试窗口，避免数据源异常时每个请求都去打接口 */
+const FAILURE_RETRY_MS = 60 * 1000
+
+function snapshotFor(cityCode: string): WeatherSnapshot {
+  return SNAPSHOTS.get(cityCode) ?? FALLBACK
+}
+
+/** 天气现象 → 小程序图标（static/icons 下只有这 6 个天气图标） */
+function iconFor(weather: string): string {
+  if (weather.includes('雪')) return 'weather-snow.svg'
+  if (weather.includes('雨')) return 'weather-rain.svg'
+  if (weather.includes('雾')) return 'weather-fog.svg'
+  if (weather.includes('晴')) return 'weather-sun.svg'
+  if (weather.includes('阴')) return 'weather-overcast.svg'
+  if (weather.includes('霾') || weather.includes('沙') || weather.includes('尘')) return 'weather-overcast.svg'
+  return 'weather-cloudy.svg'
+}
+
+/** 出行建议按天气现象本地推导，不编造数据源没有的信息 */
+function tipFor(weather: string, temp: number): string {
+  if (weather.includes('雪')) return '注意路面结冰'
+  if (weather.includes('雨')) return '记得带伞'
+  if (weather.includes('雾')) return '减速慢行'
+  if (weather.includes('霾') || weather.includes('沙') || weather.includes('尘')) return '减少户外活动'
+  if (temp >= 30) return '注意防晒'
+  if (temp <= 8) return '注意添衣'
+  return '适宜出行'
+}
+
+function toCurrentWeather(cityCode: string, observation: WeatherObservation): CurrentWeather {
+  const snapshot = snapshotFor(cityCode)
+  return {
+    cityCode,
+    temp: observation.temperature,
+    desc: observation.weather,
+    wind: [observation.windDirection, observation.windPower].filter(Boolean).join(' ') || snapshot.wind,
+    // 腾讯基础天气不返回 AQI（需 added_fields=air），空气质量暂沿用城市静态文案
+    air: snapshot.air,
+    tip: tipFor(observation.weather, observation.temperature),
+    icon: iconFor(observation.weather),
+  }
+}
+
 @Injectable()
 export class WeatherService {
-  current(cityCode: string): CurrentWeather {
-    return { cityCode, ...(SNAPSHOTS.get(cityCode) ?? FALLBACK) }
+  private readonly cache = new Map<string, { value: CurrentWeather; expiresAt: number }>()
+  private readonly inflight = new Map<string, Promise<WeatherObservation | null>>()
+
+  constructor(private readonly provider: TencentWeatherProvider) {}
+
+  async current(cityCode: string): Promise<CurrentWeather> {
+    const cached = this.cache.get(cityCode)
+    if (cached && cached.expiresAt > Date.now()) return cached.value
+
+    const observation = await this.load(cityCode)
+    if (observation) {
+      const value = toCurrentWeather(cityCode, observation)
+      this.cache.set(cityCode, { value, expiresAt: Date.now() + CACHE_TTL_MS })
+      return value
+    }
+
+    // 取数失败：优先用上一次成功值，其次静态快照；失败窗口内不再重复打接口
+    const value = cached?.value ?? { cityCode, ...snapshotFor(cityCode) }
+    this.cache.set(cityCode, { value, expiresAt: Date.now() + FAILURE_RETRY_MS })
+    return value
+  }
+
+  /** 同一城市的并发请求共用一个在途请求，避免重复消耗额度 */
+  private load(cityCode: string): Promise<WeatherObservation | null> {
+    const pending = this.inflight.get(cityCode)
+    if (pending) return pending
+
+    const request = this.provider.fetch(cityCode)
+      .catch(() => null)
+      .finally(() => { if (this.inflight.get(cityCode) === request) this.inflight.delete(cityCode) })
+    this.inflight.set(cityCode, request)
+    return request
   }
 }
