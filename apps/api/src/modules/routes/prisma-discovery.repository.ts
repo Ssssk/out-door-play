@@ -63,6 +63,15 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
     return labels
   }
 
+  /** 榜单标签优先取后台榜单绑定（榜单名 + 在榜单中的位次），未绑定则保留路线自带标签。 */
+  private async applyRankingLabels<T extends { id: string; rankTag: string; rank: number }>(records: T[]) {
+    const labels = await this.rankingLabels(records.map((record) => record.id))
+    return records.map((record) => {
+      const label = labels.get(record.id)
+      return label ? { ...record, rankTag: label.rankTag, rank: label.rank } : record
+    })
+  }
+
   async list(scene: DiscoveryScene, limit: number, cityCode?: string) {
     const records = await this.prisma.discovery.findMany({
       where: {
@@ -75,18 +84,17 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
       orderBy: [{ rank: 'asc' }, { distanceKm: 'asc' }, { id: 'asc' }],
       take: limit,
     })
-    // 榜单标签优先取后台榜单绑定（榜单名 + 在榜单中的位次），未绑定则保留路线自带标签
-    const labels = await this.rankingLabels(records.map((record) => record.id))
-    return records.map((record) => {
-      const label = labels.get(record.id)
-      return label ? { ...record, rankTag: label.rankTag, rank: label.rank } : record
-    })
+    return this.applyRankingLabels(records)
   }
 
-  find(id: string, scene: DiscoveryScene) {
-    return this.prisma.discovery.findFirst({
+  async find(id: string, scene: DiscoveryScene) {
+    const record = await this.prisma.discovery.findFirst({
       where: { id, scene, status: 'online', city: { enabled: true } },
       select: publicDiscoverySelect,
     })
+    // 详情与列表使用同一份榜单标签口径，否则详情会显示库里原始的 rank/rankTag（如「Top 0」）
+    if (!record) return null
+    const [labelled] = await this.applyRankingLabels([record])
+    return labelled
   }
 }
