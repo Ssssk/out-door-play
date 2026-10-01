@@ -6,14 +6,14 @@
         :cities-loading="citiesLoading"
         :cities-fallback="citiesFallback"
         @change="loadRoutes()"
-        @retry-cities="loadCities"
+        @retry-cities="loadCities(true)"
       />
 
       <SceneTabs :model-value="scene" @update:model-value="changeScene" />
 
-      <view v-if="loading && routes.length === 0" class="loading-state">
-        <wd-loading color="#1a1a1a" />
-        <text>正在寻找附近好去处…</text>
+      <!-- 首屏用骨架卡占位，避免转圈 + 大面积空白 -->
+      <view v-if="status === 'loading' || (loading && routes.length === 0)" class="route-list">
+        <RouteCardSkeleton v-for="index in 3" :key="index" />
       </view>
 
       <view v-else-if="status === 'empty'" class="result-state" role="status">
@@ -43,6 +43,7 @@
 import AppShell from '@/components/AppShell.vue'
 import BrandHeader from '@/components/BrandHeader.vue'
 import DiscoveryCard from '@/components/DiscoveryCard.vue'
+import RouteCardSkeleton from '@/components/RouteCardSkeleton.vue'
 import SceneTabs from '@/components/SceneTabs.vue'
 import { onShareAppMessage } from '@dcloudio/uni-app'
 import { navigate } from '@/common/router'

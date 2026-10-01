@@ -4,7 +4,9 @@
       <PageHeader title="我的收藏" fallback="/pages/mine/index" />
       <SceneTabs v-model="scene" />
 
-      <view v-if="loading" class="state"><wd-loading /><text>正在加载收藏…</text></view>
+      <view v-if="loading" class="favorite-list">
+        <ListRowSkeleton v-for="index in 3" :key="index" />
+      </view>
       <view v-else-if="loadError" class="state error-state"><text>{{ loadError }}</text><button @click="load">重试</button></view>
       <view v-else-if="items.length" class="favorite-list">
         <button v-for="item in items" :key="item.id" class="favorite-card card-surface" @click="openItem(item)">
@@ -22,6 +24,7 @@
 import { onShow } from '@dcloudio/uni-app'
 import { ref, watch } from 'vue'
 import AppShell from '@/components/AppShell.vue'
+import ListRowSkeleton from '@/components/ListRowSkeleton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import SceneTabs from '@/components/SceneTabs.vue'
 import { outdoorApi } from '@/api/outdoor'

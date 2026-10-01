@@ -16,7 +16,7 @@
       </view>
       <DetailActionBar :favorite="isFavorite" @favorite="toggleFavorite" @share="share" @start="start" />
     </view>
-    <view v-else-if="loadState === 'loading'" class="loading"><wd-loading /><text>正在加载路线…</text></view>
+    <view v-else-if="loadState === 'loading'"><DetailSkeleton /></view>
     <view v-else class="loading error-state" role="alert"><text>{{ loadError }}</text><button @click="loadDetail">重试</button></view>
   </AppShell>
 </template>
@@ -27,6 +27,7 @@ import { onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import AppShell from '@/components/AppShell.vue'
 import DetailActionBar from '@/components/DetailActionBar.vue'
 import DetailHero from '@/components/DetailHero.vue'
+import DetailSkeleton from '@/components/DetailSkeleton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { outdoorApi } from '@/api/outdoor'
 import { userFacingError } from '@/common/apiErrors'
