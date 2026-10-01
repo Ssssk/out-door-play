@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { createHash } from 'node:crypto'
 import type { GeoPoint } from '../../common/geo'
+import { buildSignature } from '../../common/tencent-signature'
 
 /**
  * 附近加油站数据源：腾讯位置服务「地点搜索」（WebService API）。
@@ -85,17 +85,10 @@ function toText(value: unknown): string {
 }
 
 /**
- * 腾讯 SN 校验签名：`md5(请求路径 + "?" + 参数名升序的 key=value 拼接 + SK)`。
- * 参与签名的必须是**未编码的原始值**（发送时才逐值 urlencode），路径要带 `/ws/` 前缀。
+ * 腾讯 SN 校验签名实现已抽到 `common/tencent-signature`（天气查询共用同一份），
+ * 这里保留再导出，避免既有调用方与测试改动。
  */
-export function buildSignature(path: string, params: Record<string, string>, secretKey: string): string {
-  const rawQuery = Object.entries(params)
-    // 参数名按字母升序（a→z），与官方要求一致
-    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
-    .map(([name, value]) => `${name}=${value}`)
-    .join('&')
-  return createHash('md5').update(`${path}?${rawQuery}${secretKey}`, 'utf8').digest('hex')
-}
+export { buildSignature }
 
 /** 名称优先、分类兜底地推导品牌；都识别不出时统一记作「加油站」 */
 export function deriveBrand(title: string, category: string): string {

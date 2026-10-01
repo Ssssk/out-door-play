@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common'
+import { buildSignature, buildTencentUrl, tencentMapSecret } from '../../common/tencent-signature'
 
 /**
  * 实时天气数据源：腾讯位置服务「天气查询」（WebService API）。
@@ -30,7 +31,8 @@ export interface WeatherObservation {
 }
 
 const BASE_URL = 'https://apis.map.qq.com'
-const WEATHER_PATH = '/ws/weather/v1/'
+/** 路径不带末尾斜杠，且签名与实际请求必须一致（官方要求） */
+const WEATHER_PATH = '/ws/weather/v1'
 const REQUEST_TIMEOUT_MS = 8000
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
@@ -64,9 +66,17 @@ export class TencentWeatherProvider {
   async fetch(adcode: string): Promise<WeatherObservation | null> {
     if (!this.enabled) return null
 
-    const url = `${BASE_URL}${WEATHER_PATH}?key=${encodeURIComponent(this.apiKey())}&adcode=${encodeURIComponent(adcode)}&type=now`
+    const params: Record<string, string> = {
+      key: this.apiKey(),
+      adcode,
+      type: 'now',
+    }
+    // key 开启 SN 校验时（控制台配置）必须附签名，否则返回 status 111 会被静默降级
+    const secret = tencentMapSecret()
+    if (secret) params.sig = buildSignature(WEATHER_PATH, params, secret)
+
     try {
-      const response = await fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) })
+      const response = await fetch(buildTencentUrl(BASE_URL, WEATHER_PATH, params), { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) })
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
 
       const payload: unknown = await response.json()
