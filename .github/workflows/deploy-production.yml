@@ -98,8 +98,11 @@ jobs:
           test -n "$DEPLOY_USER"
           deploy_port="${DEPLOY_PORT:-22}"
           deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
-          ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$deploy_dir'"
+          ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$deploy_dir' '$deploy_dir/nginx'"
           scp -i "$HOME/.ssh/id_deploy" -P "$deploy_port" compose.prod.yaml "$DEPLOY_USER@$DEPLOY_HOST:$deploy_dir/compose.prod.yaml"
+          # web 容器的 nginx 配置由宿主机文件挂载进容器（compose.prod.yaml 的 WEB_NGINX_CONFIG），
+          # 必须随仓库下发，否则宿主机残留旧配置（曾缺 client_max_body_size → 上传 >1MB 图片返回 413）。
+          scp -i "$HOME/.ssh/id_deploy" -P "$deploy_port" docker/nginx/production.conf "$DEPLOY_USER@$DEPLOY_HOST:$deploy_dir/nginx/production.conf"
 
       - name: Write deployment environment
         shell: bash
