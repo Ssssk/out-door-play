@@ -191,9 +191,11 @@ export class TencentStationProvider {
       if (!Array.isArray(record?.data) || toNumber(record?.count) === null) throw new Error('Invalid POI response')
       const data = window ? record.data.slice(window.offset, window.offset + window.limit) : record.data
       return parseStations({ ...record, data })
-    } catch {
-      // 不输出原始异常与 URL，避免泄露 Key 或签名。
-      this.logger.warn('腾讯地点搜索请求失败（网络、配置或配额异常）')
+    } catch (error) {
+      // 不输出原始 URL，避免泄露 Key 或签名；但保留腾讯返回的 status/message，
+      // 否则配额超限（121）、签名错误（111）、无权限（112）等无法从日志区分。
+      const reason = error instanceof Error ? error.message : String(error)
+      this.logger.warn(`腾讯地点搜索请求失败：${reason}`)
       return null
     }
   }
