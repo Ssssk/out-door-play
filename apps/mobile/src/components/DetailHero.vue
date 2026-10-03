@@ -1,6 +1,6 @@
 <template>
   <view class="detail-hero">
-    <image :src="resolveAssetUrl(item.coverImageUrl)" mode="aspectFill" />
+    <image :src="resolveAssetUrl(item.coverImageUrl)" mode="aspectFill" webp />
     <view class="shade" />
     <view class="hero-top"><view v-if="item.rankTag && item.rank > 0" class="rank"><image src="/static/icons/bolt.svg" mode="aspectFit" /><text>{{ item.rankTag }} Top {{ item.rank }}</text></view><view class="distance"><image src="/static/icons/pin-light.svg" mode="aspectFit" /><text>距你 {{ formatDistanceKm(item.distanceKm) }}km</text></view></view>
     <view class="hero-content">

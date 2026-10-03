@@ -1,6 +1,6 @@
 <template>
   <view class="discovery-card" role="button" tabindex="0" :aria-label="`${item.title}，距你${formatDistanceKm(item.distanceKm)}公里`" @click="activate" @keyup.enter="activate" @keyup.space="activate">
-    <image class="cover" :src="resolveAssetUrl(item.coverImageUrl)" mode="aspectFill" />
+    <image class="cover" :src="resolveAssetUrl(item.coverImageUrl)" mode="aspectFill" webp />
     <view class="overlay" />
     <view class="card-top">
       <view v-if="item.rankTag && item.rank > 0" class="rank"><image src="/static/icons/bolt.svg" mode="aspectFit" /><text>{{ item.rankTag }} Top {{ item.rank }}</text></view>
