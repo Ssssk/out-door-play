@@ -28,7 +28,8 @@ export interface StationItem {
   address: string
   latitude: number
   longitude: number
-  distanceKm: number
+  /** 城市兜底场景下用户坐标离该城市很远，距你无意义，置空由前端显示「-」 */
+  distanceKm: number | null
   openingHours: string
   price92: number
   price95: number
