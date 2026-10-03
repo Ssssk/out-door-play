@@ -4,7 +4,7 @@ import type { TencentStation } from './tencent-station.provider'
 
 function station(id: string, overrides: Partial<TencentStation> = {}): TencentStation {
   return {
-    id,
+    id: `tx-${id}`,
     name: `加油站 ${id}`,
     address: `地址 ${id}`,
     brand: '中石化',
@@ -21,11 +21,17 @@ function createHarness(pages: Array<{ items: TencentStation[]; count: number } |
   for (const page of pages) fetchPage.mockResolvedValueOnce(page)
   fetchPage.mockResolvedValue({ items: [], count: 0 })
 
+  // 与腾讯 provider 一致的 3×3 采样中心，保证「每城 9 次调用」的既有预期不变
+  const sampleCenters = () => [
+    [0, 0], [0.08, 0], [-0.08, 0], [0, 0.08], [0, -0.08],
+    [0.08, 0.08], [0.08, -0.08], [-0.08, 0.08], [-0.08, -0.08],
+  ].map(([dLat, dLng]) => ({ latitude: 30 + dLat, longitude: 114 + dLng }))
+
   const upsert = vi.fn().mockResolvedValue(undefined)
   const deleteMany = vi.fn().mockResolvedValue({ count: 0 })
   const service = new StationSyncService(
     { fuelStation: { upsert, deleteMany } } as never,
-    { enabled: true, fetchPage } as never,
+    { sampleCenters, fetchPage } as never,
   )
   return { service, fetchPage, upsert, deleteMany }
 }
@@ -52,10 +58,16 @@ describe('StationSyncService', () => {
     else process.env.STATION_SYNC_CALL_BUDGET = original.budget
   })
 
-  it('reports a skip when the data source is not configured', async () => {
-    const service = new StationSyncService({} as never, { enabled: false } as never)
+  it('reports a skip when sync is not enabled', async () => {
+    delete process.env.STATION_SYNC_ENABLED
+    const service = new StationSyncService(
+      {} as never,
+      { sampleCenters: () => [], fetchPage: vi.fn() } as never,
+    )
 
-    await expect(service.sync()).resolves.toMatchObject({ skipped: '未配置 TENCENT_MAP_KEY' })
+    await expect(service.sync()).resolves.toMatchObject({
+      skipped: expect.stringContaining('未开启'),
+    })
   })
 
   it('samples every grid centre and deduplicates POIs seen more than once', async () => {
@@ -146,7 +158,7 @@ describe('StationSyncService', () => {
     const summary = await service.sync()
 
     expect(deleteMany).toHaveBeenCalledWith({
-      where: { cityCode: '420100', id: { notIn: items.map((item) => `tx-${item.id}`) } },
+      where: { cityCode: '420100', id: { notIn: items.map((item) => item.id) } },
     })
     expect(summary.removed).toBe(7)
   })

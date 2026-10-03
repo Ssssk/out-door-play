@@ -98,7 +98,7 @@ describe('parseStations', () => {
     expect(result.count).toBe(31)
     expect(result.items).toEqual([
       {
-        id: '123',
+        id: 'tx-123',
         name: '中国石化光谷大道加油站',
         address: '光谷大道 88 号',
         brand: '中石化',
@@ -127,7 +127,7 @@ describe('parseStations', () => {
       poi({ id: 'f1' }),
     ]))
 
-    expect(result.items.map((item) => item.id)).toEqual(['f1'])
+    expect(result.items.map((item) => item.id)).toEqual(['tx-f1'])
   })
 
   it('drops charging piles that Tencent misclassifies as 其它加油站', () => {
@@ -140,7 +140,7 @@ describe('parseStations', () => {
       poi({ id: 'f1', title: '中国石化月亮湾加油站', category: '汽车:加油站:中石化' }),
     ]))
 
-    expect(result.items.map((item) => item.id)).toEqual(['f1'])
+    expect(result.items.map((item) => item.id)).toEqual(['tx-f1'])
   })
 
   it('tolerates an unexpected payload shape', () => {
@@ -221,7 +221,7 @@ describe('TencentStationProvider.fetchPage', () => {
     fetchMock.mockResolvedValueOnce({ ok: true, json: async () => payload(1, [poi()]) })
     const provider = new TencentStationProvider()
 
-    await provider.fetchPage(POINT, 3)
+    await provider.fetchPage(POINT, { pageIndex: 3 })
 
     expect(decodeURIComponent(String(fetchMock.mock.calls[0][0]))).toContain('page_index=3')
   })
@@ -230,8 +230,8 @@ describe('TencentStationProvider.fetchPage', () => {
     fetchMock.mockResolvedValueOnce({ ok: true, json: async () => payload(3, [
       poi({ id: 'charge', title: '充电桩' }), poi({ id: 'second' }), poi({ id: 'third' }),
     ]) })
-    const result = await new TencentStationProvider().fetchPage(POINT, 1, { offset: 1, limit: 1 })
-    expect(result?.items.map(s => s.id)).toEqual(['second'])
+    const result = await new TencentStationProvider().fetchPage(POINT, { pageIndex: 1, window: { offset: 1, limit: 1 } })
+    expect(result?.items.map(s => s.id)).toEqual(['tx-second'])
     expect(result?.count).toBe(3)
   })
 

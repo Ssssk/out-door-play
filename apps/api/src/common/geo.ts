@@ -28,3 +28,46 @@ export function distanceInKm(from: GeoPoint, to: GeoPoint): number {
 export function roundDistanceKm(value: number): number {
   return Math.round(value * 10) / 10
 }
+
+/**
+ * WGS-84 → GCJ-02（国测局火星坐标）偏移。
+ *
+ * 高德/腾讯坐标均为 GCJ-02；OpenStreetMap 原始坐标为 WGS-84。
+ * 库里既有站点（腾讯）按 GCJ-02 存储，"距你"距离也是在该坐标系下计算，
+ * 故 OSM 抓取的坐标必须转换到 GCJ-02 再入库，否则"距你"会整体偏移数百米。
+ */
+const GCJ_A = 6378245.0
+const GCJ_EE = 0.00669342162296594323
+
+function outOfChina(latitude: number, longitude: number): boolean {
+  return !(longitude > 73.66 && longitude < 135.05 && latitude > 3.86 && latitude < 53.55)
+}
+
+function transformLat(x: number, y: number): number {
+  let ret = -100 + 2 * x + 3 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x))
+  ret += ((20 * Math.sin(6 * x * Math.PI) + 20 * Math.sin(2 * x * Math.PI)) * 2) / 3
+  ret += ((20 * Math.sin(y * Math.PI) + 40 * Math.sin((y / 3) * Math.PI)) * 2) / 3
+  ret += ((160 * Math.sin((y / 12) * Math.PI) + 320 * Math.sin((y * Math.PI) / 30)) * 2) / 3
+  return ret
+}
+
+function transformLng(x: number, y: number): number {
+  let ret = 300 + x + 2 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x))
+  ret += ((20 * Math.sin(6 * x * Math.PI) + 20 * Math.sin(2 * x * Math.PI)) * 2) / 3
+  ret += ((20 * Math.sin(x * Math.PI) + 40 * Math.sin((x / 3) * Math.PI)) * 2) / 3
+  ret += ((150 * Math.sin((x / 12) * Math.PI) + 300 * Math.sin((x / 30) * Math.PI)) * 2) / 3
+  return ret
+}
+
+/** 把 WGS-84 坐标转换为 GCJ-02；中国境外坐标原样返回（无需偏移）。 */
+export function wgs84ToGcj02(point: GeoPoint): GeoPoint {
+  if (outOfChina(point.latitude, point.longitude)) return point
+  const dLat = transformLat(point.longitude - 105, point.latitude - 35)
+  const dLng = transformLng(point.longitude - 105, point.latitude - 35)
+  const radLat = (point.latitude / 180) * Math.PI
+  const magic = 1 - GCJ_EE * Math.sin(radLat) * Math.sin(radLat)
+  const sqrtMagic = Math.sqrt(magic)
+  const adjustLat = (dLat * 180) / (((GCJ_A * (1 - GCJ_EE)) / sqrtMagic) * Math.PI)
+  const adjustLng = (dLng * 180) / ((GCJ_A / sqrtMagic) * Math.cos(radLat) * Math.PI)
+  return { latitude: point.latitude + adjustLat, longitude: point.longitude + adjustLng }
+}

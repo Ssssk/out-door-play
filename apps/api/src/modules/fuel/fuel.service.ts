@@ -1,11 +1,12 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
-import { TencentStationProvider } from './tencent-station.provider'
+import { BadRequestException, Injectable, Inject } from '@nestjs/common'
 import { PrismaService } from '../../database/prisma.service'
 import { distanceInKm, roundDistanceKm } from '../../common/geo'
 import { ProvinceFuelPriceProvider, regionFromCityCode } from './province-price.provider'
 import { STATION_PAGE_SIZE, STATION_PAGE_SIZE_MAX } from './fuel.dto'
 import type { GeoPoint } from '../../common/geo'
 import type { ProvinceFuelPrice } from './province-price.provider'
+import type { StationProvider } from './station-provider'
+import { STATION_PROVIDER } from './station-provider'
 
 /** 油价数据来源：省级官方参考价（含 92/95/98/0 四档）/ 暂无 */
 export type FuelPriceSource = 'province' | 'empty'
@@ -39,7 +40,7 @@ export interface StationItem {
 export class FuelService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly tencent: TencentStationProvider,
+    @Inject(STATION_PROVIDER) private readonly stationProvider: StationProvider,
     private readonly provincePrice: ProvinceFuelPriceProvider,
   ) {}
 
@@ -107,7 +108,7 @@ export class FuelService {
     // 附近没有：若全库也为空（尚未同步过 / 同步失败），做一次实时兜底引导（仅 1 次额度）
     const totalRows = await this.prisma.fuelStation.count({ where: { enabled: true } })
     if (totalRows === 0) {
-      const live = await this.tencent.fetchPage(point)
+      const live = await this.stationProvider.fetchPage(point)
       if (live && live.items.length) {
         const mapped = live.items
           .map((station) => ({

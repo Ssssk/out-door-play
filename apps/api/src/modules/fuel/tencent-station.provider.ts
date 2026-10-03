@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import type { GeoPoint } from '../../common/geo'
 import { buildSignature } from '../../common/tencent-signature'
+import type { SourceStation, StationPage, StationProvider } from './station-provider'
 
 /**
  * 附近加油站数据源：腾讯位置服务「地点搜索」（WebService API）。
@@ -19,18 +20,19 @@ import { buildSignature } from '../../common/tencent-signature'
  * 腾讯不返回油价，站点不展示补造的价格。
  */
 
-export interface TencentStation {
-  /** 腾讯 POI id */
-  id: string
-  name: string
-  address: string
-  /** 由 POI 名称/分类推导，用于界面展示 */
-  brand: string
-  latitude: number
-  longitude: number
+export interface TencentStation extends SourceStation {
   /** 腾讯下发的省份名（如「湖北省」），调用方据此取省级指导价 */
   province: string
 }
+
+/**
+ * 腾讯 nearby 半径仅 1000 米，需用多中心采样覆盖主城区。
+ * 与同步服务的 3×3 采样保持一致；OSM 半径大，无需多中心。
+ */
+const TENCENT_SAMPLE_OFFSETS: ReadonlyArray<readonly [number, number]> = [
+  [0, 0], [0.08, 0], [-0.08, 0], [0, 0.08], [0, -0.08],
+  [0.08, 0.08], [0.08, -0.08], [-0.08, 0.08], [-0.08, -0.08],
+]
 
 const BASE_URL = 'https://apis.map.qq.com'
 const SEARCH_PATH = '/ws/place/v1/search'
@@ -113,10 +115,12 @@ export function parseStations(payload: unknown): { items: TencentStation[]; coun
     const location = asRecord(poi.location)
     const latitude = toNumber(location?.lat)
     const longitude = toNumber(location?.lng)
-    const id = toText(poi.id)
+    const rawId = toText(poi.id)
+    if (!rawId) continue
+    const id = `tx-${rawId}`
     const name = toText(poi.title)
     const category = toText(poi.category)
-    if (!id || !name || latitude === null || longitude === null) continue
+    if (!name || latitude === null || longitude === null) continue
     // 充电桩等非加油 POI 一律剔除：腾讯既会混入 191014「充电站」，也会把部分充电桩
     // 误分类成 191099「其它加油站」（只有名称能识别），故名称与分类都要匹配
     if (EXCLUDED_HINTS.some((hint) => `${name}${category}`.includes(hint))) continue
@@ -137,7 +141,7 @@ export function parseStations(payload: unknown): { items: TencentStation[]; coun
 }
 
 @Injectable()
-export class TencentStationProvider {
+export class TencentStationProvider implements StationProvider {
   private readonly logger = new Logger(TencentStationProvider.name)
 
   /** 未配置 key 时整体关闭该数据源 */
@@ -153,14 +157,24 @@ export class TencentStationProvider {
     return process.env.TENCENT_MAP_SECRET?.trim() ?? ''
   }
 
+  /** 腾讯半径受限，每个城市用 3×3 共 9 个采样中心覆盖主城区。 */
+  sampleCenters(center: GeoPoint): GeoPoint[] {
+    return TENCENT_SAMPLE_OFFSETS.map(([dLat, dLng]) => ({
+      latitude: center.latitude + dLat,
+      longitude: center.longitude + dLng,
+    }))
+  }
+
   /**
    * 取一页加油站 POI（腾讯每页上限 20 条）。
    *
    * ⚠️ 这是**配额敏感**入口：调用一次即消耗一次额度，而个人开发者只有 200 次/日。
    * 因此这里只暴露「单页」，不提供自动翻页——请求次数由调用方按分页窗口控制。
    */
-  async fetchPage(center: GeoPoint, pageIndex = 1, window?: { offset: number; limit: number }): Promise<{ items: TencentStation[]; count: number } | null> {
+  async fetchPage(center: GeoPoint, opts?: { pageIndex?: number; window?: { offset: number; limit: number } }): Promise<StationPage | null> {
     if (!this.enabled) return null
+    const pageIndex = opts?.pageIndex ?? 1
+    const window = opts?.window
 
     const params: Record<string, string> = {
       key: this.apiKey(),
