@@ -42,8 +42,12 @@ const CENTER_OFFSETS: ReadonlyArray<readonly [number, number]> = [
 ]
 /** 未配置 `STATION_SYNC_CITIES` 时只同步已开通的城市，避免无谓消耗额度 */
 const DEFAULT_CITY_CODES = ['420100']
-/** 单次运行的调用预算：守住 200 次/日 的额度并留出余量 */
-const DEFAULT_CALL_BUDGET = 60
+/**
+ * 单次运行的调用预算：守住 200 次/日 的额度并留出余量。
+ * 生产同步全部 10 个城市，每城 9 个采样中心 = 90 次调用，故默认需 ≥90；
+ * 取 120 留 10 次余量，否则排在最末的重庆/成都永远因超预算被跳过、无法入库。
+ */
+const DEFAULT_CALL_BUDGET = 120
 /** 启动后延迟再跑，避开启动高峰 */
 const FIRST_RUN_DELAY_MS = 60 * 1000
 const DAILY_INTERVAL_MS = 24 * 60 * 60 * 1000
