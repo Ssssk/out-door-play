@@ -12,7 +12,7 @@
     "type-check": "tsc --noEmit",
     "pretest": "prisma generate",
     "test": "vitest run --exclude test/**/*.integration.spec.ts --exclude test/**/*.e2e.spec.ts",
-    "test:contract": "tsx scripts/verify-openapi-contract.ts",
+    "test:contract": "pnpm build && node dist/scripts/verify-openapi-contract.js",
     "test:integration": "vitest run integration --fileParallelism=false",
     "pretest:e2e": "pnpm build",
     "test:e2e": "vitest run e2e --fileParallelism=false",

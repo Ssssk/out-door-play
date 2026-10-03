@@ -1,10 +1,10 @@
 import { NestFactory } from '@nestjs/core'
 import { parse } from 'yaml'
-import fs from 'node:fs'
-import path from 'node:path'
-import process from 'node:process'
-import { AppModule } from '../src/app.module'
-import { configureApplication, createOpenApiDocument } from '../src/setup-application'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+import * as process from 'node:process'
+import { AppModule } from '../app.module'
+import { configureApplication, createOpenApiDocument } from '../setup-application'
 
 interface ContractOperation { operationId?: string }
 interface ContractDocument {
@@ -32,7 +32,8 @@ async function main() {
   const app = await NestFactory.create(AppModule, { logger: false })
   try {
     configureApplication(app)
-    const runtime = createOpenApiDocument(app)
+    // 仅校验路由与 operationId，无需 @nestjs/swagger 的完整类型
+    const runtime = createOpenApiDocument(app) as unknown as ContractDocument
     const missing: string[] = []
     const operationMismatches: string[] = []
     let operationCount = 0
@@ -41,7 +42,7 @@ async function main() {
       for (const [route, operations] of Object.entries(contract.paths || {})) {
         for (const [method, expected] of Object.entries(operations).filter(([value]) => ['get', 'post', 'put', 'patch', 'delete'].includes(value))) {
           operationCount += 1
-          const actual = runtime.paths[route]?.[method as keyof (typeof runtime.paths)[string]]
+          const actual: ContractOperation | undefined = runtime.paths?.[route]?.[method]
           if (!actual) {
             missing.push(`${method.toUpperCase()} ${route}`)
             continue
