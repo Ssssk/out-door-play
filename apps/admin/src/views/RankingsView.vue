@@ -83,7 +83,10 @@ function onDrop(index: number) {
   if (dragIndex.value < 0 || dragIndex.value === index) return
   const next = [...picked.value]
   const [moved] = next.splice(dragIndex.value, 1)
-  next.splice(index, 0, moved)
+  // index 是拖拽发生时目标行在「未删除被拖行」列表中的位置；
+  // 向下移动时数组已前移一位，需插入到 index-1 才能落在目标行原位置（否则错一格）
+  const insertAt = dragIndex.value < index ? index - 1 : index
+  next.splice(insertAt, 0, moved)
   picked.value = next
   dragIndex.value = -1
 }

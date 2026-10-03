@@ -133,7 +133,9 @@ export class AdminService {
         gear: input.gear?.trim() || null,
         shoreKm: input.shoreKm ?? null,
         depthM: input.depthM ?? null,
-        description: input.description?.trim() || '暂无描述',
+        // 留空即可，不要写「暂无描述」这类占位文案：它会被编辑弹窗当真实内容回填、
+        // 被小程序当正文渲染，导致「简介保存后依然为空」的假象（空与有内容无法区分）
+        description: input.description?.trim() || '',
         tags: input.tags ?? [],
         latitude: input.latitude ?? 0,
         longitude: input.longitude ?? 0,

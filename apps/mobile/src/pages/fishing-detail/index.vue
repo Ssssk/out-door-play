@@ -8,7 +8,7 @@
         <view class="summary-card"><view><text>{{ spot.durationLabel }}</text><text>建议停留</text></view><view><text>{{ spot.bestTime }}</text><text>最佳时段</text></view><view><text>{{ spot.gear || '--' }}</text><text>竿具建议</text></view></view>
         <text class="section-title">钓点信息</text>
         <view class="info-list"><view><text>钓点入口</text><text>{{ spot.entryPoint || '--' }}</text></view><view><text>主钓区</text><text>{{ spot.mainArea || '--' }}</text></view><view><text>最佳时段</text><text>{{ spot.bestTime }}</text></view><view><text>装备建议</text><text>{{ spot.gear || '--' }}</text></view></view>
-        <text class="section-title">钓点介绍</text><text class="description">{{ spot.description }}</text>
+        <template v-if="spot.description"><text class="section-title">钓点介绍</text><text class="description">{{ spot.description }}</text></template>
       </view>
       <DetailActionBar :favorite="isFavorite" @favorite="toggleFavorite" @share="share" @start="start" />
     </view>
