@@ -18,7 +18,7 @@
       </view>
 
       <view v-if="stationFallback === 'city'" class="station-fallback" role="status">
-        <text>你当前位置附近暂无加油站，以下为「{{ cityName }}」已收录的站点</text>
+        <text>你所在区域暂未收录加油站，以下为「{{ cityName }}」已收录的站点</text>
       </view>
 
       <view v-if="loading" class="station-state" role="status">
@@ -41,7 +41,9 @@
         <view v-for="station in stations" :key="station.id" class="station-card card-surface">
           <view class="station-info">
             <text class="station-name">{{ station.name }}</text>
-            <text class="station-meta">距你 {{ formatDistanceKm(station.distanceKm) }}km{{ station.openingHours ? ` · ${station.openingHours}` : '' }}</text>
+            <!-- 城市兜底时无真实「距你」距离：改展示地址，避免出现「距你 -km」 -->
+          <text v-if="stationFallback !== 'city'" class="station-meta">距你 {{ formatDistanceKm(station.distanceKm) }}km{{ station.openingHours ? ` · ${station.openingHours}` : '' }}</text>
+          <text v-else class="station-meta">{{ station.address }}</text>
            <!-- 腾讯实时站点不提供油价：拿不到时整行隐藏，避免显示「0.00 元/升」 -->
             <text v-if="station.price92 > 0" class="station-prices">92# <text class="price-strong">{{ station.price92.toFixed(2) }}</text> · 95# {{ station.price95.toFixed(2) }} 元/升</text>
           </view>
