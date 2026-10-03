@@ -17,6 +17,10 @@
         <text class="section-title">附近加油站点</text>
       </view>
 
+      <view v-if="stationFallback === 'city'" class="station-fallback" role="status">
+        <text>你当前位置附近暂无加油站，以下为「{{ cityName }}」已收录的站点</text>
+      </view>
+
       <view v-if="loading" class="station-state" role="status">
         <wd-loading color="#1a1a1a" />
         <text>正在获取位置并查询附近站点…</text>
@@ -63,8 +67,11 @@ import { onShareAppMessage } from '@dcloudio/uni-app'
 import { openNavigation } from '@/common/mapNavigation'
 import { cities as localCities } from '@/data/mock'
 import { outdoorApi } from '@/api/outdoor'
+import { useAppStore } from '@/stores/app'
 import type { City, FuelStation } from '@/types/domain'
 import { useFuel } from './useFuel'
+
+const appStore = useAppStore()
 
 // 城市列表与出车 tab 同源（/v1/cities）；接口不可用时回退本地兜底，保证两端一致
 const availableCities = ref<City[]>(localCities)
@@ -75,6 +82,12 @@ async function loadCities() {
   } catch { /* 回退本地列表 */ }
 }
 
+// 兜底提示里展示的城市名：优先用门店选中城市，否则从城市列表查
+const cityName = computed(() => {
+  const picked = availableCities.value.find((city) => city.code === appStore.city.code)
+  return picked?.name || appStore.city.name || appStore.city.code || '该城市'
+})
+
 const {
   prices,
   stations,
@@ -84,6 +97,7 @@ const {
   loadingMore,
   stationState,
   stationError,
+  stationFallback,
   locationStatus,
   openLocationSettings,
   updatedAt,
@@ -121,6 +135,8 @@ onShareAppMessage(() => ({ title: '今日油价 · 附近加油站｜粗门溜�
 .station-heading { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; margin: calc(36rpx - var(--chumen-top-inset, var(--status-bar-height, 0px))) -32rpx 22rpx; padding: calc(var(--chumen-top-inset, var(--status-bar-height, 0px)) + 16rpx) 32rpx 16rpx; background: var(--chumen-canvas); }
 .station-heading .section-title { margin: 0; }
 .station-heading > text:last-child { color: var(--chumen-muted); font-size: 22rpx; }
+/* 城市兜底提示：用户坐标附近无站点时，说明下方列表口径为所选城市 */
+.station-fallback { margin: 0 0 18rpx; padding: 16rpx 22rpx; border: 2rpx solid var(--chumen-line); border-radius: 20rpx; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 22rpx; line-height: 1.5; text-align: center; }
 .price-grid, .price-empty { position: relative; z-index: 31; }
 .station-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 220rpx; padding: 28rpx; border: 2rpx solid var(--chumen-line); border-radius: 28rpx; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 24rpx; line-height: 1.6; text-align: center; }
 .station-state text { margin-top: 16rpx; }

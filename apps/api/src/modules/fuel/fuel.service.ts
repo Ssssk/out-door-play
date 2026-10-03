@@ -57,8 +57,12 @@ export class FuelService {
     }
   }
 
-  /** 用户坐标检索附近加油站：读库优先，实时兜底。 */
-  async stations(point?: GeoPoint | null, page = 1, pageSize = STATION_PAGE_SIZE) {
+  /**
+   * 用户坐标检索附近加油站：读库优先，实时兜底。
+   * 当坐标附近没有、但所选城市已同步过站点时，兜底返回该城市全部站点（fallback: 'city'），
+   * 避免用户在非覆盖区 / 测试定位时永远看到空白。
+   */
+  async stations(point?: GeoPoint | null, page = 1, pageSize = STATION_PAGE_SIZE, cityCode?: string) {
     if (!point) throw new BadRequestException({ code: 'FUEL_LOCATION_REQUIRED', message: '请先开启定位' })
     const currentPage = Math.max(1, Math.trunc(page) || 1)
     const size = Math.min(Math.max(1, Math.trunc(pageSize) || STATION_PAGE_SIZE), STATION_PAGE_SIZE_MAX)
@@ -123,6 +127,32 @@ export class FuelService {
       }
       // 实时也失败（典型如配额黑窗期）：返回空，避免前端弹出「暂不可用」报错
       return { items: [], total: 0, page: currentPage, pageSize: size, hasMore: false }
+    }
+
+    // 全库有数据但用户坐标附近没有：兜底展示其「所选城市」的站点，避免永远空白。
+    // 距离按用户真实坐标算会很大，故 distanceKm 置空，前端显示「-」并提示城市口径。
+    if (cityCode) {
+      const rows = await this.prisma.fuelStation.findMany({
+        where: { enabled: true, cityCode },
+        select: { id: true, name: true, brand: true, address: true, latitude: true, longitude: true, openingHours: true, price92: true, price95: true },
+        orderBy: { name: 'asc' },
+      })
+      if (rows.length) {
+        const items: StationItem[] = rows.map((row) => ({
+          id: row.id,
+          name: row.name,
+          brand: row.brand,
+          address: row.address,
+          latitude: row.latitude,
+          longitude: row.longitude,
+          distanceKm: null,
+          openingHours: row.openingHours,
+          price92: row.price92,
+          price95: row.price95,
+        }))
+        const paged = items.slice(start, start + size)
+        return { items: paged, total: items.length, page: currentPage, pageSize: size, hasMore: start + size < items.length, fallback: 'city' as const }
+      }
     }
 
     return { items: [], total: 0, page: currentPage, pageSize: size, hasMore: false }

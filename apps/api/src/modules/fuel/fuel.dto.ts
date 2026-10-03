@@ -15,4 +15,6 @@ export class FuelStationsDto {
   @IsLongitude() lng!: string
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(STATION_PAGE_SIZE_MAX) pageSize?: number
+  // 坐标附近无站点时的兜底城市：返回该城市已同步站点（非空时不消耗腾讯额度）
+  @IsOptional() @IsString() @Matches(/^\d{6}$/) cityCode?: string
 }

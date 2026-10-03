@@ -18,7 +18,7 @@ describe('useFuel real-time location search', () => {
   it('waits for location and forwards its coordinates', async () => {
     const fuel = useFuel()
     await fuel.loadFuel()
-    expect(mocks.stations).toHaveBeenCalledWith(point, 1)
+    expect(mocks.stations).toHaveBeenCalledWith(point, 1, '420100')
     expect(fuel.stationState.value).toBe('ready')
   })
   it('shows permission state without requesting stations on denial', async () => {
@@ -53,7 +53,7 @@ describe('useFuel real-time location search', () => {
     await fuel.loadFuel()
     expect(fuel.stationState.value).toBe('empty')
     await fuel.loadMore()
-    expect(mocks.stations).toHaveBeenLastCalledWith(point, 2)
+    expect(mocks.stations).toHaveBeenLastCalledWith(point, 2, '420100')
     expect(fuel.stationState.value).toBe('ready')
   })
   it('ignores an in-flight response after leaving the page', async () => {

@@ -66,13 +66,15 @@ export interface FuelStationPage {
   page: number
   pageSize: number
   hasMore: boolean
+  /** 非空时为兜底来源：'city' 表示按所选城市返回（用户坐标附近无站点） */
+  fallback?: 'city'
 }
 
 export interface FuelStation {
   id: string
   name: string
   brand: string
-  distanceKm: number
+  distanceKm: number | null
   openingHours: string
   price92: number
   price95: number

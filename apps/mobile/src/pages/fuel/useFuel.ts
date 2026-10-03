@@ -25,6 +25,8 @@ export function useFuel() {
   const loadingMore = ref(false)
   const stationState = ref<'idle' | 'loading' | 'ready' | 'empty' | 'error' | 'denied'>('idle')
   const stationError = ref('')
+  // 兜底来源：'city' 表示按所选城市展示（用户坐标附近暂无站点）
+  const stationFallback = ref<'city' | undefined>(undefined)
   let loadRequestId = 0
   let searchPoint: GeoPoint | null = null
   // 展示服务端最后一次发布油价的时间；未获取到时不展示虚假时间
@@ -49,9 +51,10 @@ export function useFuel() {
     if (!append) {
       stationState.value = 'loading'
       stationError.value = ''
+      stationFallback.value = undefined
     }
     try {
-      const result = await outdoorApi.fuelStations(point, targetPage)
+      const result = await outdoorApi.fuelStations(point, targetPage, appStore.city.code)
       if (requestId !== loadRequestId) return
       const items = result.items
       stations.value = append ? [...new Map([...stations.value, ...items].map(s => [s.id, s])).values()] : items
@@ -59,6 +62,7 @@ export function useFuel() {
       page.value = result.page
       hasMore.value = result.hasMore
       stationError.value = ''
+      stationFallback.value = result.fallback
       stationState.value = stations.value.length > 0 ? 'ready' : 'empty'
     } catch (error) {
       if (requestId !== loadRequestId) return
@@ -138,6 +142,7 @@ export function useFuel() {
     loadingMore,
     stationState,
     stationError,
+    stationFallback,
     locationStatus,
     openLocationSettings,
     loadFuel,
