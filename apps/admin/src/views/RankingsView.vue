@@ -167,7 +167,7 @@ onMounted(load)
     </el-table>
   </section>
 
-  <el-dialog v-model="dialogVisible" :title="`${editingId ? '编辑榜单 · ' : '新建榜单'}${editingId ? form.name : ''}`" width="760px">
+  <el-dialog v-model="dialogVisible" :title="`${editingId ? '编辑榜单 · ' : '新建榜单'}${editingId ? form.name : ''}`" width="1080px" top="5vh" class="ranking-dialog">
     <el-tabs v-model="dialogTab">
       <el-tab-pane label="基本信息" name="basic">
         <el-form label-position="top">
@@ -242,12 +242,13 @@ onMounted(load)
 .cover-board { display: grid; grid-template-columns: 1fr 36px 1fr; gap: 10px; align-items: stretch; }
 .cover-arrow { display: flex; align-items: center; justify-content: center; color: var(--el-text-color-secondary); font-size: 18px; }
 .cover-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
-.cover-list { min-height: 220px; max-height: 320px; margin: 0; padding: 6px; overflow-y: auto; border: 1px solid var(--el-border-color-lighter); border-radius: 8px; background: var(--el-fill-color-lighter); list-style: none; }
+.cover-list { min-height: 220px; max-height: 60vh; margin: 0; padding: 6px; overflow-y: auto; border: 1px solid var(--el-border-color-lighter); border-radius: 8px; background: var(--el-fill-color-lighter); list-style: none; }
 .cover-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; padding: 8px 10px; border: 1px solid transparent; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; }
 .cover-row:hover { border-color: var(--el-color-primary-light-5); }
 .cover-row.picked { border-color: var(--el-color-primary-light-7); background: var(--el-color-primary-light-9); }
-.cover-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cover-meta { color: var(--el-text-color-secondary); font-size: 12px; }
+/* 名称占满剩余空间并整体展示，不再截断（之前列太窄会把城市名切掉） */
+.cover-name { flex: 1 1 auto; min-width: 80px; overflow: visible; text-overflow: clip; white-space: normal; word-break: break-all; line-height: 1.35; }
+.cover-meta { flex: 0 0 auto; color: var(--el-text-color-secondary); font-size: 12px; white-space: nowrap; }
 .cover-empty { padding: 24px 10px; color: var(--el-text-color-secondary); font-size: 12px; text-align: center; }
-.drag-handle { color: var(--el-text-color-placeholder); cursor: grab; letter-spacing: -2px; }
+.drag-handle { flex: 0 0 auto; color: var(--el-text-color-placeholder); cursor: grab; letter-spacing: -2px; }
 </style>
