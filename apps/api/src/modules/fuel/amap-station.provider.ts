@@ -27,6 +27,13 @@ export class AmapStationProvider implements StationProvider {
   private readonly maxPages = 10
   private readonly requestTimeoutMs = 8000
 
+  /** 翻页间隔：个人 Key QPS=3，取 400ms（≈2.5 QPS）留出余量（天气等同 Key 调用共享配额） */
+  private static readonly QPS_INTERVAL_MS = 400
+  /** 单页 QPS 超限(10021)最大重试次数 */
+  private static readonly QPS_RETRY_MAX = 4
+  /** QPS 重试基础等待，按尝试次数线性放大 */
+  private static readonly QPS_RETRY_WAIT_MS = 600
+
   get enabled(): boolean {
     return this.apiKey().length > 0
   }
@@ -53,37 +60,65 @@ export class AmapStationProvider implements StationProvider {
 
     const items: SourceStation[] = []
     for (let page = 1; page <= this.maxPages; page++) {
-      const url =
-        `${this.baseUrl}${this.searchPath}?key=${encodeURIComponent(this.apiKey())}` +
-        `&keywords=${encodeURIComponent(this.keyword)}&city=${encodeURIComponent(cityCode)}` +
-        `&citylimit=true&offset=${this.pageSize}&page=${page}`
+      // 高德个人 Key QPS 仅 3 次/秒（infocode 10021 CUQPS_HAS_EXCEEDED_THE_LIMIT），
+      // 翻页请求间强制间隔，把速率压到限值以下
+      if (page > 1) await sleep(AmapStationProvider.QPS_INTERVAL_MS)
+      const record = await this.requestSearchPage(cityCode, page)
+      if (!record) {
+        // 单页彻底失败：保留已取到的页（此前整城丢弃导致「取到 0 条」），不足清理阈值时同步侧不会误删
+        if (items.length > 0) {
+          this.logger.warn(`高德检索 ${cityCode} 第 ${page} 页起失败，保留已取到的 ${items.length} 条`)
+          break
+        }
+        return null
+      }
+      const pois = Array.isArray(record.pois) ? record.pois : []
+      if (pois.length === 0) break // 已到末页
+      this.logger.log(`高德检索 ${cityCode} 第 ${page} 页 返回 ${pois.length} 条`)
+      for (const raw of pois) {
+        const station = this.parse(raw)
+        if (station) items.push(station)
+      }
+      if (pois.length < this.pageSize) break // 不足一页，已是末页
+    }
+
+    this.logger.log(`高德加油站查询成功：${cityCode} 命中 ${items.length} 条`)
+    return { items, count: items.length }
+  }
+
+  /** 请求单页；命中 QPS 超限（10021）时指数退避重试，其余错误直接抛出 */
+  private async requestSearchPage(cityCode: string, page: number): Promise<RawRecord | null> {
+    const url =
+      `${this.baseUrl}${this.searchPath}?key=${encodeURIComponent(this.apiKey())}` +
+      `&keywords=${encodeURIComponent(this.keyword)}&city=${encodeURIComponent(cityCode)}` +
+      `&citylimit=true&offset=${this.pageSize}&page=${page}`
+    let lastReason = ''
+    for (let attempt = 1; attempt <= AmapStationProvider.QPS_RETRY_MAX; attempt++) {
       try {
         const response = await fetch(url, { signal: AbortSignal.timeout(this.requestTimeoutMs) })
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
         const payload: unknown = await response.json()
         const record = asRecord(payload)
-        // 高德约定：status '1' 成功；infocode 10000 为正常，其余（如 10044/10021 配额类）报错
+        // 高德约定：status '1' 成功；infocode 10000 为正常
         if (toText(record?.status) !== '1') {
+          const infocode = toText(record?.infocode)
           const info = toText(record?.info)
-          throw new Error(`infocode ${toText(record?.infocode)}${info ? ` ${info}` : ''}`)
+          if (infocode === '10021' && attempt < AmapStationProvider.QPS_RETRY_MAX) {
+            lastReason = `infocode 10021 ${info}`
+            this.logger.warn(`高德 QPS 超限（${cityCode} 第 ${page} 页 第 ${attempt} 次），${AmapStationProvider.QPS_RETRY_WAIT_MS * attempt}ms 后重试`)
+            await sleep(AmapStationProvider.QPS_RETRY_WAIT_MS * attempt)
+            continue
+          }
+          throw new Error(`infocode ${infocode}${info ? ` ${info}` : ''}`)
         }
-        const pois = Array.isArray(record?.pois) ? record.pois : []
-        if (pois.length === 0) break // 已到末页
-        this.logger.log(`高德检索 ${cityCode} 第 ${page} 页 返回 ${pois.length} 条`)
-        for (const raw of pois) {
-          const station = this.parse(raw)
-          if (station) items.push(station)
-        }
-        if (pois.length < this.pageSize) break // 不足一页，已是末页
+        return record
       } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error)
-        this.logger.warn(`高德地点检索失败（${cityCode} 第 ${page} 页）：${reason}`)
-        return null
+        lastReason = error instanceof Error ? error.message : String(error)
+        await sleep(300)
       }
     }
-
-    this.logger.log(`高德加油站查询成功：${cityCode} 命中 ${items.length} 条`)
-    return { items, count: items.length }
+    this.logger.warn(`高德地点检索失败（${cityCode} 第 ${page} 页）：${lastReason}`)
+    return null
   }
 
   private parse(raw: unknown): SourceStation | null {
@@ -117,4 +152,8 @@ function asRecord(value: unknown): RawRecord | null {
 /** 高德对缺失字段返回空数组 [] 而非空串，这里统一兜底成空串 */
 function toText(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
