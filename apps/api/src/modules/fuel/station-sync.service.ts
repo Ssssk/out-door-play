@@ -124,7 +124,7 @@ export class StationSyncService implements OnModuleInit, OnModuleDestroy {
         summary.fetched += collected.stations.length
         this.logger.log(`[站点同步] ◀ 城市 ${cityCode} 完成: 取到 ${collected.stations.length} 条, 调用 ${collected.calls} 次`)
         if (collected.stations.length === 0) {
-          this.logger.warn(`[站点同步] 城市 ${cityCode} 取到 0 条（可能百度 provider 未启用/接口失败/IP白名单/SN不匹配）`)
+          this.logger.warn(`[站点同步] 城市 ${cityCode} 取到 0 条（可能 provider 未启用/Key 无效/接口失败/网络被拦）`)
           continue
         }
 

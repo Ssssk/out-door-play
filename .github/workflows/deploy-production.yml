@@ -117,9 +117,10 @@ jobs:
           ADMIN_COOKIE_SECURE: ${{ secrets.ADMIN_COOKIE_SECURE }}
           WECHAT_APP_ID: ${{ secrets.WECHAT_APP_ID }}
           WECHAT_APP_SECRET: ${{ secrets.WECHAT_APP_SECRET }}
-          STATION_PROVIDER: ${{ vars.STATION_PROVIDER || 'baidu' }}
+          STATION_PROVIDER: ${{ vars.STATION_PROVIDER || 'amap' }}
           BAIDU_MAP_AK: ${{ secrets.BAIDU_MAP_AK || vars.BAIDU_MAP_AK }}
           BAIDU_MAP_SK: ${{ secrets.BAIDU_MAP_SK || vars.BAIDU_MAP_SK }}
+          AMAP_MAP_KEY: ${{ secrets.AMAP_MAP_KEY || vars.AMAP_MAP_KEY }}
           STATION_SYNC_TRIGGER_TOKEN: ${{ secrets.STATION_SYNC_TRIGGER_TOKEN }}
           API_IMAGE: ${{ needs.build-images.outputs.api_image }}
           WEB_IMAGE: ${{ needs.build-images.outputs.web_image }}
@@ -133,8 +134,8 @@ jobs:
           test -n "$CORS_ORIGINS"
           test -n "$ADMIN_ALLOWED_ORIGINS"
           test "$ADMIN_COOKIE_SECURE" = "true"
-          DEPLOY_ENV_FILE="$(printf '%s\n' "$DEPLOY_ENV_FILE" | sed '/^WECHAT_APP_ID=/d; /^WECHAT_APP_SECRET=/d; /^STATION_SYNC_ENABLED=/d; /^STATION_SYNC_CITIES=/d; /^BAIDU_MAP_AK=/d; /^BAIDU_MAP_SK=/d; /^CORS_ORIGINS=/d; /^ADMIN_ALLOWED_ORIGINS=/d; /^ADMIN_COOKIE_SECURE=/d; /^STATION_SYNC_TRIGGER_TOKEN=/d')"
-          DEPLOY_ENV_FILE="$(printf '%s\nCORS_ORIGINS=%s\nADMIN_ALLOWED_ORIGINS=%s\nADMIN_COOKIE_SECURE=%s\nWECHAT_APP_ID=%s\nWECHAT_APP_SECRET=%s\nSTATION_SYNC_ENABLED=true\nSTATION_PROVIDER=%s\nBAIDU_MAP_AK=%s\nBAIDU_MAP_SK=%s\nSTATION_SYNC_TRIGGER_TOKEN=%s\nSTATION_SYNC_CITIES=110000,310000,320100,330100,420100,430100,440100,440300,500000,510100,450200\n' "$DEPLOY_ENV_FILE" "$CORS_ORIGINS" "$ADMIN_ALLOWED_ORIGINS" "$ADMIN_COOKIE_SECURE" "$WECHAT_APP_ID" "$WECHAT_APP_SECRET" "$STATION_PROVIDER" "$BAIDU_MAP_AK" "$BAIDU_MAP_SK" "$STATION_SYNC_TRIGGER_TOKEN")"
+          DEPLOY_ENV_FILE="$(printf '%s\n' "$DEPLOY_ENV_FILE" | sed '/^WECHAT_APP_ID=/d; /^WECHAT_APP_SECRET=/d; /^STATION_SYNC_ENABLED=/d; /^STATION_SYNC_CITIES=/d; /^BAIDU_MAP_AK=/d; /^BAIDU_MAP_SK=/d; /^AMAP_MAP_KEY=/d; /^CORS_ORIGINS=/d; /^ADMIN_ALLOWED_ORIGINS=/d; /^ADMIN_COOKIE_SECURE=/d; /^STATION_SYNC_TRIGGER_TOKEN=/d')"
+          DEPLOY_ENV_FILE="$(printf '%s\nCORS_ORIGINS=%s\nADMIN_ALLOWED_ORIGINS=%s\nADMIN_COOKIE_SECURE=%s\nWECHAT_APP_ID=%s\nWECHAT_APP_SECRET=%s\nSTATION_SYNC_ENABLED=true\nSTATION_PROVIDER=%s\nBAIDU_MAP_AK=%s\nBAIDU_MAP_SK=%s\nAMAP_MAP_KEY=%s\nSTATION_SYNC_TRIGGER_TOKEN=%s\nSTATION_SYNC_CITIES=110000,310000,320100,330100,420100,430100,440100,440300,500000,510100,450200\n' "$DEPLOY_ENV_FILE" "$CORS_ORIGINS" "$ADMIN_ALLOWED_ORIGINS" "$ADMIN_COOKIE_SECURE" "$WECHAT_APP_ID" "$WECHAT_APP_SECRET" "$STATION_PROVIDER" "$BAIDU_MAP_AK" "$BAIDU_MAP_SK" "$AMAP_MAP_KEY" "$STATION_SYNC_TRIGGER_TOKEN")"
           env_payload="$(printf '%s\nAPI_IMAGE=%s\nWEB_IMAGE=%s\n' "$DEPLOY_ENV_FILE" "$API_IMAGE" "$WEB_IMAGE" | base64 -w0)"
           printf '%s' "$env_payload" | ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "base64 -d > '$deploy_dir/.env.production' && chmod 600 '$deploy_dir/.env.production'"
 
@@ -182,7 +183,7 @@ jobs:
           deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
           ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api db:deploy && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api admin:sync-permissions && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api migrate:route-covers && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api migrate:clear-description-placeholder && docker compose --env-file .env.production -f compose.prod.yaml up -d --remove-orphans --wait --wait-timeout 120"
 
-      - name: Baidu connectivity self-check (inside api container)
+      - name: Data-source connectivity self-check (inside api container)
         shell: bash
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -207,12 +208,12 @@ jobs:
           health="$(curl --fail --silent --show-error --max-time 20 https://www.chumenliuliu.cloud/v1/health)"
           printf '%s' "$health" | python3 -c 'import json,sys; body=json.load(sys.stdin); assert body.get("code") == 0 and body.get("data", {}).get("status") == "ok"'
           poi=""
-          # 站点同步在容器启动 60s 后才运行，且约 90 次串行调用需 1~3 分钟；
-          # 这里轮询等待首批「百度(bd-)」站点落库，避免与启动延迟竞态导致部署误报；
-          # 注意：武汉等城市库里可能有历史腾讯 tx- 残留，故必须要求 bd- 而非 tx-/bd- 任一，否则会假绿
+          # 站点同步在容器启动 30s 后才运行，且每城最多 10 页串行调用需 1~3 分钟；
+          # 这里轮询等待首批「非腾讯」站点（高德 am- / 百度 bd-）落库，避免与启动延迟竞态导致部署误报；
+          # 注意：武汉等城市库里可能有历史腾讯 tx- 残留，故必须要求 am-/bd- 而非 tx-，否则会假绿
           for attempt in $(seq 1 20); do
             if poi="$(curl --fail --silent --show-error --max-time 30 'https://www.chumenliuliu.cloud/v1/fuel/stations?lat=30.5928&lng=114.3055&page=1&pageSize=10')" \
-              && printf '%s' "$poi" | python3 -c 'import json,sys; body=json.load(sys.stdin); items=(body.get("data") or {}).get("items") or []; assert body.get("code") == 0 and any(str(i.get("id", "")).startswith("bd-") for i in items)' 2>/dev/null; then
+              && printf '%s' "$poi" | python3 -c 'import json,sys; body=json.load(sys.stdin); items=(body.get("data") or {}).get("items") or []; assert body.get("code") == 0 and any(str(i.get("id", "")).startswith(("am-", "bd-")) for i in items)' 2>/dev/null; then
               break
             fi
             echo "waiting for station sync... attempt $attempt/20"
@@ -220,10 +221,10 @@ jobs:
             poi=""
           done
           if [ -z "$poi" ]; then
-            echo "::error::5 分钟内未见 bd-* 站点落库（武汉可能存在历史 tx- 残留，故必须百度 bd- 落库才算成功）。同步失败常见原因：(baidu) BAIDU_MAP_AK/SK 配置错误或 IP 白名单不匹配（看 docker logs 中「百度地点检索失败」）"
+            echo "::error::5 分钟内未见 am-/bd- 站点落库（武汉可能有历史 tx- 残留，故必须高德 am- 或百度 bd- 落库才算成功）。同步失败常见原因：AMAP_MAP_KEY 未注入/无效（看 self-check 与 docker logs 中「高德地点检索失败」）"
             exit 1
           fi
-          printf '%s' "$poi" | python3 -c 'import json,sys; body=json.load(sys.stdin); data=body.get("data") or {}; items=data.get("items") or []; assert any(str(item.get("id", "")).startswith("bd-") for item in items) and all(float(item.get("distanceKm", -1)) >= 0 for item in items); print(json.dumps({"status":"passed","count":len(items),"total":data.get("total"),"firstId":(items[0].get("id") if items else None)}, ensure_ascii=False))'
+          printf '%s' "$poi" | python3 -c 'import json,sys; body=json.load(sys.stdin); data=body.get("data") or {}; items=data.get("items") or []; assert any(str(item.get("id", "")).startswith(("am-", "bd-")) for item in items) and all(float(item.get("distanceKm", -1)) >= 0 for item in items); print(json.dumps({"status":"passed","count":len(items),"total":data.get("total"),"firstId":(items[0].get("id") if items else None)}, ensure_ascii=False))'
           auth_file="$(mktemp)"
           auth_status="$(curl --silent --show-error --max-time 20 --output "$auth_file" --write-out '%{http_code}' --header 'content-type: application/json' --data '{"code":"deployment-invalid-code-probe"}' https://www.chumenliuliu.cloud/v1/auth/wechat/login)"
           AUTH_STATUS="$auth_status" python3 - "$auth_file" <<'PY'

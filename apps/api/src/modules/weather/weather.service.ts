@@ -1,5 +1,16 @@
-import { Injectable } from '@nestjs/common'
-import { BaiduWeatherProvider, type WeatherObservation } from './baidu-weather.provider'
+import { Injectable, Inject } from '@nestjs/common'
+import type { WeatherObservation } from './baidu-weather.provider'
+
+/**
+ * 天气数据源统一抽象：高德(`AmapWeatherProvider`)为主，百度为备选，
+ * 由 WeatherModule 按环境变量选择。同步/缓存逻辑只依赖此接口。
+ */
+export interface WeatherProvider {
+  fetch(adcode: string): Promise<WeatherObservation | null>
+}
+
+/** Nest 依赖注入令牌：运行时按 `AMAP_MAP_KEY` 是否配置选择具体实现。 */
+export const WEATHER_PROVIDER = Symbol('WEATHER_PROVIDER')
 
 export interface CurrentWeather {
   cityCode: string
@@ -90,7 +101,7 @@ export class WeatherService {
   private readonly cache = new Map<string, { value: CurrentWeather; expiresAt: number }>()
   private readonly inflight = new Map<string, Promise<WeatherObservation | null>>()
 
-  constructor(private readonly provider: BaiduWeatherProvider) {}
+  constructor(@Inject(WEATHER_PROVIDER) private readonly provider: WeatherProvider) {}
 
   async current(cityCode: string): Promise<CurrentWeather> {
     const cached = this.cache.get(cityCode)

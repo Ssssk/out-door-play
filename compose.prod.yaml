@@ -53,8 +53,10 @@ services:
       # 加油站数据源：百度地图（STATION_PROVIDER=baidu 时启用）；AK 由部署变量注入。
       BAIDU_MAP_AK: ${BAIDU_MAP_AK:-}
       BAIDU_MAP_SK: ${BAIDU_MAP_SK:-}
-      # 数据源切换：baidu(默认) / osm
-      STATION_PROVIDER: ${STATION_PROVIDER:-osm}
+      # 加油站/天气数据源：高德开放平台（STATION_PROVIDER 默认 amap）；Key 由部署变量注入。
+      AMAP_MAP_KEY: ${AMAP_MAP_KEY:-}
+      # 数据源切换：amap(默认) / baidu / osm
+      STATION_PROVIDER: ${STATION_PROVIDER:-amap}
     volumes:
       - chumen_uploads_prod:/app/uploads
     depends_on:
