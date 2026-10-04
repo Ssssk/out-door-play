@@ -30,8 +30,8 @@ const CITY_CENTERS = new Map<string, readonly [number, number]>([
   ['510100', [30.5728, 104.0668]], // 成都
   ['450200', [24.3255, 109.4155]], // 柳州
 ])
-/** 未配置 `STATION_SYNC_CITIES` 时只同步已开通的城市 */
-const DEFAULT_CITY_CODES = ['420100']
+/** 未配置 `STATION_SYNC_CITIES` 时同步的默认城市：武汉 + 柳州 */
+const DEFAULT_CITY_CODES = ['420100', '450200']
 /**
  * 单次运行的调用预算：OSM 免费无每日上限，这里仅作礼貌限速，
  * 避免对公共 Overpass 实例造成压力。腾讯作为兜底时每城 9 次，需 ≥99；
@@ -39,8 +39,12 @@ const DEFAULT_CITY_CODES = ['420100']
  */
 const DEFAULT_CALL_BUDGET = 120
 /** 启动后延迟再跑，避开启动高峰 */
-const FIRST_RUN_DELAY_MS = 60 * 1000
-const DAILY_INTERVAL_MS = 24 * 60 * 60 * 1000
+const FIRST_RUN_DELAY_MS = 30 * 1000
+/**
+ * 轮询间隔。数据源已切到免费的 OSM（无每日配额），6 小时一轮既友好又能
+ * 在首次同步异常后较快自愈，不必苦等 24 小时。
+ */
+const DAILY_INTERVAL_MS = 6 * 60 * 60 * 1000
 /**
  * 该城市本次至少要取到这么多条，才允许清理未出现的站点。
  * 否则一次额度耗尽会把整城站点清空——这是不可接受的。
@@ -149,7 +153,7 @@ export class StationSyncService implements OnModuleInit, OnModuleDestroy {
     let calls = 0
     for (const sample of this.provider.sampleCenters({ latitude, longitude })) {
       if (calls >= remainingBudget) break
-      const page = await this.provider.fetchPage(sample)
+      const page = await this.provider.fetchPage(sample, { cityCode })
       calls += 1
       if (!page) break
       // 多个中心会取到重叠的站点，按 POI id 去重

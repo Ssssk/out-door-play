@@ -45,6 +45,13 @@ services:
       STATION_SYNC_ENABLED: ${STATION_SYNC_ENABLED:-false}
       STATION_SYNC_CITIES: ${STATION_SYNC_CITIES:-}
       STATION_SYNC_CALL_BUDGET: ${STATION_SYNC_CALL_BUDGET:-}
+      # 手动触发同步的令牌；设置后可用 POST /v1/fuel/sync 立即同步（便于验证）。
+      STATION_SYNC_TRIGGER_TOKEN: ${STATION_SYNC_TRIGGER_TOKEN:-}
+      # 加油站数据源：百度地图（STATION_PROVIDER=baidu 时启用）；AK 由部署变量注入。
+      BAIDU_MAP_AK: ${BAIDU_MAP_AK:-}
+      BAIDU_MAP_SK: ${BAIDU_MAP_SK:-}
+      # 数据源切换：osm(默认) / tencent / baidu
+      STATION_PROVIDER: ${STATION_PROVIDER:-osm}
     volumes:
       - chumen_uploads_prod:/app/uploads
     depends_on:

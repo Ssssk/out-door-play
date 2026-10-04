@@ -38,7 +38,7 @@ export interface StationProvider {
    */
   fetchPage(
     center: GeoPoint,
-    opts?: { pageIndex?: number; window?: { offset: number; limit: number } },
+    opts?: { pageIndex?: number; window?: { offset: number; limit: number }; cityCode?: string },
   ): Promise<StationPage | null>
 }
 

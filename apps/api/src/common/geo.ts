@@ -71,3 +71,32 @@ export function wgs84ToGcj02(point: GeoPoint): GeoPoint {
   const adjustLng = (dLng * 180) / ((GCJ_A / sqrtMagic) * Math.cos(radLat) * Math.PI)
   return { latitude: point.latitude + adjustLat, longitude: point.longitude + adjustLng }
 }
+
+/**
+ * BD-09（百度坐标系）→ GCJ-02。
+ *
+ * 百度接口返回的坐标均为 BD-09，必须转回库内统一的 GCJ-02 再入库，
+ * 否则「距你」距离会整体偏移数百米~1 公里，与高德/腾讯/OSM 数据对不齐。
+ */
+const BD_X_PI = (Math.PI * 3000) / 180
+
+export function bd09ToGcj02(point: GeoPoint): GeoPoint {
+  const x = point.longitude - 0.0065
+  const y = point.latitude - 0.006
+  const z = Math.sqrt(x * x + y * y) - 0.00002 * Math.sin(y * BD_X_PI)
+  const theta = Math.atan2(y, x) - 0.000003 * Math.cos(x * BD_X_PI)
+  const longitude = z * Math.cos(theta)
+  const latitude = z * Math.sin(theta)
+  return { latitude, longitude }
+}
+
+/** GCJ-02 → BD-09（备用：若将来需要把 GCJ-02 坐标发给百度 `location` 接口）。 */
+export function gcj02ToBd09(point: GeoPoint): GeoPoint {
+  const x = point.longitude
+  const y = point.latitude
+  const z = Math.sqrt(x * x + y * y) + 0.00002 * Math.sin(y * BD_X_PI)
+  const theta = Math.atan2(y, x) + 0.000003 * Math.cos(x * BD_X_PI)
+  const longitude = z * Math.cos(theta) + 0.0065
+  const latitude = z * Math.sin(theta) + 0.006
+  return { latitude, longitude }
+}
