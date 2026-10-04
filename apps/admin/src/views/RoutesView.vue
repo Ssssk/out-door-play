@@ -67,7 +67,6 @@ const filtered = computed(() => routes.value.filter((item) => {
   const hitScene = !sceneFilter.value || item.scene === sceneFilter.value
   return hitKeyword && hitScene
 }))
-const enabledCities = computed(() => cities.value.filter((city) => city.enabled))
 
 const sceneLabel = (value: string) => (value === 'fish' ? '钓鱼' : value === 'drive' ? '溜车' : value)
 const statusLabel = (value: string) => ({ online: '正常', pending: '待审核', offline: '下架' }[value] || value)

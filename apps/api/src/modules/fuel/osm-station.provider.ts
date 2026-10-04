@@ -46,7 +46,6 @@ export class OsmStationProvider implements StationProvider {
       `[out:json][timeout:25];node["amenity"="fuel"](${south},${west},${north},${east});` +
       `out body ${this.perCenterLimit};`
 
-    let lastError: unknown
     for (const mirror of this.mirrors) {
       try {
         const response = await fetch(mirror, {
@@ -61,7 +60,6 @@ export class OsmStationProvider implements StationProvider {
         this.logger.log(`OSM 加油站查询成功：${mirror} 命中 ${items.length} 条`)
         return { items, count: items.length }
       } catch (error) {
-        lastError = error
         const reason = error instanceof Error ? error.message : String(error)
         this.logger.warn(`OSM 镜像 ${mirror} 失败：${reason}`)
       }

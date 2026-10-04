@@ -62,6 +62,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
 import AppShell from '@/components/AppShell.vue'
 import BrandHeader from '@/components/BrandHeader.vue'
 import { formatDistanceKm } from '@/common/location'
@@ -83,6 +84,7 @@ async function loadCities() {
     if (items.length) availableCities.value = items
   } catch { /* 回退本地列表 */ }
 }
+onMounted(() => { void loadCities() })
 
 // 兜底提示里展示的城市名：优先用门店选中城市，否则从城市列表查
 const cityName = computed(() => {
@@ -93,7 +95,6 @@ const cityName = computed(() => {
 const {
   prices,
   stations,
-  total,
   hasMore,
   loading,
   loadingMore,

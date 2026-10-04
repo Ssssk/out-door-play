@@ -37,7 +37,7 @@ export function roundDistanceKm(value: number): number {
  * 故 OSM 抓取的坐标必须转换到 GCJ-02 再入库，否则"距你"会整体偏移数百米。
  */
 const GCJ_A = 6378245.0
-const GCJ_EE = 0.00669342162296594323
+const GCJ_EE = 0.00669342162296594
 
 function outOfChina(latitude: number, longitude: number): boolean {
   return !(longitude > 73.66 && longitude < 135.05 && latitude > 3.86 && latitude < 53.55)
