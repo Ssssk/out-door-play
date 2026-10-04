@@ -27,8 +27,16 @@ const query = keys.map((k) => `${k}=${percentEncode(params[k])}`).join('&')
 const sn = createHash('md5').update(encodeURIComponent(`${path}?${query}${sk}`), 'utf8').digest('hex')
 try {
   const res = await fetch(`https://api.map.baidu.com${path}?${query}&sn=${sn}`, { signal: AbortSignal.timeout(15000) })
-  const data = await res.json()
-  console.log(`[selftest] 百度天气查询返回: status=${data.status} message=${data.message ?? '-'}`)
+  const text = await res.text()
+  console.log(`[selftest] HTTP 状态=${res.status} content-type=${res.headers.get('content-type') ?? '-'}`)
+  console.log(`[selftest] 响应前400字符: ${text.slice(0, 400).replace(/\s+/g, ' ')}`)
+  // 对照:正常应是 {"status":0,...} 或服务未开通类 JSON;若是 HTML/代理报错/DNS 劫持页,这里会直接暴露
 } catch (err) {
   console.log(`[selftest] 请求异常: ${err?.message ?? err} → 服务器出网到 api.map.baidu.com 失败`)
+  try {
+    const probe = await fetch('https://www.baidu.com', { signal: AbortSignal.timeout(10000) })
+    console.log(`[selftest] 对照探测 www.baidu.com: HTTP ${probe.status}(通则说明仅 api.map.baidu.com 被拦,不通则整机出网异常)`)
+  } catch (err2) {
+    console.log(`[selftest] 对照探测 www.baidu.com 也失败: ${err2?.message ?? err2}`)
+  }
 }
