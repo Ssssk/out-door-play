@@ -2,6 +2,7 @@
 // 只输出密钥长度/指纹与百度返回状态，绝不输出密钥明文。
 // 用法（宿主机）：docker compose --env-file .env.production -f compose.prod.yaml exec -T api node < apps/api/scripts/baidu-selftest.mjs
 import { createHash } from 'node:crypto'
+import dns from 'node:dns/promises'
 
 const percentEncode = (v) =>
   encodeURIComponent(v).replace(/!/g, '%21').replace(/\*/g, '%2A')
@@ -26,6 +27,8 @@ const keys = Object.keys(params).sort()
 const query = keys.map((k) => `${k}=${percentEncode(params[k])}`).join('&')
 const sn = createHash('md5').update(encodeURIComponent(`${path}?${query}${sk}`), 'utf8').digest('hex')
 try {
+  const addrs = await dns.lookup('api.map.baidu.com', { all: true }).catch(() => [])
+  console.log(`[selftest] 容器内解析 api.map.baidu.com → ${addrs.map((a) => a.address).join(', ') || '失败'}(应为公网 IP 14.215.182.x;若是 10.x 说明 hosts 钉死未生效)`)
   const res = await fetch(`https://api.map.baidu.com${path}?${query}&sn=${sn}`, { signal: AbortSignal.timeout(15000) })
   const text = await res.text()
   console.log(`[selftest] HTTP 状态=${res.status} content-type=${res.headers.get('content-type') ?? '-'}`)
