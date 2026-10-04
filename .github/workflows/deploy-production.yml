@@ -190,10 +190,11 @@ jobs:
           printf '%s' "$health" | python3 -c 'import json,sys; body=json.load(sys.stdin); assert body.get("code") == 0 and body.get("data", {}).get("status") == "ok"'
           poi=""
           # 站点同步在容器启动 60s 后才运行，且约 90 次串行调用需 1~3 分钟；
-          # 这里轮询等待首批 tx- 站点落库，避免与启动延迟竞态导致部署误报
+          # 这里轮询等待首批「百度(bd-)」站点落库，避免与启动延迟竞态导致部署误报；
+          # 注意：武汉等城市库里可能有历史腾讯 tx- 残留，故必须要求 bd- 而非 tx-/bd- 任一，否则会假绿
           for attempt in $(seq 1 20); do
             if poi="$(curl --fail --silent --show-error --max-time 30 'https://www.chumenliuliu.cloud/v1/fuel/stations?lat=30.5928&lng=114.3055&page=1&pageSize=10')" \
-              && printf '%s' "$poi" | python3 -c 'import json,sys; body=json.load(sys.stdin); items=(body.get("data") or {}).get("items") or []; assert body.get("code") == 0 and any(str(i.get("id", "")).startswith(("tx-", "bd-")) for i in items)' 2>/dev/null; then
+              && printf '%s' "$poi" | python3 -c 'import json,sys; body=json.load(sys.stdin); items=(body.get("data") or {}).get("items") or []; assert body.get("code") == 0 and any(str(i.get("id", "")).startswith("bd-") for i in items)' 2>/dev/null; then
               break
             fi
             echo "waiting for station sync... attempt $attempt/20"
@@ -201,10 +202,10 @@ jobs:
             poi=""
           done
           if [ -z "$poi" ]; then
-            echo "::error::5 分钟内未见 tx-/bd-* 站点落库。同步失败常见原因：(baidu) BAIDU_MAP_AK/SK 配置错误或 IP 白名单不匹配（看 docker logs 中「百度地点检索失败」）；(tencent) TENCENT_MAP_KEY/SECRET 配置错误 或当日额度耗尽"
+            echo "::error::5 分钟内未见 bd-* 站点落库（武汉可能存在历史 tx- 残留，故必须百度 bd- 落库才算成功）。同步失败常见原因：(baidu) BAIDU_MAP_AK/SK 配置错误或 IP 白名单不匹配（看 docker logs 中「百度地点检索失败」）"
             exit 1
           fi
-          printf '%s' "$poi" | python3 -c 'import json,sys; body=json.load(sys.stdin); data=body.get("data") or {}; items=data.get("items") or []; assert all(str(item.get("id", "")).startswith(("tx-", "bd-")) for item in items) and all(float(item.get("distanceKm", -1)) >= 0 for item in items); print(json.dumps({"status":"passed","count":len(items),"total":data.get("total"),"firstId":(items[0].get("id") if items else None)}, ensure_ascii=False))'
+          printf '%s' "$poi" | python3 -c 'import json,sys; body=json.load(sys.stdin); data=body.get("data") or {}; items=data.get("items") or []; assert any(str(item.get("id", "")).startswith("bd-") for item in items) and all(float(item.get("distanceKm", -1)) >= 0 for item in items); print(json.dumps({"status":"passed","count":len(items),"total":data.get("total"),"firstId":(items[0].get("id") if items else None)}, ensure_ascii=False))'
           auth_file="$(mktemp)"
           auth_status="$(curl --silent --show-error --max-time 20 --output "$auth_file" --write-out '%{http_code}' --header 'content-type: application/json' --data '{"code":"deployment-invalid-code-probe"}' https://www.chumenliuliu.cloud/v1/auth/wechat/login)"
           AUTH_STATUS="$auth_status" python3 - "$auth_file" <<'PY'
