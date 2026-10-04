@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import type { GeoPoint } from '../../common/geo'
 import { wgs84ToGcj02 } from '../../common/geo'
-import { deriveBrand } from './tencent-station.provider'
+import { deriveBrand } from './baidu-station.provider'
 import type { SourceStation, StationPage, StationProvider } from './station-provider'
 
 /**

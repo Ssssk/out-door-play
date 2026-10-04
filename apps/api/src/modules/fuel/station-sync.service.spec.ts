@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { StationSyncService } from './station-sync.service'
-import type { TencentStation } from './tencent-station.provider'
+import type { SourceStation } from './station-provider'
 
-function station(id: string, overrides: Partial<TencentStation> = {}): TencentStation {
+function station(id: string, overrides: Partial<SourceStation> = {}): SourceStation {
   return {
-    id: `tx-${id}`,
+    id: `bd-${id}`,
     name: `加油站 ${id}`,
     address: `地址 ${id}`,
     brand: '中石化',
@@ -16,12 +16,12 @@ function station(id: string, overrides: Partial<TencentStation> = {}): TencentSt
 }
 
 /** 依次返回给定的页；用完后统一返回空页 */
-function createHarness(pages: Array<{ items: TencentStation[]; count: number } | null>) {
+function createHarness(pages: Array<{ items: SourceStation[]; count: number } | null>) {
   const fetchPage = vi.fn()
   for (const page of pages) fetchPage.mockResolvedValueOnce(page)
   fetchPage.mockResolvedValue({ items: [], count: 0 })
 
-  // 与腾讯 provider 一致的 3×3 采样中心，保证「每城 9 次调用」的既有预期不变
+  // 多中心采样（历史上腾讯用 3×3 共 9 个中心），保证「每城 9 次调用」的既有预期不变
   const sampleCenters = () => [
     [0, 0], [0.08, 0], [-0.08, 0], [0, 0.08], [0, -0.08],
     [0.08, 0.08], [0.08, -0.08], [-0.08, 0.08], [-0.08, -0.08],
@@ -84,7 +84,7 @@ describe('StationSyncService', () => {
     expect(upsert).toHaveBeenCalledTimes(10)
   })
 
-  it('stops calling Tencent once the run budget is used up', async () => {
+  it('stops calling the provider once the run budget is used up', async () => {
     process.env.STATION_SYNC_CALL_BUDGET = '3'
     const { service, fetchPage } = createHarness(
       Array.from({ length: 9 }, () => ({ items: [station('p1')], count: 20 })),
@@ -117,17 +117,17 @@ describe('StationSyncService', () => {
     expect(fetchPage).not.toHaveBeenCalled()
   })
 
-  it('writes synced rows with a tx- prefix, fallback price and truncated columns', async () => {
+  it('writes synced rows with a bd- prefix, fallback price and truncated columns', async () => {
     const long = station('abc', { name: 'x'.repeat(200), address: 'y'.repeat(400), brand: 'b'.repeat(50) })
     const { service, upsert } = createHarness([{ items: [long], count: 1 }])
 
     await service.sync()
 
     const call = upsert.mock.calls[0][0]
-    expect(call.where).toEqual({ id: 'tx-abc' })
+    expect(call.where).toEqual({ id: 'bd-abc' })
     expect(call.update).toMatchObject({
       cityCode: '420100',
-      // 腾讯不提供营业时间与油价，落库用空/回落值，展示时由省级指导价覆盖
+      // 数据源不提供营业时间与油价，落库用空/回落值，展示时由省级指导价覆盖
       openingHours: '',
       price92: 8.31,
       price95: 8.89,

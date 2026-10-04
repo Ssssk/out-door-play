@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common'
 import { FuelController } from './fuel.controller'
 import { FuelService } from './fuel.service'
 import { ProvinceFuelPriceProvider } from './province-price.provider'
-import { TencentStationProvider } from './tencent-station.provider'
 import { OsmStationProvider } from './osm-station.provider'
 import { BaiduStationProvider } from './baidu-station.provider'
 import { StationSyncService } from './station-sync.service'
@@ -11,11 +10,10 @@ import { STATION_PROVIDER } from './station-provider'
 const stationProvider = {
   provide: STATION_PROVIDER,
   useFactory: () => {
-    // 默认走开源 OSM（免费、无每日配额）；配置为 tencent 时回落到腾讯地点搜索
+    // 默认走百度地图（国内可达、配额充足）；仅显式配置为 osm 时回落开源 OSM
     const mode = process.env.STATION_PROVIDER?.trim().toLowerCase()
-    if (mode === 'baidu') return new BaiduStationProvider()
-    if (mode === 'tencent') return new TencentStationProvider()
-    return new OsmStationProvider()
+    if (mode === 'osm') return new OsmStationProvider()
+    return new BaiduStationProvider()
   },
 }
 
@@ -24,7 +22,6 @@ const stationProvider = {
   providers: [
     FuelService,
     ProvinceFuelPriceProvider,
-    TencentStationProvider,
     OsmStationProvider,
     stationProvider,
     StationSyncService,

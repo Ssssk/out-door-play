@@ -1,21 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { createHash } from 'node:crypto'
 import type { GeoPoint } from '../../common/geo'
 import { bd09ToGcj02 } from '../../common/geo'
-import { deriveBrand } from './tencent-station.provider'
+import { calcBaiduSn, toBaiduQuery } from '../../common/baidu-signature'
 import type { SourceStation, StationPage, StationProvider } from './station-provider'
 
 /**
  * 附近加油站数据源：百度地图开放平台「地点检索服务」(`place/v2/search`)。
  *
- * 相比 OSM（国外 Overpass 实例，国内服务器常被墙）与腾讯（个人 200 次/日额度），
- * 百度 WebService 国内可达、个人配额约 2000 次/日，适合作主数据源。
+ * 国内可达、个人配额约 2000 次/日，适合作主数据源。
  *
  * 关键点：
  * - 百度坐标体系为 BD-09，返回的坐标必须转回库内统一的 GCJ-02，否则「距你」偏移数百米~1 公里。
  * - 用 `region=城市名` 模式按城市全量检索（不依赖坐标半径），每城分页拉取（最多 200 条）。
- * - AK 开启 SN 校验时需按百度规范计算 `sn`（见 calcSn）。
+ * - AK 开启 SN 校验时需按百度规范计算 `sn`（见 common/baidu-signature）。
  */
+
 @Injectable()
 export class BaiduStationProvider implements StationProvider {
   private readonly logger = new Logger(BaiduStationProvider.name)
@@ -72,9 +71,9 @@ export class BaiduStationProvider implements StationProvider {
         page_size: String(this.pageSize),
         page_num: String(page),
       }
-      if (sk) params.sn = calcSn(this.searchPath, params, sk)
+      if (sk) params.sn = calcBaiduSn(this.searchPath, params, sk)
 
-      const url = `${this.baseUrl}${this.searchPath}?${toQuery(params)}`
+      const url = `${this.baseUrl}${this.searchPath}?${toBaiduQuery(params)}`
       try {
         const response = await fetch(url, { signal: AbortSignal.timeout(this.requestTimeoutMs) })
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
@@ -130,24 +129,22 @@ export class BaiduStationProvider implements StationProvider {
   }
 }
 
-// ---- 百度 SN 校验签名（AK 开启 SN 校验时使用） ----
-function calcSn(path: string, params: Record<string, string>, sk: string): string {
-  const keys = Object.keys(params).sort()
-  const query = keys.map((k) => `${k}=${percentEncode(params[k])}`).join('&')
-  const raw = path + '?' + query + sk
-  return createHash('md5').update(raw, 'utf8').digest('hex')
-}
-
-function percentEncode(value: string): string {
-  return encodeURIComponent(value)
-    .replace(/!/g, '%21').replace(/\*/g, '%2A').replace(/'/g, '%27')
-    .replace(/\(/g, '%28').replace(/\)/g, '%29')
-}
-
-function toQuery(params: Record<string, string>): string {
-  return Object.entries(params)
-    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
-    .join('&')
+/** 名称优先、分类兜底地推导品牌；都识别不出时统一记作「加油站」 */
+export function deriveBrand(title: string, category: string): string {
+  const haystack = title.toLowerCase()
+  const BRAND_HINTS: ReadonlyArray<readonly [string, string]> = [
+    ['中国石化', '中石化'], ['中石化', '中石化'],
+    ['中国石油', '中石油'], ['中石油', '中石油'],
+    ['中国海油', '中海油'], ['中海油', '中海油'], ['中国海洋石油', '中海油'],
+    ['壳牌', 'Shell'], ['shell', 'Shell'],
+    ['道达尔', '道达尔'], ['total', '道达尔'],
+    ['中化', '中化'], ['bp', 'BP'],
+  ]
+  for (const [hint, brand] of BRAND_HINTS) {
+    if (haystack.includes(hint)) return brand
+  }
+  const segment = category.split(':').at(-1)?.trim() ?? ''
+  return segment && segment !== '加油站' && segment !== '其它加油站' ? segment : '加油站'
 }
 
 type RawRecord = Record<string, unknown>

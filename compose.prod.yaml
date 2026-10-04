@@ -37,11 +37,9 @@ services:
       # 值来自 GitHub Secret DEPLOY_ENV_FILE。留空时登录接口返回 503 AUTH_PROVIDER_UNAVAILABLE。
       WECHAT_APP_ID: ${WECHAT_APP_ID:-}
       WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-}
-      # 附近加油站：腾讯地点搜索（定时同步用）。
+      # 附近加油站：百度地图地点检索（定时同步用）。
       # ⚠️ 必须在此显式透传：本服务用 environment 逐项列举（没有 env_file），
       # 只把变量写进 .env.production 是进不了容器的。留空即关闭同步。
-      TENCENT_MAP_KEY: ${TENCENT_MAP_KEY:-}
-      TENCENT_MAP_SECRET: ${TENCENT_MAP_SECRET:-}
       STATION_SYNC_ENABLED: ${STATION_SYNC_ENABLED:-false}
       STATION_SYNC_CITIES: ${STATION_SYNC_CITIES:-}
       STATION_SYNC_CALL_BUDGET: ${STATION_SYNC_CALL_BUDGET:-}
@@ -50,7 +48,7 @@ services:
       # 加油站数据源：百度地图（STATION_PROVIDER=baidu 时启用）；AK 由部署变量注入。
       BAIDU_MAP_AK: ${BAIDU_MAP_AK:-}
       BAIDU_MAP_SK: ${BAIDU_MAP_SK:-}
-      # 数据源切换：osm(默认) / tencent / baidu
+      # 数据源切换：baidu(默认) / osm
       STATION_PROVIDER: ${STATION_PROVIDER:-osm}
     volumes:
       - chumen_uploads_prod:/app/uploads

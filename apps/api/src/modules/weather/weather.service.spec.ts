@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import { TencentWeatherProvider, type WeatherObservation } from './tencent-weather.provider'
+import { BaiduWeatherProvider, type WeatherObservation } from './baidu-weather.provider'
 import { WeatherService } from './weather.service'
 
 function provider(impl: () => Promise<WeatherObservation | null>) {
-  return { fetch: vi.fn(impl) } as unknown as TencentWeatherProvider
+  return { fetch: vi.fn(impl) } as unknown as BaiduWeatherProvider
 }
 
 describe('WeatherService', () => {

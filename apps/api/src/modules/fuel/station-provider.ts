@@ -4,10 +4,10 @@ import type { GeoPoint } from '../../common/geo'
  * 加油站数据源统一抽象。
  *
  * 同步与「库空实时兜底」都只依赖这个接口，具体实现可插拔：
- * - `TencentStationProvider`：腾讯位置服务，受 200 次/日配额限制；
+ * - `BaiduStationProvider`：百度地图地点检索，国内可达、配额约 2000 次/日；
  * - `OsmStationProvider`：OpenStreetMap Overpass，免费、无每日配额。
  *
- * 通过 `STATION_PROVIDER` 环境变量选择，默认 `osm`。
+ * 通过 `STATION_PROVIDER` 环境变量选择，默认 `baidu`。
  */
 export interface SourceStation {
   /** 数据源内唯一 id（不同源加不同前缀避免冲突，如 `tx-` / `osm-`） */

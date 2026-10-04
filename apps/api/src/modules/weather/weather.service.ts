@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { TencentWeatherProvider, type WeatherObservation } from './tencent-weather.provider'
+import { BaiduWeatherProvider, type WeatherObservation } from './baidu-weather.provider'
 
 export interface CurrentWeather {
   cityCode: string
@@ -20,7 +20,7 @@ export interface CurrentWeather {
 type WeatherSnapshot = Omit<CurrentWeather, 'cityCode'>
 
 /**
- * 实时天气取腾讯位置服务（按城市 adcode 查询），失败或未配置 key 时降级到静态快照。
+ * 实时天气取百度地图开放平台（按城市 adcode 查询），失败或未配置 AK 时降级到静态快照。
  *
  * 降级快照只在「拿不到真实数据」时使用，保证 `GET /v1/weather/current` 永远有稳定结构，
  * 小程序端不需要为天气失败单独兜底。
@@ -40,7 +40,7 @@ const SNAPSHOTS = new Map<string, WeatherSnapshot>([
 
 const FALLBACK: WeatherSnapshot = { temp: 28, desc: '晴朗', wind: '微风 3 级', air: '空气优', tip: '适宜出行', icon: 'weather-sun.svg' }
 
-/** 天气缓存时长：腾讯天气短时间内不会变，且个人开发者额度有限 */
+/** 天气缓存时长：百度天气短时间内不会变，且个人开发者额度有限 */
 const CACHE_TTL_MS = 10 * 60 * 1000
 /** 取数失败后的重试窗口，避免数据源异常时每个请求都去打接口 */
 const FAILURE_RETRY_MS = 60 * 1000
@@ -78,7 +78,7 @@ function toCurrentWeather(cityCode: string, observation: WeatherObservation): Cu
     temp: observation.temperature,
     desc: observation.weather,
     wind: [observation.windDirection, observation.windPower].filter(Boolean).join(' ') || snapshot.wind,
-    // 腾讯基础天气不返回 AQI（需 added_fields=air），空气质量暂沿用城市静态文案
+    // 百度基础天气不返回 AQI，空气质量暂沿用城市静态文案
     air: snapshot.air,
     tip: tipFor(observation.weather, observation.temperature),
     icon: iconFor(observation.weather),
@@ -90,7 +90,7 @@ export class WeatherService {
   private readonly cache = new Map<string, { value: CurrentWeather; expiresAt: number }>()
   private readonly inflight = new Map<string, Promise<WeatherObservation | null>>()
 
-  constructor(private readonly provider: TencentWeatherProvider) {}
+  constructor(private readonly provider: BaiduWeatherProvider) {}
 
   async current(cityCode: string): Promise<CurrentWeather> {
     const cached = this.cache.get(cityCode)
