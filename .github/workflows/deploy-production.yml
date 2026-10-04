@@ -182,6 +182,24 @@ jobs:
           deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
           ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api db:deploy && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api admin:sync-permissions && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api migrate:route-covers && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api migrate:clear-description-placeholder && docker compose --env-file .env.production -f compose.prod.yaml up -d --remove-orphans --wait --wait-timeout 120"
 
+      - name: Baidu connectivity self-check (inside api container)
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
+        run: |
+          set -euo pipefail
+          deploy_port="${DEPLOY_PORT:-22}"
+          deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
+          # 把自检脚本喂进 api 容器的 node 执行：打印容器内注入的 AK/SK 指纹(长度+md5前8)，
+          # 并用 SN 签名真实调用一次百度接口，一次性区分「密钥未注入/SK 不匹配/出网失败」，
+          # 输出只含指纹与百度状态码，不泄露密钥明文
+          ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml exec -T api node" \
+            < apps/api/scripts/baidu-selftest.mjs
+
       - name: Smoke test live fuel POI
         shell: bash
         run: |
