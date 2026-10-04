@@ -202,6 +202,32 @@ jobs:
             "cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml exec -T api node" \
             < apps/api/scripts/baidu-selftest.mjs
 
+      - name: Trigger station sync and print summary
+        shell: bash
+        env:
+          STATION_SYNC_TRIGGER_TOKEN: ${{ secrets.STATION_SYNC_TRIGGER_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$STATION_SYNC_TRIGGER_TOKEN" ]; then
+            echo "::warning::STATION_SYNC_TRIGGER_TOKEN 未配置，无法手动触发同步，仅靠容器启动后的自动同步"
+            exit 0
+          fi
+          # 直接调用同步端点，把同步执行摘要（城市数/调用数/取到/写入/清理/skipped 原因）打进日志，
+          # 彻底消除「同步到底跑没跑、为什么没落库」的黑盒。摘要不含任何密钥。
+          body=""
+          for attempt in 1 2 3; do
+            body="$(curl --silent --show-error --max-time 900 \
+              --header "x-station-sync-token: $STATION_SYNC_TRIGGER_TOKEN" \
+              --request POST https://www.chumenliuliu.cloud/v1/fuel/sync)" || body=""
+            if printf '%s' "$body" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; then
+              printf '%s' "$body" | python3 -c 'import json,sys; print("[sync-summary]", json.dumps(json.load(sys.stdin), ensure_ascii=False))'
+              break
+            fi
+            echo "[sync-summary] 第 $attempt 次触发未拿到 JSON（可能启动自动同步尚在执行），30s 后重试"
+            echo "  原始返回: $(printf '%s' "$body" | head -c 200)"
+            sleep 30
+          done
+
       - name: Smoke test live fuel POI
         shell: bash
         run: |
