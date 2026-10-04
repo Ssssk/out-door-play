@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Inject } from '@nestjs/common'
 import { PrismaService } from '../../database/prisma.service'
 import { distanceInKm, roundDistanceKm } from '../../common/geo'
-import { ProvinceFuelPriceProvider, regionFromCityCode } from './province-price.provider'
+import { FUEL_GRADES, ProvinceFuelPriceProvider, regionFromCityCode } from './province-price.provider'
 import { STATION_PAGE_SIZE, STATION_PAGE_SIZE_MAX } from './fuel.dto'
 import type { GeoPoint } from '../../common/geo'
 import type { ProvinceFuelPrice } from './province-price.provider'
@@ -78,7 +78,7 @@ export class FuelService {
         longitude: { gte: point.longitude - BOX_HALF_DEG, lte: point.longitude + BOX_HALF_DEG },
       },
       select: {
-        id: true, name: true, brand: true, address: true,
+        id: true, name: true, brand: true, address: true, cityCode: true,
         latitude: true, longitude: true, openingHours: true, price92: true, price95: true,
       },
     })
@@ -89,6 +89,8 @@ export class FuelService {
       .sort((a, b) => a.distanceKm - b.distanceKm)
 
     if (nearby.length > 0) {
+      // 挂牌价统一覆盖为省级指导价（同省同价）；拉取失败保留库内回落价
+      const override = await this.provincePriceOverride(cityCode ?? nearby[0]?.cityCode)
       const items: StationItem[] = nearby.map((row) => ({
         id: row.id,
         name: row.name,
@@ -98,8 +100,8 @@ export class FuelService {
         longitude: row.longitude,
         distanceKm: roundDistanceKm(row.distanceKm),
         openingHours: row.openingHours,
-        price92: row.price92,
-        price95: row.price95,
+        price92: override?.price92 ?? row.price92,
+        price95: override?.price95 ?? row.price95,
       }))
       const paged = items.slice(start, start + size)
       return { items: paged, total: items.length, page: currentPage, pageSize: size, hasMore: start + size < items.length }
@@ -140,6 +142,7 @@ export class FuelService {
         orderBy: { name: 'asc' },
       })
       if (rows.length) {
+        const override = await this.provincePriceOverride(cityCode)
         const items: StationItem[] = rows.map((row) => ({
           id: row.id,
           name: row.name,
@@ -149,8 +152,8 @@ export class FuelService {
           longitude: row.longitude,
           distanceKm: null,
           openingHours: row.openingHours,
-          price92: row.price92,
-          price95: row.price95,
+          price92: override?.price92 ?? row.price92,
+          price95: override?.price95 ?? row.price95,
         }))
         const paged = items.slice(start, start + size)
         return { items: paged, total: items.length, page: currentPage, pageSize: size, hasMore: start + size < items.length, fallback: 'city' as const }
@@ -163,6 +166,19 @@ export class FuelService {
   private async fetchProvincePrice(cityCode: string): Promise<ProvinceFuelPrice | null> {
     const region = regionFromCityCode(cityCode)
     return region ? this.provincePrice.fetchByRegion(region) : null
+  }
+
+  /**
+   * 站点挂牌价的省级指导价覆盖值（92/95）。
+   * 库内 price92/95 只是同步落库时的回落值；省级源失败或无该省数据时返回 null，保留库内值。
+   */
+  private async provincePriceOverride(cityCode?: string | null): Promise<{ price92: number; price95: number } | null> {
+    if (!cityCode) return null
+    const province = await this.fetchProvincePrice(cityCode).catch(() => null)
+    if (!province) return null
+    const price92 = province.items.find((item) => item.grade === FUEL_GRADES.gasoline92)?.price
+    const price95 = province.items.find((item) => item.grade === FUEL_GRADES.gasoline95)?.price
+    return price92 && price95 ? { price92, price95 } : null
   }
 
   /** 省级源只有调价日期，没有具体时刻，因此只展示到日，不补造时间 */
