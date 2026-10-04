@@ -122,6 +122,7 @@ jobs:
           STATION_PROVIDER: ${{ vars.STATION_PROVIDER || 'osm' }}
           BAIDU_MAP_AK: ${{ secrets.BAIDU_MAP_AK || vars.BAIDU_MAP_AK }}
           BAIDU_MAP_SK: ${{ secrets.BAIDU_MAP_SK || vars.BAIDU_MAP_SK }}
+          STATION_SYNC_TRIGGER_TOKEN: ${{ secrets.STATION_SYNC_TRIGGER_TOKEN }}
           API_IMAGE: ${{ needs.build-images.outputs.api_image }}
           WEB_IMAGE: ${{ needs.build-images.outputs.web_image }}
         run: |
@@ -137,8 +138,8 @@ jobs:
           test -n "$CORS_ORIGINS"
           test -n "$ADMIN_ALLOWED_ORIGINS"
           test "$ADMIN_COOKIE_SECURE" = "true"
-          DEPLOY_ENV_FILE="$(printf '%s\n' "$DEPLOY_ENV_FILE" | sed '/^WECHAT_APP_ID=/d; /^WECHAT_APP_SECRET=/d; /^TENCENT_MAP_KEY=/d; /^TENCENT_MAP_SECRET=/d; /^STATION_SYNC_ENABLED=/d; /^STATION_SYNC_CITIES=/d; /^BAIDU_MAP_AK=/d; /^BAIDU_MAP_SK=/d; /^CORS_ORIGINS=/d; /^ADMIN_ALLOWED_ORIGINS=/d; /^ADMIN_COOKIE_SECURE=/d')"
-          DEPLOY_ENV_FILE="$(printf '%s\nCORS_ORIGINS=%s\nADMIN_ALLOWED_ORIGINS=%s\nADMIN_COOKIE_SECURE=%s\nWECHAT_APP_ID=%s\nWECHAT_APP_SECRET=%s\nTENCENT_MAP_KEY=%s\nTENCENT_MAP_SECRET=%s\nSTATION_SYNC_ENABLED=true\nSTATION_PROVIDER=%s\nBAIDU_MAP_AK=%s\nBAIDU_MAP_SK=%s\nSTATION_SYNC_CITIES=110000,310000,320100,330100,420100,430100,440100,440300,500000,510100,450200\n' "$DEPLOY_ENV_FILE" "$CORS_ORIGINS" "$ADMIN_ALLOWED_ORIGINS" "$ADMIN_COOKIE_SECURE" "$WECHAT_APP_ID" "$WECHAT_APP_SECRET" "$TENCENT_MAP_KEY" "$TENCENT_MAP_SECRET" "$STATION_PROVIDER" "$BAIDU_MAP_AK" "$BAIDU_MAP_SK")"
+          DEPLOY_ENV_FILE="$(printf '%s\n' "$DEPLOY_ENV_FILE" | sed '/^WECHAT_APP_ID=/d; /^WECHAT_APP_SECRET=/d; /^TENCENT_MAP_KEY=/d; /^TENCENT_MAP_SECRET=/d; /^STATION_SYNC_ENABLED=/d; /^STATION_SYNC_CITIES=/d; /^BAIDU_MAP_AK=/d; /^BAIDU_MAP_SK=/d; /^CORS_ORIGINS=/d; /^ADMIN_ALLOWED_ORIGINS=/d; /^ADMIN_COOKIE_SECURE=/d; /^STATION_SYNC_TRIGGER_TOKEN=/d')"
+          DEPLOY_ENV_FILE="$(printf '%s\nCORS_ORIGINS=%s\nADMIN_ALLOWED_ORIGINS=%s\nADMIN_COOKIE_SECURE=%s\nWECHAT_APP_ID=%s\nWECHAT_APP_SECRET=%s\nTENCENT_MAP_KEY=%s\nTENCENT_MAP_SECRET=%s\nSTATION_SYNC_ENABLED=true\nSTATION_PROVIDER=%s\nBAIDU_MAP_AK=%s\nBAIDU_MAP_SK=%s\nSTATION_SYNC_TRIGGER_TOKEN=%s\nSTATION_SYNC_CITIES=110000,310000,320100,330100,420100,430100,440100,440300,500000,510100,450200\n' "$DEPLOY_ENV_FILE" "$CORS_ORIGINS" "$ADMIN_ALLOWED_ORIGINS" "$ADMIN_COOKIE_SECURE" "$WECHAT_APP_ID" "$WECHAT_APP_SECRET" "$TENCENT_MAP_KEY" "$TENCENT_MAP_SECRET" "$STATION_PROVIDER" "$BAIDU_MAP_AK" "$BAIDU_MAP_SK" "$STATION_SYNC_TRIGGER_TOKEN")"
           env_payload="$(printf '%s\nAPI_IMAGE=%s\nWEB_IMAGE=%s\n' "$DEPLOY_ENV_FILE" "$API_IMAGE" "$WEB_IMAGE" | base64 -w0)"
           printf '%s' "$env_payload" | ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "base64 -d > '$deploy_dir/.env.production' && chmod 600 '$deploy_dir/.env.production'"
 
@@ -197,7 +198,7 @@ jobs:
           # 这里轮询等待首批 tx- 站点落库，避免与启动延迟竞态导致部署误报
           for attempt in $(seq 1 20); do
             if poi="$(curl --fail --silent --show-error --max-time 30 'https://www.chumenliuliu.cloud/v1/fuel/stations?lat=30.5928&lng=114.3055&page=1&pageSize=10')" \
-              && printf '%s' "$poi" | python3 -c 'import json,sys; body=json.load(sys.stdin); items=(body.get("data") or {}).get("items") or []; assert body.get("code") == 0 and any(str(i.get("id", "")).startswith("tx-") for i in items)' 2>/dev/null; then
+              && printf '%s' "$poi" | python3 -c 'import json,sys; body=json.load(sys.stdin); items=(body.get("data") or {}).get("items") or []; assert body.get("code") == 0 and any(str(i.get("id", "")).startswith(("tx-", "bd-")) for i in items)' 2>/dev/null; then
               break
             fi
             echo "waiting for station sync... attempt $attempt/20"
@@ -205,10 +206,10 @@ jobs:
             poi=""
           done
           if [ -z "$poi" ]; then
-            echo "::error::5 分钟内未见 tx-* 站点落库。同步失败常见原因：TENCENT_MAP_KEY/SECRET 配置错误（看 docker logs 中「站点同步」记录的腾讯 status）或当日额度耗尽"
+            echo "::error::5 分钟内未见 tx-/bd-* 站点落库。同步失败常见原因：(baidu) BAIDU_MAP_AK/SK 配置错误或 IP 白名单不匹配（看 docker logs 中「百度地点检索失败」）；(tencent) TENCENT_MAP_KEY/SECRET 配置错误 或当日额度耗尽"
             exit 1
           fi
-          printf '%s' "$poi" | python3 -c 'import json,sys; body=json.load(sys.stdin); data=body.get("data") or {}; items=data.get("items") or []; assert all(str(item.get("id", "")).startswith("tx-") for item in items) and all(float(item.get("distanceKm", -1)) >= 0 for item in items); print(json.dumps({"status":"passed","count":len(items),"total":data.get("total"),"firstId":(items[0].get("id") if items else None)}, ensure_ascii=False))'
+          printf '%s' "$poi" | python3 -c 'import json,sys; body=json.load(sys.stdin); data=body.get("data") or {}; items=data.get("items") or []; assert all(str(item.get("id", "")).startswith(("tx-", "bd-")) for item in items) and all(float(item.get("distanceKm", -1)) >= 0 for item in items); print(json.dumps({"status":"passed","count":len(items),"total":data.get("total"),"firstId":(items[0].get("id") if items else None)}, ensure_ascii=False))'
           auth_file="$(mktemp)"
           auth_status="$(curl --silent --show-error --max-time 20 --output "$auth_file" --write-out '%{http_code}' --header 'content-type: application/json' --data '{"code":"deployment-invalid-code-probe"}' https://www.chumenliuliu.cloud/v1/auth/wechat/login)"
           AUTH_STATUS="$auth_status" python3 - "$auth_file" <<'PY'
