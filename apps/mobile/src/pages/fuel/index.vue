@@ -44,8 +44,8 @@
             <!-- 城市兜底时无真实「距你」距离：改展示地址，避免出现「距你 -km」 -->
           <text v-if="stationFallback !== 'city'" class="station-meta">距你 {{ formatDistanceKm(station.distanceKm) }}km{{ station.openingHours ? ` · ${station.openingHours}` : '' }}</text>
           <text v-else class="station-meta">{{ station.address }}</text>
-           <!-- 腾讯实时站点不提供油价：拿不到时整行隐藏，避免显示「0.00 元/升」 -->
-            <text v-if="station.price92 > 0" class="station-prices">92# <text class="price-strong">{{ station.price92.toFixed(2) }}</text> · 95# {{ station.price95.toFixed(2) }} 元/升</text>
+           <!-- 产品决策：站点卡片不展示油价（省级指导价同省同价，参考意义有限），只保留距离/地址；需要恢复时把 v-if 条件改回 station.price92 > 0 -->
+            <text v-if="false" class="station-prices">92# <text class="price-strong">{{ station.price92.toFixed(2) }}</text> · 95# {{ station.price95.toFixed(2) }} 元/升</text>
           </view>
           <button class="navigate-button" @click="navigateToStation(station)">导航</button>
         </view>
