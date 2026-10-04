@@ -228,6 +228,22 @@ jobs:
             sleep 30
           done
 
+      - name: Print api sync logs (diagnose why stations not landing)
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
+        run: |
+          set -euo pipefail
+          deploy_port="${DEPLOY_PORT:-22}"
+          deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
+          # 打出 api 容器最近 15 分钟里与站点同步相关的日志：provider 选择、每城采集结果、失败原因全在这里
+          ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml logs --since 15m api" \
+            | grep -aE "站点同步|高德|provider|Nest.*started|error|Error" | tail -100 || true
+
       - name: Smoke test live fuel POI
         shell: bash
         run: |
