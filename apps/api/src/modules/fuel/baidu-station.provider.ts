@@ -51,7 +51,10 @@ export class BaiduStationProvider implements StationProvider {
   }
 
   async fetchPage(center: GeoPoint, opts?: { cityCode?: string }): Promise<StationPage | null> {
-    if (!this.enabled) return null
+    if (!this.enabled) {
+      this.logger.warn('百度加油站 provider 未启用：环境变量 BAIDU_MAP_AK 为空，将跳过全部城市同步（柳州等将无法入库）')
+      return null
+    }
     const cityName = opts?.cityCode ? this.cityNames[opts.cityCode] : undefined
     if (!cityName) {
       this.logger.warn(`百度检索跳过未知城市码：${opts?.cityCode ?? 'undefined'}`)
@@ -87,6 +90,7 @@ export class BaiduStationProvider implements StationProvider {
         }
         const results = Array.isArray(record?.results) ? record.results : []
         if (results.length === 0) break // 已到末页
+        this.logger.log(`百度检索 ${cityName} 第 ${page} 页 返回 ${results.length} 条`)
         for (const raw of results) {
           const station = this.parse(raw)
           if (station) items.push(station)

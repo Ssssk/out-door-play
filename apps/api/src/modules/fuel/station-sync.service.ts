@@ -107,6 +107,10 @@ export class StationSyncService implements OnModuleInit, OnModuleDestroy {
 
     this.running = true
     const budget = this.callBudget()
+    this.logger.log(
+      `[站点同步] 启动：provider=${this.provider.constructor.name}，` +
+        `城市=[${this.cityCodes().join(', ')}]，预算=${budget} 次，间隔=${DAILY_INTERVAL_MS / 3_600_000}h`,
+    )
     try {
       for (const cityCode of this.cityCodes()) {
         if (summary.calls >= budget) {
@@ -114,10 +118,15 @@ export class StationSyncService implements OnModuleInit, OnModuleDestroy {
           break
         }
         summary.cities += 1
+        this.logger.log(`[站点同步] ▶ 城市 ${cityCode} 开始采集`)
         const collected = await this.collectCity(cityCode, budget - summary.calls)
         summary.calls += collected.calls
         summary.fetched += collected.stations.length
-        if (collected.stations.length === 0) continue
+        this.logger.log(`[站点同步] ◀ 城市 ${cityCode} 完成: 取到 ${collected.stations.length} 条, 调用 ${collected.calls} 次`)
+        if (collected.stations.length === 0) {
+          this.logger.warn(`[站点同步] 城市 ${cityCode} 取到 0 条（可能百度 provider 未启用/接口失败/IP白名单/SN不匹配）`)
+          continue
+        }
 
         summary.upserted += await this.persist(cityCode, collected.stations, collected.center)
         summary.removed += await this.prune(cityCode, collected.stations)
@@ -127,7 +136,7 @@ export class StationSyncService implements OnModuleInit, OnModuleDestroy {
     }
 
     this.logger.log(
-      `加油站站点同步完成：城市 ${summary.cities} 个、调用 ${summary.calls} 次、取到 ${summary.fetched} 条、` +
+      `加油站站点同步完成(provider=${this.provider.constructor.name})：城市 ${summary.cities} 个、调用 ${summary.calls} 次、取到 ${summary.fetched} 条、` +
         `写入 ${summary.upserted} 条、清理 ${summary.removed} 条`,
     )
     return summary
