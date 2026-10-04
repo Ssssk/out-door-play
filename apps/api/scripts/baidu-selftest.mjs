@@ -26,20 +26,22 @@ const params = { ak, data_type: 'all', district_id: '420100' }
 const keys = Object.keys(params).sort()
 const query = keys.map((k) => `${k}=${percentEncode(params[k])}`).join('&')
 const sn = createHash('md5').update(encodeURIComponent(`${path}?${query}${sk}`), 'utf8').digest('hex')
-try {
-  const addrs = await dns.lookup('api.map.baidu.com', { all: true }).catch(() => [])
-  console.log(`[selftest] 容器内解析 api.map.baidu.com → ${addrs.map((a) => a.address).join(', ') || '失败'}(应为公网 IP 14.215.182.x;若是 10.x 说明 hosts 钉死未生效)`)
-  const res = await fetch(`https://api.map.baidu.com${path}?${query}&sn=${sn}`, { signal: AbortSignal.timeout(15000) })
-  const text = await res.text()
-  console.log(`[selftest] HTTP 状态=${res.status} content-type=${res.headers.get('content-type') ?? '-'}`)
-  console.log(`[selftest] 响应前400字符: ${text.slice(0, 400).replace(/\s+/g, ' ')}`)
-  // 对照:正常应是 {"status":0,...} 或服务未开通类 JSON;若是 HTML/代理报错/DNS 劫持页,这里会直接暴露
-} catch (err) {
-  console.log(`[selftest] 请求异常: ${err?.message ?? err} → 服务器出网到 api.map.baidu.com 失败`)
+const addrs = await dns.lookup('api.map.baidu.com', { all: true }).catch(() => [])
+console.log(`[selftest] 容器内解析 api.map.baidu.com → ${addrs.map((a) => a.address).join(', ') || '失败'}(应为公网 IP 14.215.182.x;若是 10.x 说明 hosts 钉死未生效)`)
+
+// 多目标探测:判断出口网关是"全拦"还是"按域名白名单放行"
+const probes = [
+  ['www.baidu.com', 'https://www.baidu.com/'],
+  ['api.weixin.qq.com(小程序登录依赖)', 'https://api.weixin.qq.com/sns/jscode2session'],
+  ['api.map.baidu.com(当前主用)', `https://api.map.baidu.com${path}?${query}&sn=${sn}`],
+  ['restapi.amap.com(高德备选)', 'https://restapi.amap.com/v3/weather/weatherInfo'],
+]
+for (const [label, url] of probes) {
   try {
-    const probe = await fetch('https://www.baidu.com', { signal: AbortSignal.timeout(10000) })
-    console.log(`[selftest] 对照探测 www.baidu.com: HTTP ${probe.status}(通则说明仅 api.map.baidu.com 被拦,不通则整机出网异常)`)
-  } catch (err2) {
-    console.log(`[selftest] 对照探测 www.baidu.com 也失败: ${err2?.message ?? err2}`)
+    const res = await fetch(url, { signal: AbortSignal.timeout(10000) })
+    const text = (await res.text()).slice(0, 120).replace(/\s+/g, ' ')
+    console.log(`[probe] ${label} → HTTP ${res.status} | ${text}`)
+  } catch (err) {
+    console.log(`[probe] ${label} → 异常: ${err?.message ?? err}`)
   }
 }
