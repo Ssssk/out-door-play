@@ -9,6 +9,14 @@ const amapKey = process.env.AMAP_MAP_KEY?.trim() ?? ''
 const baiduAk = process.env.BAIDU_MAP_AK?.trim() ?? ''
 console.log(`[selftest] AMAP_MAP_KEY 长度=${amapKey.length} md5前8=${fp(amapKey)}`)
 console.log(`[selftest] BAIDU_MAP_AK 长度=${baiduAk.length} md5前8=${fp(baiduAk)}`)
+console.log(
+  `[selftest] STATION_PROVIDER=${process.env.STATION_PROVIDER ?? '(未设)'} ` +
+    `STATION_SYNC_ENABLED=${process.env.STATION_SYNC_ENABLED ?? '(未设)'} ` +
+    `STATION_SYNC_CITIES=${process.env.STATION_SYNC_CITIES ?? '(未设)'}`,
+)
+if (amapKey && process.env.STATION_PROVIDER?.trim() && process.env.STATION_PROVIDER.trim() !== 'amap') {
+  console.log(`[selftest] ⚠️ STATION_PROVIDER=${process.env.STATION_PROVIDER.trim()} 不是 amap：将不走高德同步！`)
+}
 
 if (!amapKey) {
   console.log('[selftest] 结论: AMAP_MAP_KEY 未注入 → 高德站点同步与天气都会降级/跳过，检查 GitHub Secrets')

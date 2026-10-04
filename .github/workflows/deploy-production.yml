@@ -117,7 +117,8 @@ jobs:
           ADMIN_COOKIE_SECURE: ${{ secrets.ADMIN_COOKIE_SECURE }}
           WECHAT_APP_ID: ${{ secrets.WECHAT_APP_ID }}
           WECHAT_APP_SECRET: ${{ secrets.WECHAT_APP_SECRET }}
-          STATION_PROVIDER: ${{ vars.STATION_PROVIDER || 'amap' }}
+          # 硬编码 amap：高德为主源；不读 vars.STATION_PROVIDER，避免仓库残留的 baidu 配置把源又切回去
+          STATION_PROVIDER: amap
           BAIDU_MAP_AK: ${{ secrets.BAIDU_MAP_AK || vars.BAIDU_MAP_AK }}
           BAIDU_MAP_SK: ${{ secrets.BAIDU_MAP_SK || vars.BAIDU_MAP_SK }}
           AMAP_MAP_KEY: ${{ secrets.AMAP_MAP_KEY || vars.AMAP_MAP_KEY }}
