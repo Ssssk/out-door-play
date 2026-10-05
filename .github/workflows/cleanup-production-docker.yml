@@ -1,0 +1,69 @@
+name: Temporary production Docker cleanup
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/cleanup-production-docker.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'chore(ops): temporary production Docker cleanup' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - name: Configure SSH
+        shell: bash
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_SSH_KEY"
+          test -n "$DEPLOY_KNOWN_HOSTS"
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/id_deploy"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/id_deploy" "$HOME/.ssh/known_hosts"
+
+      - name: Inspect and clean Docker cache and unused images
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_HOST"
+          test -n "$DEPLOY_USER"
+          deploy_port="${DEPLOY_PORT:-22}"
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 \
+            -i "$HOME/.ssh/id_deploy" -p "$deploy_port" \
+            "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          echo '=== BEFORE: df -h / ==='
+          df -h /
+          echo '=== BEFORE: docker system df ==='
+          docker system df
+          before_kib="$(df -kP / | awk 'NR == 2 {print $4}')"
+
+          echo '=== CLEAN: docker builder prune -af ==='
+          docker builder prune -af
+          echo '=== CLEAN: docker image prune -af ==='
+          docker image prune -af
+
+          after_kib="$(df -kP / | awk 'NR == 2 {print $4}')"
+          freed_kib=$((after_kib - before_kib))
+          echo "=== AFTER: df -h / ==="
+          df -h /
+          echo '=== AFTER: docker system df ==='
+          docker system df
+          echo "FREED_KIB=$freed_kib"
+          echo 'CLEANUP_SCOPE=docker builder cache and unused images only; volumes and containers were not pruned'
+          REMOTE
