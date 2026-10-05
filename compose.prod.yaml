@@ -3,6 +3,11 @@ services:
     image: mysql:8.4
     container_name: chumen-mysql-prod
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-chumen}
       MYSQL_USER: ${MYSQL_USER:-chumen}
@@ -22,6 +27,11 @@ services:
     image: ${API_IMAGE:?API_IMAGE is required}
     container_name: chumen-api-prod
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     # ⚠️ 该服务器网络的 DNS(53端口)被内网网关劫持：无论用哪个 DNS，api.map.baidu.com 都被解析到
     # 10.173.x.x(返回 [E1002] Fail to find method)，导致百度同步全部失败。
     # 因此在容器 hosts 里直接钉死百度真实公网 IP(14.215.182.24, api.map.n.shifen.com)，绕过 DNS。
@@ -75,6 +85,11 @@ services:
     image: ${WEB_IMAGE:?WEB_IMAGE is required}
     container_name: chumen-web-prod
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     depends_on:
       api:
         condition: service_healthy

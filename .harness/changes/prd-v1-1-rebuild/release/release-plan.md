@@ -16,6 +16,9 @@
 - Operations Gate：
 - Security/Supply-chain Gate：
 - 制品 SHA/digest 与 SBOM：
+- 磁盘治理：发布前执行 `scripts/production-docker-maintenance.sh`；确认只保留当前及最近两个回滚镜像、最近 3 个 release，且不触碰 volume/运行中容器。
+- 日志治理：确认 `compose.prod.yaml` 的 db/api/web 日志轮转配置随本次发布生效。
+- 图片容量：仅记录每日增长；连续 7 天超过 400MB/天时创建独立 COS/OSS 迁移 Change，本次发布不自动迁移。
 
 ## 发布后验证与观察窗口
 

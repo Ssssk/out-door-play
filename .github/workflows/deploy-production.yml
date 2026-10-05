@@ -103,11 +103,13 @@ jobs:
           test -n "$DEPLOY_USER"
           deploy_port="${DEPLOY_PORT:-22}"
           deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
-          ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$deploy_dir' '$deploy_dir/nginx'"
+          ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$deploy_dir' '$deploy_dir/nginx' '$deploy_dir/ops'"
           scp -i "$HOME/.ssh/id_deploy" -P "$deploy_port" compose.prod.yaml "$DEPLOY_USER@$DEPLOY_HOST:$deploy_dir/compose.prod.yaml"
           # web 容器的 nginx 配置由宿主机文件挂载进容器（compose.prod.yaml 的 WEB_NGINX_CONFIG），
           # 必须随仓库下发，否则宿主机残留旧配置（曾缺 client_max_body_size → 上传 >1MB 图片返回 413）。
           scp -i "$HOME/.ssh/id_deploy" -P "$deploy_port" docker/nginx/production.conf "$DEPLOY_USER@$DEPLOY_HOST:$deploy_dir/nginx/production.conf"
+          # 发布前维护脚本用于释放 Docker 构建空间、保护最近回滚镜像并清理旧 release 目录。
+          scp -i "$HOME/.ssh/id_deploy" -P "$deploy_port" scripts/production-docker-maintenance.sh "$DEPLOY_USER@$DEPLOY_HOST:$deploy_dir/ops/production-docker-maintenance.sh"
 
       - name: Write deployment environment
         shell: bash
@@ -144,6 +146,20 @@ jobs:
           DEPLOY_ENV_FILE="$(printf '%s\nCORS_ORIGINS=%s\nADMIN_ALLOWED_ORIGINS=%s\nADMIN_COOKIE_SECURE=%s\nWECHAT_APP_ID=%s\nWECHAT_APP_SECRET=%s\nSTATION_SYNC_ENABLED=true\nSTATION_PROVIDER=%s\nBAIDU_MAP_AK=%s\nBAIDU_MAP_SK=%s\nAMAP_MAP_KEY=%s\nSTATION_SYNC_TRIGGER_TOKEN=%s\nSTATION_SYNC_CITIES=110000,310000,320100,330100,420100,430100,440100,440300,500000,510100,450200\n' "$DEPLOY_ENV_FILE" "$CORS_ORIGINS" "$ADMIN_ALLOWED_ORIGINS" "$ADMIN_COOKIE_SECURE" "$WECHAT_APP_ID" "$WECHAT_APP_SECRET" "$STATION_PROVIDER" "$BAIDU_MAP_AK" "$BAIDU_MAP_SK" "$AMAP_MAP_KEY" "$STATION_SYNC_TRIGGER_TOKEN")"
           env_payload="$(printf '%s\nAPI_IMAGE=%s\nWEB_IMAGE=%s\n' "$DEPLOY_ENV_FILE" "$API_IMAGE" "$WEB_IMAGE" | base64 -w0)"
           printf '%s' "$env_payload" | ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "base64 -d > '$deploy_dir/.env.production' && chmod 600 '$deploy_dir/.env.production'"
+
+      - name: Pre-build production Docker maintenance
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
+        run: |
+          set -euo pipefail
+          deploy_port="${DEPLOY_PORT:-22}"
+          deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i "$HOME/.ssh/id_deploy" -p "$deploy_port" \
+            "$DEPLOY_USER@$DEPLOY_HOST" "bash '$deploy_dir/ops/production-docker-maintenance.sh' '$deploy_dir'"
 
       - name: Upload Docker build context
         shell: bash
