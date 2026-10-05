@@ -2,6 +2,11 @@ name: Deploy production
 
 on:
   workflow_dispatch:
+    inputs:
+      reset_admin_password:
+        description: '重置管理员密码（新密码取 Secret ADMIN_RESET_PASSWORD），并解除账号锁定'
+        type: boolean
+        default: false
 
 concurrency:
   group: production-deploy
@@ -201,6 +206,45 @@ jobs:
           ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" \
             "cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml exec -T api node" \
             < apps/api/scripts/baidu-selftest.mjs
+
+      - name: Reset admin password (only when requested)
+        if: ${{ inputs.reset_admin_password == true }}
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
+          ADMIN_RESET_PASSWORD: ${{ secrets.ADMIN_RESET_PASSWORD }}
+        run: |
+          set -euo pipefail
+          deploy_port="${DEPLOY_PORT:-22}"
+          deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
+          test -n "$ADMIN_RESET_PASSWORD" || { echo "::error::未配置 Secret ADMIN_RESET_PASSWORD（新密码，建议 12 位以上字母+数字，避免特殊 shell 字符）"; exit 1; }
+          # 在服务器上加载 .env.production（含 ADMIN_BOOTSTRAP_USERNAME / DATABASE_URL），
+          # 再以临时容器执行重置：更新密码哈希并清除失败计数/锁定
+          ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "cd '$deploy_dir' && set -a && . ./.env.production && set +a && \
+             export ADMIN_RESET_PASSWORD='$ADMIN_RESET_PASSWORD' && \
+             docker compose --env-file .env.production -f compose.prod.yaml run --rm \
+               -e ADMIN_RESET_PASSWORD -e ADMIN_BOOTSTRAP_USERNAME \
+               api pnpm --filter @chumen/api admin:reset-password"
+
+      - name: Disk & web proxy diagnostics (truncation suspect)
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
+        run: |
+          set -euo pipefail
+          deploy_port="${DEPLOY_PORT:-22}"
+          deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
+          # 大响应(>64KB≈proxy_buffers 总量)被截断的嫌疑：磁盘满导致 nginx 临时缓冲写失败。
+          # 打出宿主机/容器磁盘水位、docker 占用与 web 容器近期错误日志。
+          ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "cd '$deploy_dir' && echo '=== df -h ===' && df -h && echo '=== docker system df ===' && docker system df && echo '=== web 容器错误日志 ===' && (docker compose --env-file .env.production -f compose.prod.yaml logs --since 30m web 2>&1 | grep -aiE 'error|emerg|alert|no space|denied|failed' | tail -30 || true) && echo '=== web 容器内磁盘 ===' && docker compose --env-file .env.production -f compose.prod.yaml exec -T web df -h / /var/cache/nginx /var/lib/nginx 2>/dev/null || true"
 
       - name: Trigger station sync and print summary
         shell: bash

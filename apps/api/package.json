@@ -25,7 +25,8 @@
     "db:studio": "prisma studio",
     "preadmin:bootstrap": "prisma generate",
     "admin:bootstrap": "tsx prisma/bootstrap-admin.ts",
-    "admin:sync-permissions": "tsx prisma/sync-admin-permissions.ts"
+    "admin:sync-permissions": "tsx prisma/sync-admin-permissions.ts",
+    "admin:reset-password": "tsx prisma/reset-admin-password.ts"
   },
   "dependencies": {
     "@nestjs/common": "11.2.3",
