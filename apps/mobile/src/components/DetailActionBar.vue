@@ -2,7 +2,7 @@
   <view class="action-bar safe-bottom">
     <button class="round-action" :class="{ favorite }" aria-label="收藏" @click="$emit('favorite')"><wd-icon :name="favorite ? 'heart-filled' : 'heart'" size="22px" /></button>
     <button class="round-action" open-type="share" aria-label="分享" @click="$emit('share')"><wd-icon name="share" size="22px" /></button>
-    <button class="start-action" @click="$emit('start')">立即出发</button>
+    <button class="start-action" @click="$emit('start')">前往出发地</button>
   </view>
 </template>
 <script setup lang="ts">
