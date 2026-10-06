@@ -15,7 +15,7 @@
       :rotate="false"
       :skew="false"
     />
-    <view class="header-over-map">
+    <view class="header-over-map" :style="{ paddingTop: headerTop + 'px', '--row-h': rowHeight + 'px' }">
       <PageHeader title="完整路线" :fallback="`/pages/route-detail/index?routeId=${routeId}`" />
     </view>
 
@@ -25,7 +25,7 @@
       <button @click="loadLine">重试</button>
     </view>
 
-    <view v-if="line" class="top-chip" role="status">
+    <view v-if="line" class="top-chip" :style="{ top: chipTop + 'px' }" role="status">
       <text v-if="line.distanceKm !== null">驾车全程约 {{ line.distanceKm }} km</text>
       <text v-if="line.durationMinutes !== null"> · 约 {{ line.durationMinutes }} 分钟</text>
     </view>
@@ -50,8 +50,31 @@ const loading = ref(true)
 const errorMsg = ref('')
 const fatal = ref(false)
 const center = ref({ latitude: 30.3, longitude: 114.3 })
+// 顶栏定位：iOS 上 CSS env(safe-area-inset-top) 取值不可靠，改用胶囊按钮实测位置对齐——
+// 返回键所在行与右上角胶囊(···◎)完全同高，永远不会再顶进状态栏
+const headerTop = ref(20)
+const rowHeight = ref(32)
+const chipTop = ref(72)
+
+function measureNavbar() {
+  try {
+    const rect = uni.getMenuButtonBoundingClientRect()
+    if (rect?.top) {
+      // 返回键行高 44px(88rpx)，令其中心与胶囊中心对齐
+      headerTop.value = Math.max(8, Math.round(rect.top + rect.height / 2 - 22))
+      rowHeight.value = rect.height
+      chipTop.value = rect.top + rect.height + 14
+      return
+    }
+  } catch { /* 低版本基础库没有该接口，走回落 */ }
+  const statusBar = (uni.getSystemInfoSync().statusBarHeight as number | undefined) ?? 20
+  headerTop.value = statusBar + 10
+  rowHeight.value = 32
+  chipTop.value = statusBar + 10 + 32 + 14
+}
 
 onLoad(async (query) => {
+  measureNavbar()
   routeId.value = String(query?.routeId || '')
   await loadLine()
 })
@@ -135,13 +158,14 @@ async function goToStart() {
 <style scoped lang="scss">
 .route-map-page { position: relative; width: 100vw; height: 100vh; }
 .map { width: 100vw; height: 100vh; }
-.header-over-map { position: absolute; z-index: 10; top: 0; right: 24rpx; left: 24rpx; padding-top: calc(env(safe-area-inset-top) + 10rpx); color: #fff; }
+.header-over-map { position: absolute; z-index: 10; top: 0; right: 24rpx; left: 24rpx; color: #fff; }
+.header-over-map :deep(.header-row) { min-height: var(--row-h, 88rpx); }
 .header-over-map :deep(.page-header) { margin-top: 0; color: #fff; }
 .header-over-map :deep(.back) { color: #fff; background: rgba(0,0,0,.22); border-color: rgba(255,255,255,.38); }
 .header-over-map :deep(.page-title) { color: #fff; text-shadow: 0 2rpx 8rpx rgba(0,0,0,.5); }
 .state-card { position: absolute; z-index: 12; top: 45%; left: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 16rpx; padding: 24rpx 34rpx; border-radius: 24rpx; background: rgba(255,255,255,.94); color: var(--chumen-ink); font-size: 26rpx; box-shadow: 0 8rpx 30rpx rgba(0,0,0,.18); }
 .state-card.error { flex-direction: column; gap: 12rpx; text-align: center; }
 .state-card button { min-height: 60rpx; padding: 0 30rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 24rpx; line-height: 60rpx; }
-.top-chip { position: absolute; z-index: 12; top: calc(env(safe-area-inset-top) + 150rpx); left: 50%; transform: translateX(-50%); display: flex; padding: 14rpx 28rpx; border-radius: 999rpx; background: rgba(26,26,26,.92); color: var(--chumen-lime); font-size: 24rpx; font-weight: 700; white-space: nowrap; }
+.top-chip { position: absolute; z-index: 12; left: 50%; transform: translateX(-50%); display: flex; padding: 14rpx 28rpx; border-radius: 999rpx; background: rgba(26,26,26,.92); color: var(--chumen-lime); font-size: 24rpx; font-weight: 700; white-space: nowrap; }
 .start-btn { position: absolute; z-index: 12; right: 32rpx; bottom: calc(44rpx + env(safe-area-inset-bottom)); left: 32rpx; min-height: 96rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 30rpx; font-weight: 800; line-height: 96rpx; box-shadow: 0 8rpx 26rpx rgba(0,0,0,.28); }
 </style>
