@@ -8,8 +8,7 @@
       :longitude="center.longitude"
       :scale="13"
       :polyline="polyline"
-      :circles="circles"
-      :labels="labels"
+      :markers="markers"
       :include-points="includePoints"
       enable-satellite
       :show-compass="false"
@@ -87,39 +86,36 @@ const polyline = computed(() => {
   }]
 })
 
-// 起终点用「圆点 + 文本标签」表达：circles/labels 无需图标资源，兼容性最好
-const circles = computed(() => {
+// 起终点用「圆点图标 + 文字标签」的 marker 表达：圆点为预生成的 PNG（transparent 底，
+// 青柠=起点 / 橙=终点），label 挂在 marker 上方区分起终
+const markers = computed(() => {
   const points = line.value?.points
   if (!points?.length) return []
-  const build = (point: LinePoint) => ({
+  const build = (point: LinePoint, content: string, iconPath: string, markerId: number) => ({
+    id: markerId,
     latitude: point.latitude,
     longitude: point.longitude,
-    radius: 14,
-    color: '#1A1A1ACC',
-    fillColor: '#CCFF00E6',
-    strokeWidth: 4,
+    iconPath,
+    width: 24,
+    height: 24,
+    anchor: { x: 0.5, y: 0.5 },
+    label: {
+      content,
+      bgColor: '#1A1A1A',
+      color: '#CCFF00',
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: '#CCFF00',
+      padding: 6,
+      textAlign: 'center' as const,
+      anchorX: 0,
+      anchorY: -34,
+    },
   })
-  return [build(points[0]), build(points[points.length - 1])]
-})
-
-const labels = computed(() => {
-  const points = line.value?.points
-  if (!points?.length) return []
-  const build = (point: LinePoint, content: string) => ({
-    latitude: point.latitude,
-    longitude: point.longitude,
-    content,
-    bgColor: '#1A1A1A',
-    color: '#CCFF00',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#CCFF00',
-    padding: 6,
-    textAlign: 'center' as const,
-    anchorX: 0,
-    anchorY: -34,
-  })
-  return [build(points[0], '起'), build(points[points.length - 1], '终')]
+  return [
+    build(points[0], '起', '/static/icons/map-point-start.png', 1),
+    build(points[points.length - 1], '终', '/static/icons/map-point-end.png', 2),
+  ]
 })
 
 const includePoints = computed(() => line.value?.points.map((point) => ({ latitude: point.latitude, longitude: point.longitude })) ?? [])
