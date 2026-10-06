@@ -139,13 +139,13 @@ async function goToStart() {
 <style scoped lang="scss">
 .route-map-page { position: relative; width: 100vw; height: 100vh; }
 .map { width: 100vw; height: 100vh; }
-.header-over-map { position: absolute; z-index: 10; top: 0; right: 24rpx; left: 24rpx; color: #fff; }
-.header-over-map :deep(.page-header) { margin-top: 0; padding-top: var(--chumen-top-inset, var(--status-bar-height, 0px)); color: #fff; }
+.header-over-map { position: absolute; z-index: 10; top: 0; right: 24rpx; left: 24rpx; padding-top: calc(env(safe-area-inset-top) + 10rpx); color: #fff; }
+.header-over-map :deep(.page-header) { margin-top: 0; color: #fff; }
 .header-over-map :deep(.back) { color: #fff; background: rgba(0,0,0,.22); border-color: rgba(255,255,255,.38); }
 .header-over-map :deep(.page-title) { color: #fff; text-shadow: 0 2rpx 8rpx rgba(0,0,0,.5); }
 .state-card { position: absolute; z-index: 12; top: 45%; left: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 16rpx; padding: 24rpx 34rpx; border-radius: 24rpx; background: rgba(255,255,255,.94); color: var(--chumen-ink); font-size: 26rpx; box-shadow: 0 8rpx 30rpx rgba(0,0,0,.18); }
 .state-card.error { flex-direction: column; gap: 12rpx; text-align: center; }
 .state-card button { min-height: 60rpx; padding: 0 30rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 24rpx; line-height: 60rpx; }
-.top-chip { position: absolute; z-index: 12; top: calc(var(--chumen-top-inset, var(--status-bar-height, 0px)) + 108rpx); left: 50%; transform: translateX(-50%); display: flex; padding: 14rpx 28rpx; border-radius: 999rpx; background: rgba(26,26,26,.92); color: var(--chumen-lime); font-size: 24rpx; font-weight: 700; white-space: nowrap; }
+.top-chip { position: absolute; z-index: 12; top: calc(env(safe-area-inset-top) + 150rpx); left: 50%; transform: translateX(-50%); display: flex; padding: 14rpx 28rpx; border-radius: 999rpx; background: rgba(26,26,26,.92); color: var(--chumen-lime); font-size: 24rpx; font-weight: 700; white-space: nowrap; }
 .start-btn { position: absolute; z-index: 12; right: 32rpx; bottom: calc(44rpx + env(safe-area-inset-bottom)); left: 32rpx; min-height: 96rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 30rpx; font-weight: 800; line-height: 96rpx; box-shadow: 0 8rpx 26rpx rgba(0,0,0,.28); }
 </style>
