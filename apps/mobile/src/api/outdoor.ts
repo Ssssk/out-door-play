@@ -8,6 +8,11 @@ export const outdoorApi = {
   routes: (cityCode: string, scene: 'drive' | 'fish') =>
     request<RouteCard[]>(`/routes?city=${encodeURIComponent(cityCode)}&scene=${encodeURIComponent(scene)}&limit=10`),
   route: (id: string) => request<RouteDetail>(`/routes/${encodeURIComponent(id)}`),
+  // 「查看完整路线」：驾车轨迹（GCJ-02 点串）。服务端一次规划后永久缓存，重复请求不消耗配额
+  routeLine: (id: string) =>
+    request<{ points: { longitude: number; latitude: number }[]; distanceKm: number | null; durationMinutes: number | null }>(
+      `/routes/${encodeURIComponent(id)}/line`, { timeout: 20000 },
+    ),
   spot: (id: string) => request<FishingSpot>(`/spots/${encodeURIComponent(id)}`),
   // region 仅在 source 为 province 时返回，用于界面标注「XX省参考价」
   fuelPrices: (cityCode: string) =>

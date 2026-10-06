@@ -8,7 +8,10 @@
         <view class="summary-card">
           <view><text>{{ detail.durationLabel }}</text><text>预计耗时</text></view><view><text>{{ detail.bestTime }}</text><text>推荐时段</text></view><view><text>{{ detail.carType || '--' }}</text><text>车型建议</text></view>
         </view>
-        <text class="section-title">路线信息</text>
+        <view class="section-head">
+          <text class="section-title">路线信息</text>
+          <text class="route-map-link" @click="openRouteMap">查看完整路线 ›</text>
+        </view>
         <view class="info-list">
           <view><text>出发地</text><text>{{ detail.startPoint || '--' }}</text></view><view><text>终点</text><text>{{ detail.endPoint || '--' }}</text></view><view><text>最佳时段</text><text>{{ detail.bestTime }}</text></view><view><text>车型建议</text><text>{{ detail.carType || '--' }}</text></view>
         </view>
@@ -62,6 +65,11 @@ async function loadFavorite() {
   try { isFavorite.value = (await outdoorApi.favorites('drive')).some((item) => item.id === detail.value?.id) }
   catch { /* 收藏列表失败不影响公开详情，写操作仍会显示明确错误。 */ }
 }
+function openRouteMap() {
+  if (!detail.value?.id) return
+  uni.navigateTo({ url: `/pages/route-map/index?routeId=${encodeURIComponent(detail.value.id)}` })
+}
+
 async function loadDetail() {
   loadState.value = 'loading'
   loadError.value = '路线加载失败，请重试'
@@ -113,4 +121,5 @@ async function start() {
 .info-list > view { display: flex; padding: 12rpx 0; font-size: 25rpx; }.info-list > view text:first-child { width: 150rpx; flex-shrink: 0; color: var(--chumen-muted); }.info-list > view text:last-child { flex: 1; color: var(--chumen-ink); }.description { display: block; color: var(--chumen-muted); font-size: 26rpx; line-height: 1.8; }
 .detail-notice { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22rpx; padding: 18rpx 22rpx; border-radius: 22rpx; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 22rpx; }.detail-notice button,.error-state button { min-height: 54rpx; margin-left: 18rpx; padding: 0 24rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 22rpx; line-height: 54rpx; }
 .loading { display: flex; flex-direction: column; align-items: center; padding: 40vh 32rpx 0; color: var(--chumen-muted); text-align: center; }.loading text { margin-top: 18rpx; }.error-state button { margin: 24rpx 0 0; }
+.section-head { display: flex; align-items: center; justify-content: space-between; }.route-map-link { padding: 8rpx 22rpx; border-radius: 999rpx; background: var(--chumen-lime); color: var(--chumen-ink); font-size: 22rpx; font-weight: 700; }
 </style>

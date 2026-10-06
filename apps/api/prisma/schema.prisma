@@ -124,6 +124,10 @@ model Discovery {
   latitude        Float
   longitude       Float
   elevationPoints Json?       @map("elevation_points")
+  /// 「查看完整路线」：驾车规划轨迹缓存（GCJ-02，[[lng,lat],...]），高德路径规划一次生成
+  routePolyline   Json?       @map("route_polyline")
+  /// 轨迹生成时间；为空表示尚未成功规划过
+  routePlannedAt  DateTime?   @map("route_planned_at")
   status          RouteStatus @default(online)
   impressions     Int         @default(0)
   clicks          Int         @default(0)
