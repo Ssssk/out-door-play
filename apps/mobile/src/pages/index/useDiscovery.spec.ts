@@ -111,19 +111,31 @@ describe('useDiscovery', () => {
     expect(state.routes.value.map((item) => item.id)).toEqual(['refreshed-drive'])
   })
 
-  it('renders cached routes immediately when the page is entered again', async () => {
+  it('renders cached routes immediately and refreshes them in the background on re-entry', async () => {
     api.routes.mockResolvedValueOnce([card('initial-drive', 'drive')])
     useDiscovery({ prefetch: false })
     await lifecycle.load?.()
     expect(api.routes).toHaveBeenCalledTimes(1)
 
-    // 二次进入（新实例，进程内缓存仍在）：不再请求，也不闪转圈
+    // 二次进入（新实例，进程内缓存仍在）：先渲染缓存不闪转圈，随后后台刷新拿最新数据
+    api.routes.mockResolvedValueOnce([card('updated-drive', 'drive')])
     const second = useDiscovery({ prefetch: false })
     await lifecycle.load?.()
 
-    expect(api.routes).toHaveBeenCalledTimes(1)
-    expect(second.routes.value.map((item) => item.id)).toEqual(['initial-drive'])
+    expect(api.routes).toHaveBeenCalledTimes(2)
+    expect(second.routes.value.map((item) => item.id)).toEqual(['updated-drive'])
     expect(second.loading.value).toBe(false)
+    expect(second.status.value).toBe('ready')
+  })
+
+  it('shows an explicit error state instead of local mock data when the request fails', async () => {
+    api.cities.mockRejectedValueOnce(new Error('offline'))
+    api.routes.mockRejectedValueOnce(new Error('offline'))
+    const state = useDiscovery({ prefetch: false })
+    await lifecycle.load?.()
+
+    expect(state.status.value).toBe('error')
+    expect(state.routes.value).toHaveLength(0)
   })
 
   it('bypasses the cache when the user pulls down to refresh', async () => {

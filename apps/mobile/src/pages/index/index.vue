@@ -29,10 +29,6 @@
       </view>
 
       <view v-else class="route-list">
-        <view v-if="status === 'fallback'" class="fallback-notice" role="status">
-          <text>网络不太稳定，正在显示本地推荐</text>
-          <button @click="loadRoutes()">重试</button>
-        </view>
         <DiscoveryCard v-for="route in routes" :key="route.id" :item="route" @click="openDetail" />
       </view>
     </view>
@@ -77,7 +73,6 @@ onShareAppMessage(() => ({ title: '粗门溜溜 · 周末一起出门溜溜', pa
 .loading-state text { margin-top: 18rpx; }
 .result-state { display: flex; flex-direction: column; align-items: center; padding: 150rpx 32rpx; color: var(--chumen-muted); font-size: 24rpx; text-align: center; }
 .result-state .state-title { margin-bottom: 12rpx; color: var(--chumen-ink); font-size: 32rpx; font-weight: 900; }
-.result-state button,.fallback-notice button { min-height: 60rpx; margin-top: 24rpx; padding: 0 28rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 23rpx; line-height: 60rpx; }
-.fallback-notice { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22rpx; padding: 18rpx 22rpx; border-radius: 22rpx; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 22rpx; }
+.result-state button { min-height: 60rpx; margin-top: 24rpx; padding: 0 28rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 23rpx; line-height: 60rpx; }
 .fallback-notice button { min-height: 52rpx; margin: 0 0 0 20rpx; line-height: 52rpx; }
 </style>

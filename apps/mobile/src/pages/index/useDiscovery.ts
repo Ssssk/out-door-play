@@ -5,11 +5,11 @@ import { launchLock } from '@/common/launchLock'
 import { CITIES_TTL_MS, readListCache, writeListCache } from '@/common/listCache'
 import { resolveDistanceKm } from '@/common/location'
 import { useUserLocation } from '@/common/userLocation'
-import { cities as localCities, driveRoutes, fishingSpots } from '@/data/mock'
+import { cities as localCities } from '@/data/mock'
 import { useAppStore } from '@/stores/app'
 import type { City, RouteCard, Scene } from '@/types/domain'
 
-export type DiscoveryStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'fallback' | 'error'
+export type DiscoveryStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error'
 
 /** 排序用距离：无距离（定位未授权且数据未带距离）按无穷远处理，排在最后。 */
 function sortableDistance(distanceKm: number | null | undefined) {
@@ -90,13 +90,13 @@ export function useDiscovery(options: { prefetch?: boolean } = {}) {
     }
   }
 
-  function loadRoutes(showFallbackToast = false, force = false) {
+  function loadRoutes(force = false) {
     const requestedScene = scene.value
     const requestedCity = appStore.city.code
     const requestKey = `${requestedCity}:${requestedScene}`
     if (pendingKey === requestKey && pendingRequest) return pendingRequest
 
-    const request = executeRouteLoad(requestedCity, requestedScene, showFallbackToast, force)
+    const request = executeRouteLoad(requestedCity, requestedScene, force)
     pendingKey = requestKey
     pendingRequest = request
     void request.finally(() => {
@@ -108,38 +108,52 @@ export function useDiscovery(options: { prefetch?: boolean } = {}) {
     return request
   }
 
-  async function executeRouteLoad(requestedCity: string, requestedScene: Scene, showFallbackToast: boolean, force = false) {
-    // 命中缓存直接渲染：切城市/切场景/二次进入不再重新请求，也不会闪一下转圈
+  async function executeRouteLoad(requestedCity: string, requestedScene: Scene, force: boolean) {
+    // 命中缓存立即渲染（切城市/切场景/二次进入不闪转圈），随后后台强制刷新拿最新数据——
+    // 用户每次进首页看到的都是最新内容，而不是一份不会更新的旧缓存。
     const cached = force ? null : readListCache<RouteCard[]>(listCacheKey(requestedCity, requestedScene))
-    if (cached) {
+    if (cached && cached.length > 0) {
       rawRoutes.value = cached
-      status.value = cached.length === 0 ? 'empty' : 'ready'
+      status.value = 'ready'
       loading.value = false
       uni.stopPullDownRefresh()
+      const sequence = ++requestSequence
+      await fetchRoutes(requestedCity, requestedScene, sequence, { silent: true })
       return
     }
 
     loading.value = true
     const sequence = ++requestSequence
     if (rawRoutes.value.length === 0) status.value = 'loading'
+    const ok = await fetchRoutes(requestedCity, requestedScene, sequence)
+    // 刷新失败：已有渲染数据时保持现状不打扰；无数据才进入明确错误态（不再用本地假数据兜底）
+    if (!ok && active && sequence === requestSequence && rawRoutes.value.length === 0) status.value = 'error'
+    if (active && sequence === requestSequence) {
+      loading.value = false
+      uni.stopPullDownRefresh()
+    }
+  }
+
+  /** 拉取列表并应用；成功返回 true。silent=true 时失败不打扰现有界面（用于缓存命中后的后台刷新）。 */
+  async function fetchRoutes(
+    city: string,
+    scene: Scene,
+    sequence: number,
+    opts: { silent?: boolean } = {},
+  ): Promise<boolean> {
     try {
-      const items = await outdoorApi.routes(requestedCity, requestedScene)
-      if (!active || sequence !== requestSequence) return
-      writeListCache(listCacheKey(requestedCity, requestedScene), items)
+      const items = await outdoorApi.routes(city, scene)
+      if (!active || sequence !== requestSequence) return true
+      writeListCache(listCacheKey(city, scene), items)
       rawRoutes.value = items
       status.value = items.length === 0 ? 'empty' : 'ready'
       // 首屏数据到位后，后台预取其他城市与另一个场景，用户切过去时无需等待
-      if (options.prefetch !== false) void prefetch(requestedCity, requestedScene)
+      if (options.prefetch !== false) void prefetch(city, scene)
+      return true
     } catch {
-      if (!active || sequence !== requestSequence) return
-      rawRoutes.value = requestedScene === 'drive' ? driveRoutes : fishingSpots
-      status.value = rawRoutes.value.length === 0 ? 'error' : 'fallback'
-      if (showFallbackToast) uni.showToast({ title: '暂时用本地推荐', icon: 'none' })
-    } finally {
-      if (active && sequence === requestSequence) {
-        loading.value = false
-        uni.stopPullDownRefresh()
-      }
+      if (!active || sequence !== requestSequence) return true
+      // silent 刷新失败：保留现有渲染（缓存数据仍可用）；非 silent 失败由调用方进入错误态
+      return false
     }
   }
 
@@ -179,10 +193,10 @@ export function useDiscovery(options: { prefetch?: boolean } = {}) {
     // 定位与列表并行获取，定位到达后 distances 会自动重算，不阻塞列表渲染。
     void loadLocation()
     await loadCities()
-    await loadRoutes(true)
+    await loadRoutes()
   })
   // 下拉刷新是用户主动行为，绕过缓存取最新数据
-  onPullDownRefresh(() => loadRoutes(false, true))
+  onPullDownRefresh(() => loadRoutes(true))
   onUnload(() => {
     active = false
     requestSequence += 1
