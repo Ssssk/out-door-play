@@ -38,6 +38,7 @@ import { launchLock } from '@/common/launchLock'
 import { openNavigation } from '@/common/mapNavigation'
 import { withRealDistance } from '@/common/location'
 import { requireAuthThen } from '@/common/requireAuth'
+import { reachDailyAdThreshold, showInterstitialThen } from '@/common/routeMapAd'
 import { useUserLocation } from '@/common/userLocation'
 import { driveRoutes } from '@/data/mock'
 import { useAuthStore } from '@/stores/auth'
@@ -67,7 +68,10 @@ async function loadFavorite() {
 }
 function openRouteMap() {
   if (!detail.value?.id) return
-  uni.navigateTo({ url: `/pages/route-map/index?routeId=${encodeURIComponent(detail.value.id)}` })
+  const url = `/pages/route-map/index?routeId=${encodeURIComponent(detail.value.id)}`
+  // 运营需求：每日第 4 次点击「查看完整路线」起，先展示插屏广告再进地图（广告关闭/失败照常进入）
+  if (reachDailyAdThreshold()) showInterstitialThen(() => uni.navigateTo({ url }))
+  else uni.navigateTo({ url })
 }
 
 async function loadDetail() {
