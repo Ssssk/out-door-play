@@ -26,11 +26,11 @@
       <button @click="loadLine">重试</button>
     </view>
 
-    <view v-if="line" class="footer-chip" role="status">
+    <view v-if="line" class="top-chip" role="status">
       <text v-if="line.distanceKm !== null">驾车全程约 {{ line.distanceKm }} km</text>
       <text v-if="line.durationMinutes !== null"> · 约 {{ line.durationMinutes }} 分钟</text>
     </view>
-    <button v-if="line" class="locate-btn" aria-label="回到我的位置" @click="locate">◎</button>
+    <button v-if="line" class="start-btn" @click="goToStart">前往出发地</button>
   </view>
 </template>
 
@@ -39,6 +39,7 @@ import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import PageHeader from '@/components/PageHeader.vue'
 import { outdoorApi } from '@/api/outdoor'
+import { openNavigation } from '@/common/mapNavigation'
 import { userFacingError } from '@/common/apiErrors'
 
 interface LinePoint { longitude: number; latitude: number }
@@ -123,11 +124,14 @@ const labels = computed(() => {
 
 const includePoints = computed(() => line.value?.points.map((point) => ({ latitude: point.latitude, longitude: point.longitude })) ?? [])
 
-function locate() {
+/** 唤起系统地图导航到轨迹起点（出发地） */
+async function goToStart() {
+  const start = line.value?.points[0]
+  if (!start) return
   try {
-    uni.createMapContext('routeMap').moveToLocation()
+    await openNavigation({ latitude: start.latitude, longitude: start.longitude, name: '出发地' })
   } catch {
-    uni.showToast({ title: '定位不可用', icon: 'none' })
+    uni.showToast({ title: '当前环境无法唤起地图', icon: 'none' })
   }
 }
 </script>
@@ -142,6 +146,6 @@ function locate() {
 .state-card { position: absolute; z-index: 12; top: 45%; left: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 16rpx; padding: 24rpx 34rpx; border-radius: 24rpx; background: rgba(255,255,255,.94); color: var(--chumen-ink); font-size: 26rpx; box-shadow: 0 8rpx 30rpx rgba(0,0,0,.18); }
 .state-card.error { flex-direction: column; gap: 12rpx; text-align: center; }
 .state-card button { min-height: 60rpx; padding: 0 30rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 24rpx; line-height: 60rpx; }
-.footer-chip { position: absolute; z-index: 12; bottom: calc(40rpx + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: flex; padding: 16rpx 30rpx; border-radius: 999rpx; background: rgba(26,26,26,.92); color: var(--chumen-lime); font-size: 24rpx; font-weight: 700; white-space: nowrap; }
-.locate-btn { position: absolute; z-index: 12; right: 24rpx; bottom: calc(140rpx + env(safe-area-inset-bottom)); display: flex; align-items: center; justify-content: center; width: 88rpx; height: 88rpx; margin: 0; padding: 0; border: 2rpx solid var(--chumen-line); border-radius: 50%; background: rgba(255,255,255,.92); color: var(--chumen-ink); font-size: 34rpx; line-height: 1; box-shadow: 0 6rpx 20rpx rgba(0,0,0,.15); }
+.top-chip { position: absolute; z-index: 12; top: calc(var(--chumen-top-inset, var(--status-bar-height, 0px)) + 108rpx); left: 50%; transform: translateX(-50%); display: flex; padding: 14rpx 28rpx; border-radius: 999rpx; background: rgba(26,26,26,.92); color: var(--chumen-lime); font-size: 24rpx; font-weight: 700; white-space: nowrap; }
+.start-btn { position: absolute; z-index: 12; right: 32rpx; bottom: calc(44rpx + env(safe-area-inset-bottom)); left: 32rpx; min-height: 96rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 30rpx; font-weight: 800; line-height: 96rpx; box-shadow: 0 8rpx 26rpx rgba(0,0,0,.28); }
 </style>
