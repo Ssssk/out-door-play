@@ -19,8 +19,15 @@ request.interceptors.request.use((config) => {
 })
 
 request.interceptors.response.use(undefined, (error: unknown) => {
-  const isAuthEndpoint = axios.isAxiosError(error) && String(error.config?.url || '').includes('/admin/auth/')
-  if (axios.isAxiosError(error) && error.response?.status === 401 && !isAuthEndpoint) unauthorizedHandler?.()
+  if (axios.isAxiosError(error)) {
+    const isAuthEndpoint = String(error.config?.url || '').includes('/admin/auth/')
+    if (error.response?.status === 401 && !isAuthEndpoint) unauthorizedHandler?.()
+    // 把服务端 envelope 里的业务错误信息透传到 error.message：
+    // 否则界面只会显示笼统的「Request failed with status code 400」，
+    // 而看不到「该路线被以下榜单引用为封面路线…」这类真正可操作的原因
+    const body = error.response?.data as Partial<Envelope<unknown>> | undefined
+    if (body?.message) error.message = body.message
+  }
   return Promise.reject(error)
 })
 

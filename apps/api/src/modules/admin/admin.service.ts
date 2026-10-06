@@ -99,7 +99,15 @@ export class AdminService {
     if (usedBy.length) {
       throw new BadRequestException(`该路线被以下榜单引用为封面路线，请先到「热门榜单配置」移除：${usedBy.join('、')}`)
     }
-    await this.prisma.discovery.delete({ where: { id } })
+    try {
+      await this.prisma.discovery.delete({ where: { id } })
+    } catch (error) {
+      // 外键约束（用户收藏/动态等关联）物理删除被数据库拒绝：翻译成可操作的人话，而不是 500
+      if ((error as { code?: string })?.code === 'P2003') {
+        throw new BadRequestException('该路线存在用户收藏或动态等关联数据，暂无法删除；可先将路线「停用」下线')
+      }
+      throw error
+    }
     return { id }
   }
 
