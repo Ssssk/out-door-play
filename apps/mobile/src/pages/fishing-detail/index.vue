@@ -10,7 +10,7 @@
         <view class="info-list"><view><text>钓点入口</text><text>{{ spot.entryPoint || '--' }}</text></view><view><text>主钓区</text><text>{{ spot.mainArea || '--' }}</text></view><view><text>最佳时段</text><text>{{ spot.bestTime }}</text></view><view><text>装备建议</text><text>{{ spot.gear || '--' }}</text></view></view>
         <template v-if="spot.description"><text class="section-title">钓点介绍</text><text class="description">{{ spot.description }}</text></template>
       </view>
-      <DetailActionBar :favorite="isFavorite" @favorite="toggleFavorite" @share="share" @start="start" />
+      <DetailActionBar :favorite="isFavorite" start-label="前往钓鱼点" @favorite="toggleFavorite" @share="share" @start="start" />
     </view>
     <view v-else-if="loadState === 'loading'"><DetailSkeleton /></view>
     <view v-else class="loading error-state" role="alert"><text>{{ loadError }}</text><button @click="loadSpot">重试</button></view>
