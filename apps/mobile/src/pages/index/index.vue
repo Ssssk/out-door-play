@@ -11,8 +11,8 @@
 
       <SceneTabs :model-value="scene" @update:model-value="changeScene" />
 
-      <!-- 首屏用骨架卡占位，避免转圈 + 大面积空白 -->
-      <view v-if="status === 'loading' || (loading && routes.length === 0)" class="route-list">
+      <!-- 加载中（含下拉刷新）用骨架卡占位：避免旧列表挂半天、新数据到了才突然切换 -->
+      <view v-if="status === 'loading' || loading" class="route-list">
         <RouteCardSkeleton v-for="index in 3" :key="index" />
       </view>
 

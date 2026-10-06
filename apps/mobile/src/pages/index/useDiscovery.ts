@@ -1,5 +1,5 @@
 import { computed, ref, shallowRef } from 'vue'
-import { onLoad, onPullDownRefresh, onUnload } from '@dcloudio/uni-app'
+import { onLoad, onPullDownRefresh, onShow, onUnload } from '@dcloudio/uni-app'
 import { outdoorApi } from '@/api/outdoor'
 import { launchLock } from '@/common/launchLock'
 import { CITIES_TTL_MS, readListCache, writeListCache } from '@/common/listCache'
@@ -26,6 +26,9 @@ const CITIES_CACHE_KEY = 'cities'
 /** 预取并发：一次只并发 2 个请求，避免首屏后抢占列表/定位的网络 */
 const PREFETCH_CONCURRENCY = 2
 
+/** onShow 静默刷新的节流窗口：30 秒内回首页不重复请求 */
+const STALE_REFRESH_GAP_MS = 30 * 1000
+
 export function useDiscovery(options: { prefetch?: boolean } = {}) {
   const appStore = useAppStore()
   const { ensureLocation } = useUserLocation()
@@ -40,6 +43,7 @@ export function useDiscovery(options: { prefetch?: boolean } = {}) {
   let active = true
   let pendingKey: string | undefined
   let pendingRequest: Promise<void> | undefined
+  let lastLoadedAt = 0
 
   // 拿到设备定位后按真实经纬度重算「距你」距离，并按距离由近到远排序；无定位时沿用数据自带距离。
   const routes = computed(() => {
@@ -119,6 +123,7 @@ export function useDiscovery(options: { prefetch?: boolean } = {}) {
       uni.stopPullDownRefresh()
       const sequence = ++requestSequence
       await fetchRoutes(requestedCity, requestedScene, sequence, { silent: true })
+      lastLoadedAt = Date.now()
       return
     }
 
@@ -132,6 +137,18 @@ export function useDiscovery(options: { prefetch?: boolean } = {}) {
       loading.value = false
       uni.stopPullDownRefresh()
     }
+    lastLoadedAt = Date.now()
+  }
+
+  /**
+   * 回到首页（onShow，如切后台回来/从其他 tab 返回）时，若数据已超过 STALE_REFRESH_GAP_MS
+   * 就静默刷新一次：避免用户一直盯着几天前的旧列表，又不用手动下拉。
+   */
+  function refreshIfStale() {
+    if (!active) return
+    if (pendingRequest) return
+    if (Date.now() - lastLoadedAt < STALE_REFRESH_GAP_MS) return
+    void loadRoutes()
   }
 
   /** 拉取列表并应用；成功返回 true。silent=true 时失败不打扰现有界面（用于缓存命中后的后台刷新）。 */
@@ -197,6 +214,8 @@ export function useDiscovery(options: { prefetch?: boolean } = {}) {
   })
   // 下拉刷新是用户主动行为，绕过缓存取最新数据
   onPullDownRefresh(() => loadRoutes(true))
+  // 切后台再回首页/从其他 tab 返回：数据超时节流后静默刷新，避免一直展示旧列表
+  onShow(() => refreshIfStale())
   onUnload(() => {
     active = false
     requestSequence += 1

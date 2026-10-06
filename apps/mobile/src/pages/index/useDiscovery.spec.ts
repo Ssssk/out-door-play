@@ -5,6 +5,7 @@ import type { RouteCard } from '@/types/domain'
 const lifecycle = vi.hoisted(() => ({
   load: undefined as undefined | (() => Promise<void>),
   pullDown: undefined as undefined | (() => Promise<void>),
+  show: undefined as undefined | (() => void),
   unload: undefined as undefined | (() => void),
 }))
 const api = vi.hoisted(() => ({ cities: vi.fn(), routes: vi.fn() }))
@@ -12,6 +13,7 @@ const api = vi.hoisted(() => ({ cities: vi.fn(), routes: vi.fn() }))
 vi.mock('@dcloudio/uni-app', () => ({
   onLoad: (callback: () => Promise<void>) => { lifecycle.load = callback },
   onPullDownRefresh: (callback: () => Promise<void>) => { lifecycle.pullDown = callback },
+  onShow: (callback: () => void) => { lifecycle.show = callback },
   onUnload: (callback: () => void) => { lifecycle.unload = callback },
 }))
 vi.mock('@/api/outdoor', () => ({ outdoorApi: api }))
@@ -56,6 +58,7 @@ describe('useDiscovery', () => {
     api.routes.mockReset()
     lifecycle.load = undefined
     lifecycle.pullDown = undefined
+    lifecycle.show = undefined
     lifecycle.unload = undefined
     vi.stubGlobal('uni', { stopPullDownRefresh: vi.fn(), showToast: vi.fn() })
   })
@@ -148,6 +151,27 @@ describe('useDiscovery', () => {
     await flush()
 
     expect(api.routes).toHaveBeenCalledTimes(2)
+  })
+
+  it('silently refreshes on show when the last load is stale, throttled otherwise', async () => {
+    api.routes.mockResolvedValue([card('initial-drive', 'drive')])
+    const state = useDiscovery({ prefetch: false })
+    await lifecycle.load?.()
+    expect(api.routes).toHaveBeenCalledTimes(1)
+
+    // 30 秒节流窗口内回首页：不重复请求
+    lifecycle.show?.()
+    await flush()
+    expect(api.routes).toHaveBeenCalledTimes(1)
+    expect(state.status.value).toBe('ready')
+
+    // 超过节流窗口（模拟 31 秒后回首页）：静默刷新一次
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 31_000)
+    lifecycle.show?.()
+    await flush()
+    nowSpy.mockRestore()
+    expect(api.routes).toHaveBeenCalledTimes(2)
+    expect(state.status.value).toBe('ready')
   })
 
   it('prefetches the other scene and the other cities after the first screen', async () => {
