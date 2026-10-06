@@ -122,7 +122,7 @@ export function useDiscovery(options: { prefetch?: boolean } = {}) {
       loading.value = false
       uni.stopPullDownRefresh()
       const sequence = ++requestSequence
-      await fetchRoutes(requestedCity, requestedScene, sequence, { silent: true })
+      await fetchRoutes(requestedCity, requestedScene, sequence)
       lastLoadedAt = Date.now()
       return
     }
@@ -156,7 +156,7 @@ export function useDiscovery(options: { prefetch?: boolean } = {}) {
     city: string,
     scene: Scene,
     sequence: number,
-    opts: { silent?: boolean } = {},
+    _opts: { silent?: boolean } = {},
   ): Promise<boolean> {
     try {
       const items = await outdoorApi.routes(city, scene)
