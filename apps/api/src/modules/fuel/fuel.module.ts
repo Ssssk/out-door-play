@@ -5,6 +5,7 @@ import { ProvinceFuelPriceProvider } from './province-price.provider'
 import { OsmStationProvider } from './osm-station.provider'
 import { BaiduStationProvider } from './baidu-station.provider'
 import { AmapStationProvider } from './amap-station.provider'
+import { FailoverStationProvider } from './failover-station.provider'
 import { TiandituStationProvider } from './tianditu-station.provider'
 import { StationSyncService } from './station-sync.service'
 import { STATION_PROVIDER } from './station-provider'
@@ -19,7 +20,11 @@ const stationProvider = {
     if (mode === 'osm') return new OsmStationProvider()
     if (mode === 'baidu') return new BaiduStationProvider()
     if (mode === 'tianditu') return new TiandituStationProvider()
-    return new AmapStationProvider()
+    // 默认：高德为主源、天地图自动兜底（熔断：主源连续 2 轮失败切备源，恢复自动切回）；
+    // 天地图 Key 未配置时退化为纯高德
+    const amap = new AmapStationProvider()
+    const tianditu = new TiandituStationProvider()
+    return tianditu.enabled ? new FailoverStationProvider(amap, tianditu) : amap
   },
 }
 
