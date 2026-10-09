@@ -65,6 +65,8 @@ services:
       BAIDU_MAP_SK: ${BAIDU_MAP_SK:-}
       # 加油站/天气数据源：高德开放平台（STATION_PROVIDER 默认 amap）；Key 由部署变量注入。
       AMAP_MAP_KEY: ${AMAP_MAP_KEY:-}
+      # 加油站备选数据源：天地图（STATION_PROVIDER=tianditu 时启用）；Key 由部署变量注入。
+      TIANDITU_MAP_KEY: ${TIANDITU_MAP_KEY:-}
       # 数据源切换：amap(默认) / baidu / osm
       STATION_PROVIDER: ${STATION_PROVIDER:-amap}
     volumes:
