@@ -41,10 +41,21 @@ const DEFAULT_CALL_BUDGET = 120
 /** 启动后延迟再跑，避开启动高峰 */
 const FIRST_RUN_DELAY_MS = 30 * 1000
 /**
- * 轮询间隔。数据源已切到免费的 OSM（无每日配额），6 小时一轮既友好又能
- * 在首次同步异常后较快自愈，不必苦等 24 小时。
+ * 同步轮询间隔，可用 `STATION_SYNC_INTERVAL_HOURS` 覆盖（1-72 整数）。
+ * 数据源为高德个人 Key（有日配额），站点数据（新增/关停加油站）变化频率极低——
+ * 2026-10 高德账单显示 6 小时一轮时搜索类用量高达 ~480 次/日（9 天 4324 次），
+ * 改为每日一轮（11 城 × ≤10 页 ≈ 110 次/日）即可满足运营需求，用量降 75%。
+ * 同步失败时下一轮自愈；确需立即刷新可调 POST /v1/fuel/sync。
  */
-const DAILY_INTERVAL_MS = 6 * 60 * 60 * 1000
+const SYNC_INTERVAL_HOURS = clampInt(process.env.STATION_SYNC_INTERVAL_HOURS, 24, 1, 72)
+const DAILY_INTERVAL_MS = SYNC_INTERVAL_HOURS * 60 * 60 * 1000
+
+/** 解析整数环境变量：非法/越界时回落默认值 */
+function clampInt(raw: string | undefined, fallback: number, min: number, max: number): number {
+  const parsed = Number(raw)
+  if (!Number.isFinite(parsed)) return fallback
+  return Math.min(max, Math.max(min, Math.floor(parsed)))
+}
 /**
  * 该城市本次至少要取到这么多条，才允许清理未出现的站点。
  * 否则一次额度耗尽会把整城站点清空——这是不可接受的。
