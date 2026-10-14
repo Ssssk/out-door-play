@@ -65,6 +65,15 @@ export class CreateRouteDto {
   @IsOptional() @Type(() => Number) @IsNumber() @Min(-90) @Max(90) endLatitude?: number
 }
 
+/** 后台路线列表查询：服务端分页 + 关键词/场景过滤（不传分页参数时按默认第一页） */
+export class RouteListQueryDto {
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100000) page?: number
+  /** 单页条数上限 100，避免后台一次拉全表 */
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) pageSize?: number
+  @IsOptional() @IsString() @MaxLength(64) keyword?: string
+  @IsOptional() @IsIn(['drive', 'fish']) scene?: 'drive' | 'fish'
+}
+
 export class UpdateRankingDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100) weight?: number
   @IsOptional() @IsIn(['online', 'pending', 'offline']) status?: 'online' | 'pending' | 'offline'

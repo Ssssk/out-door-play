@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UploadedFile, UseInterceptors } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UploadedFile, UseInterceptors } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiTags } from '@nestjs/swagger'
 import { AdminService } from './admin.service'
@@ -8,6 +8,7 @@ import {
   CreateRouteDto,
   CreateReportDto,
   RouteActionDto,
+  RouteListQueryDto,
   CreateCityDto,
   UpdateCityDto,
   UpdateCityScenesDto,
@@ -26,7 +27,7 @@ export class AdminController {
   constructor(private readonly admin: AdminService) {}
 
   @RequireAdminPermissions('route:read') @Get('stats') stats() { return this.admin.stats() }
-  @RequireAdminPermissions('route:read') @Get('routes') routes() { return this.admin.routes() }
+  @RequireAdminPermissions('route:read') @Get('routes') routes(@Query() query: RouteListQueryDto) { return this.admin.routes(query) }
   @RequireAdminPermissions('route:edit') @Delete('routes/:id') deleteRoute(@Param('id') id: string) { return this.admin.deleteRoute(id) }
   @RequireAdminPermissions('route:edit') @Post('routes') createRoute(@Body() input: CreateRouteDto) { return this.admin.createRoute(input) }
   @RequireAdminPermissions('route:edit') @Post('routes/:id/cover') @UseInterceptors(FileInterceptor('file')) uploadRouteCover(@Param('id') id: string, @UploadedFile() file?: Express.Multer.File) { return this.admin.saveRouteCover(id, file) }

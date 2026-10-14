@@ -12,6 +12,9 @@ export interface RouteItem {
   shoreKm: number | null; depthM: number | null; entryPoint: string | null; mainArea: string | null; gear: string | null
 }
 
+/** 服务端分页响应（items 为当前页数据，total 为过滤后的总条数） */
+export interface Paginated<T> { items: T[]; total: number; page: number; pageSize: number }
+
 export interface AdminStats {
   routes: { onShelfCount: number; monthImpressions: number; ctr: number; pendingAuditCount: number }
   users: { total: number; banned: number; dau: number; mau: number; todayNew: number; yesterdayNew: number }

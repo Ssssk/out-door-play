@@ -48,8 +48,14 @@ async function unwrap<T>(promise: Promise<AxiosResponse<Envelope<T>>>): Promise<
   return unwrapEnvelope(response.data)
 }
 
-export async function apiGet<T>(url: string): Promise<T> {
-  return unwrap(request.get<Envelope<T>>(url))
+export type QueryParams = Record<string, string | number | boolean | null | undefined>
+
+/** 空的筛选条件（undefined/null/空串）不下发，避免拼出 ?keyword= 这类无效查询 */
+export async function apiGet<T>(url: string, params?: QueryParams): Promise<T> {
+  const query = params
+    ? Object.fromEntries(Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== ''))
+    : undefined
+  return unwrap(request.get<Envelope<T>>(url, { params: query }))
 }
 
 export async function apiPost<T>(url: string, data?: unknown): Promise<T> {

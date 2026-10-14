@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { apiDelete, apiGet, apiPatch, apiPost } from '../api/client'
 import PageHeader from '../components/PageHeader.vue'
-import type { CityItem, RankingItem, RouteItem, Scene } from '../types/admin'
+import type { CityItem, Paginated, RankingItem, RouteItem, Scene } from '../types/admin'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()
@@ -51,11 +51,12 @@ async function load() {
   try {
     const [loadedRankings, loadedRoutes, loadedCities] = await Promise.all([
       apiGet<RankingItem[]>('/admin/rankings'),
-      apiGet<RouteItem[]>('/admin/routes'),
+      // 榜单封面需要全量路线做候选池：按上限一次取回（运营量级远小于该上限）
+      apiGet<Paginated<RouteItem>>('/admin/routes', { pageSize: 100 }),
       apiGet<CityItem[]>('/admin/cities'),
     ])
     rankings.value = loadedRankings
-    routes.value = loadedRoutes
+    routes.value = loadedRoutes.items
     cities.value = loadedCities
   } catch { ElMessage.error('后台数据加载失败，请检查 API 与 MySQL') }
   finally { loading.value = false }

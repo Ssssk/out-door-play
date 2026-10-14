@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { apiDelete, apiGet, apiPatch, apiPost, apiUpload } from '../api/client'
 import PageHeader from '../components/PageHeader.vue'
-import type { CityItem, RouteItem, Scene } from '../types/admin'
+import type { CityItem, Paginated, RouteItem, Scene } from '../types/admin'
 import { useAuthStore } from '../stores/auth'
 import routeCover1 from '../../../mobile/src/static/routes/card-route-1.jpg'
 import routeCover2 from '../../../mobile/src/static/routes/card-route-2.jpg'
@@ -30,6 +30,11 @@ const cities = ref<CityItem[]>([])
 const keyword = ref('')
 const sceneFilter = ref<Scene | ''>('')
 const canEdit = auth.hasPermission('route:edit')
+
+// 服务端分页：筛选条件变化只影响当前页，因此换条件必须回到第 1 页
+const page = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
 
 // 编辑/新建共用表单模态（PRD：新建入口锁定场景；编辑展示场景专属字段）
 const dialogVisible = ref(false)
@@ -61,13 +66,6 @@ const editCoverUrl = ref('')
 const LEVEL_OPTIONS = ['入门级', '轻松级', '进阶级', '挑战级']
 const BESTTIME_OPTIONS = ['全天', '清晨 04:30-09:30', '上午 08:30-12:00', '下午 13:00-17:00', '傍晚 16:00-19:30（日落）', '夜间 19:00-23:00', '清晨+傍晚 05:00-10:00 / 16:00-19:00']
 
-const filtered = computed(() => routes.value.filter((item) => {
-  const text = `${item.title}${item.cityName}${item.tags.join('')}`.toLowerCase()
-  const hitKeyword = !keyword.value.trim() || text.includes(keyword.value.trim().toLowerCase())
-  const hitScene = !sceneFilter.value || item.scene === sceneFilter.value
-  return hitKeyword && hitScene
-}))
-
 const sceneLabel = (value: string) => (value === 'fish' ? '钓鱼' : value === 'drive' ? '溜车' : value)
 const statusLabel = (value: string) => ({ online: '正常', pending: '待审核', offline: '下架' }[value] || value)
 function formatCreatedAt(value?: string) {
@@ -85,15 +83,32 @@ async function load() {
   loading.value = true
   try {
     const [loadedRoutes, loadedCities] = await Promise.all([
-      apiGet<RouteItem[]>('/admin/routes'),
+      apiGet<Paginated<RouteItem>>('/admin/routes', {
+        page: page.value,
+        pageSize: pageSize.value,
+        keyword: keyword.value.trim(),
+        scene: sceneFilter.value,
+      }),
       auth.hasPermission('city:read') ? apiGet<CityItem[]>('/admin/cities') : Promise.resolve([] as CityItem[]),
     ])
-    routes.value = loadedRoutes
+    routes.value = loadedRoutes.items
+    total.value = loadedRoutes.total
+    page.value = loadedRoutes.page
+    pageSize.value = loadedRoutes.pageSize
     cities.value = loadedCities
   }
   catch { ElMessage.error('后台数据加载失败，请检查 API 与 MySQL') }
   finally { loading.value = false }
 }
+
+// 关键词输入防抖，避免每敲一个字打一次接口
+let keywordTimer: number | undefined
+watch(keyword, () => {
+  window.clearTimeout(keywordTimer)
+  keywordTimer = window.setTimeout(() => { page.value = 1; void load() }, 300)
+})
+watch(sceneFilter, () => { page.value = 1; void load() })
+function onPageSizeChange() { page.value = 1; void load() }
 
 function clearCoverSelection() {
   if (coverPreviewUrl.value) URL.revokeObjectURL(coverPreviewUrl.value)
@@ -213,6 +228,8 @@ async function remove(tableRow: unknown) {
     await apiDelete(`/admin/routes/${item.id}`)
     ElMessage.success(`已删除：${item.title}`)
     await load()
+    // 删掉的是当前页最后一条时回退一页，避免停在空白页
+    if (!routes.value.length && page.value > 1) { page.value -= 1; await load() }
   } catch (error) {
     // 服务端拦截：被榜单引用为封面路线时返回具体榜单名
     ElMessage.error(error instanceof Error ? error.message : '删除失败')
@@ -222,13 +239,13 @@ async function remove(tableRow: unknown) {
 function goRankings() { router.push('/rankings') }
 
 onMounted(load)
-onBeforeUnmount(clearCoverSelection)
+onBeforeUnmount(() => { window.clearTimeout(keywordTimer); clearCoverSelection() })
 </script>
 
 <template>
   <input ref="coverInput" class="route-cover-input" type="file" accept="image/jpeg,image/png,image/webp" @change="onCoverSelected" />
   <PageHeader title="路线列表" group="路线运营" description="路线、钓点与小程序展示数据同源">
-    <el-input v-model="keyword" clearable placeholder="搜索路线名、标签、城市…" style="width: 280px" />
+    <el-input v-model="keyword" clearable placeholder="搜索路线名、城市…" style="width: 280px" />
   </PageHeader>
 
   <section class="panel">
@@ -245,7 +262,7 @@ onBeforeUnmount(clearCoverSelection)
       </template>
     </div>
 
-    <el-table v-loading="loading" :data="filtered" row-key="id">
+    <el-table v-loading="loading" :data="routes" row-key="id">
       <el-table-column prop="listRank" label="排名" width="66" align="center"><template #default="{ row }"><strong>#{{ (row as RouteItem).listRank }}</strong></template></el-table-column>
       <el-table-column label="路线名称" min-width="270">
         <template #default="{ row }">
@@ -274,7 +291,23 @@ onBeforeUnmount(clearCoverSelection)
           <el-button v-if="canEdit" size="small" type="danger" plain @click="remove(row)">删除</el-button>
         </template>
       </el-table-column>
+      <template #empty>
+        <span class="muted small">{{ keyword.trim() || sceneFilter ? '没有符合筛选条件的路线' : '暂无路线数据' }}</span>
+      </template>
     </el-table>
+
+    <div v-if="total > 0" class="pager">
+      <el-pagination
+        v-model:current-page="page"
+        v-model:page-size="pageSize"
+        :total="total"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        background
+        @current-change="load"
+        @size-change="onPageSizeChange"
+      />
+    </div>
   </section>
 
   <el-dialog v-model="dialogVisible" :title="editingId ? `编辑路线 · ${form.title}` : `新建${sceneLabel(form.scene)}路线`" width="680px">
@@ -381,4 +414,5 @@ onBeforeUnmount(clearCoverSelection)
 .field-hint { margin: 4px 0 12px; color: var(--el-text-color-secondary); font-size: 12px; }
 .muted { color: var(--el-text-color-secondary); }
 .small { font-size: 12px; }
+.pager { display: flex; justify-content: flex-end; margin-top: 14px; }
 </style>

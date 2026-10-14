@@ -4,11 +4,13 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { AdminActor } from '../admin-auth/admin-auth.types'
 import { PrismaService } from '../../database/prisma.service'
+import type { Prisma } from '../../generated/prisma/client'
 import type {
   CreateCityDto,
   CreateRouteDto,
   CreateReportDto,
   RouteActionDto,
+  RouteListQueryDto,
   UpdateCityDto,
   UpdateFeedStatusDto,
   UpdateFuelStationDto,
@@ -23,6 +25,10 @@ const QR_CONFIG_KEY = 'qrcodes'
 
 /** 油价来源口径（与 web-cities.md 对齐）：manual 手动录入 / auto 自动获取 / failed 获取失败 */
 export type CityOilSource = 'manual' | 'auto' | 'failed'
+
+/** 后台路线列表默认分页参数（运营页一次看 20 条，避免全表返回） */
+const DEFAULT_ROUTE_PAGE = 1
+const DEFAULT_ROUTE_PAGE_SIZE = 20
 
 const ROUTE_COVER_MIME_EXTENSIONS: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -64,11 +70,27 @@ export class AdminService {
     }
   }
 
-  async routes() {
-    const [records, rankings] = await Promise.all([
+  /**
+   * 后台路线列表：服务端分页（skip/take + count），不再一次返回全表。
+   * listRank 保持全局连续排名（跨页计算），口径仍为 rankWeight/rank 降序。
+   */
+  async routes(query: RouteListQueryDto = {}) {
+    const page = query.page ?? DEFAULT_ROUTE_PAGE
+    const pageSize = query.pageSize ?? DEFAULT_ROUTE_PAGE_SIZE
+    const keyword = query.keyword?.trim()
+    const where: Prisma.DiscoveryWhereInput = {
+      ...(query.scene ? { scene: query.scene } : {}),
+      // 关键词只下推 title / cityName：tags 是 JSON 列，MySQL 无法可靠做数组内模糊匹配
+      ...(keyword ? { OR: [{ title: { contains: keyword } }, { city: { is: { name: { contains: keyword } } } }] } : {}),
+    }
+    const [total, records, rankings] = await Promise.all([
+      this.prisma.discovery.count({ where }),
       this.prisma.discovery.findMany({
+        where,
         include: { city: { select: { name: true } }, _count: { select: { favorites: true } } },
         orderBy: [{ rankWeight: 'desc' }, { rank: 'desc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       }),
       this.prisma.ranking.findMany({ select: { coverRouteIds: true } }),
     ])
@@ -78,16 +100,22 @@ export class AdminService {
       const ids = Array.isArray(ranking.coverRouteIds) ? (ranking.coverRouteIds as string[]) : []
       for (const id of ids) boundCount.set(id, (boundCount.get(id) || 0) + 1)
     }
-    return records.map((item, index) => ({
-      ...item,
-      listRank: index + 1,
-      cityName: item.city.name,
-      favoriteCount: item._count.favorites,
-      boundRankings: boundCount.get(item.id) || 0,
-      tags: Array.isArray(item.tags) ? item.tags : [],
-      city: undefined,
-      _count: undefined,
-    }))
+    const baseRank = (page - 1) * pageSize
+    return {
+      items: records.map((item, index) => ({
+        ...item,
+        listRank: baseRank + index + 1,
+        cityName: item.city.name,
+        favoriteCount: item._count.favorites,
+        boundRankings: boundCount.get(item.id) || 0,
+        tags: Array.isArray(item.tags) ? item.tags : [],
+        city: undefined,
+        _count: undefined,
+      })),
+      total,
+      page,
+      pageSize,
+    }
   }
 
   /** 删除路线（PRD：若被榜单引用为封面路线则拦截并提示；物理删除无法恢复） */
