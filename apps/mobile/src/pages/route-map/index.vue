@@ -35,7 +35,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import PageHeader from '@/components/PageHeader.vue'
 import { outdoorApi } from '@/api/outdoor'
 import { openNavigation } from '@/common/mapNavigation'
@@ -50,6 +50,22 @@ const loading = ref(true)
 const errorMsg = ref('')
 const fatal = ref(false)
 const center = ref({ latitude: 30.3, longitude: 114.3 })
+
+// 分享标题带路线里程，无数据时退化为通用文案
+const shareTitle = computed(() => {
+  const km = line.value?.distanceKm
+  return km ? `完整路线 ${km.toFixed(1)} 公里 · 粗门溜溜自驾` : '完整路线 · 粗门溜溜自驾'
+})
+// 右上角菜单转发/分享：落地到路线详情页（信息比纯地图完整），再由详情页进入完整路线
+onShareAppMessage(() => ({
+  title: shareTitle.value,
+  path: `/pages/route-detail/index?routeId=${routeId.value}`,
+}))
+onShareTimeline(() => ({
+  title: shareTitle.value,
+  query: `routeId=${routeId.value}`,
+}))
+
 // 顶栏定位：iOS 上 CSS env(safe-area-inset-top) 取值不可靠，改用胶囊按钮实测位置对齐——
 // 返回键所在行与右上角胶囊(···◎)完全同高，永远不会再顶进状态栏
 const headerTop = ref(20)
