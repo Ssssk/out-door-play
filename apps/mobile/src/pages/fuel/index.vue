@@ -13,12 +13,17 @@
         </view>
       </view>
 
+      <view class="kind-tabs">
+        <view class="kind-tab" :class="{ active: stationKind === 'fuel' }" @click="switchStationKind('fuel')">附近加油站</view>
+        <view class="kind-tab" :class="{ active: stationKind === 'ev' }" @click="switchStationKind('ev')">附近充电站</view>
+      </view>
+
       <view class="station-heading">
-        <text class="section-title">附近加油站点</text>
+        <text class="section-title">{{ stationKind === 'ev' ? '附近充电站点' : '附近加油站点' }}</text>
       </view>
 
       <view v-if="stationFallback === 'city'" class="station-fallback" role="status">
-        <text>你所在区域暂未收录加油站，以下为「{{ cityName }}」已收录的站点</text>
+        <text>你所在区域暂未收录{{ stationKind === 'ev' ? '充电站' : '加油站' }}，以下为「{{ cityName }}」已收录的站点</text>
       </view>
 
       <view v-if="loading" class="station-state" role="status">
@@ -26,7 +31,7 @@
         <text>正在获取位置并查询附近站点…</text>
       </view>
       <view v-else-if="stationState === 'denied'" class="station-state station-action" role="alert">
-        <text>开启定位后，才能查询你附近的真实加油站</text>
+        <text>开启定位后，才能查询你附近的真实{{ stationKind === 'ev' ? '充电站' : '加油站' }}</text>
         <button @click="enableLocation">开启定位</button>
       </view>
       <view v-else-if="stationState === 'error'" class="station-state station-action" role="alert">
@@ -34,13 +39,13 @@
         <button @click="loadFuel">重试</button>
       </view>
       <view v-else-if="stationState === 'empty'" class="station-state" role="status">
-        <text>当前结果中暂未找到加油站</text>
+        <text>当前结果中暂未找到{{ stationKind === 'ev' ? '充电站' : '加油站' }}</text>
       </view>
 
       <view v-else-if="stationState === 'ready'" class="station-list">
         <view v-for="station in stations" :key="station.id" class="station-card card-surface">
           <view class="station-info">
-            <text class="station-name">{{ station.name }}</text>
+            <text class="station-name">{{ station.name }}<text v-if="station.kind === 'ev'" class="ev-badge">⚡ 充电</text></text>
             <!-- 城市兜底时无真实「距你」距离：改展示地址，避免出现「距你 -km」 -->
           <text v-if="stationFallback !== 'city'" class="station-meta">距你 {{ formatDistanceKm(station.distanceKm) }}km{{ station.openingHours ? ` · ${station.openingHours}` : '' }}</text>
           <text v-else class="station-meta">{{ station.address }}</text>
@@ -95,6 +100,7 @@ const cityName = computed(() => {
 const {
   prices,
   stations,
+  stationKind,
   hasMore,
   loading,
   loadingMore,
@@ -108,6 +114,7 @@ const {
   priceRegion,
   loadFuel,
   loadMore,
+  switchStationKind,
 } = useFuel()
 
 async function enableLocation() {
@@ -121,7 +128,10 @@ async function navigateToStation(station: FuelStation) {
   catch { uni.showToast({ title: '当前环境无法唤起地图', icon: 'none' }) }
 }
 
-onShareAppMessage(() => ({ title: '今日油价 · 附近加油站｜粗门溜溜', path: '/pages/fuel/index' }))
+onShareAppMessage(() => ({
+  title: `今日油价 · 附近${stationKind.value === 'ev' ? '充电站' : '加油站'}｜粗门溜溜`,
+  path: '/pages/fuel/index',
+}))
 </script>
 
 <style scoped lang="scss">
@@ -136,6 +146,10 @@ onShareAppMessage(() => ({ title: '今日油价 · 附近加油站｜粗门溜�
 /* 站点标题吸顶：与首页 SceneTabs 同模式——安全区做进盒子 padding（单一背景无接缝），
    等量负 margin 抵消布局高度；油价卡片抬层级避免被上移的盒子背景盖住。 */
 .station-heading { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; margin: calc(36rpx - var(--chumen-top-inset, var(--status-bar-height, 0px))) -32rpx 22rpx; padding: calc(var(--chumen-top-inset, var(--status-bar-height, 0px)) + 16rpx) 32rpx 16rpx; background: var(--chumen-canvas); }
+/* 加油站 / 充电站 双 Tab：吸顶，与站点标题同级背景，避免接缝 */
+.kind-tabs { position: sticky; top: 0; z-index: 31; display: flex; gap: 18rpx; margin: 26rpx 0 8rpx; padding: calc(var(--chumen-top-inset, var(--status-bar-height, 0px))) 32rpx 0; background: var(--chumen-canvas); }
+.kind-tab { padding: 12rpx 30rpx; border: 2rpx solid var(--chumen-line); border-bottom: 0; border-radius: 22rpx 22rpx 0 0; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 26rpx; font-weight: 700; line-height: 1.4; }
+.kind-tab.active { background: var(--chumen-ink); color: var(--chumen-lime); border-color: var(--chumen-ink); }
 .station-heading .section-title { margin: 0; }
 .station-heading > text:last-child { color: var(--chumen-muted); font-size: 22rpx; }
 /* 城市兜底提示：用户坐标附近无站点时，说明下方列表口径为所选城市 */
@@ -151,5 +165,7 @@ onShareAppMessage(() => ({ title: '今日油价 · 附近加油站｜粗门溜�
 .station-meta,.station-prices { margin-top: 10rpx; color: var(--chumen-muted); font-size: 22rpx; }
 /* 注意：小程序 <text> 只能嵌套 <text>，写 <b> 会被编译成 <view> 并被整体丢弃（实测 92# 数字因此不显示） */
 .station-prices .price-strong { color: var(--chumen-ink); font-weight: 700; }
+/* 充电站卡片角标 */
+.ev-badge { margin-left: 12rpx; padding: 2rpx 12rpx; border-radius: 999rpx; background: #e8f7ef; color: #1a9d54; font-size: 20rpx; font-weight: 800; vertical-align: 4rpx; }
 .navigate-button { min-width: 142rpx; min-height: 72rpx; margin: 0; padding: 0 26rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 26rpx; line-height: 72rpx; }
 </style>

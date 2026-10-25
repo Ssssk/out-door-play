@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import type { GeoPoint } from '../../common/geo'
 import { bd09ToGcj02 } from '../../common/geo'
 import { calcBaiduSn, toBaiduQuery } from '../../common/baidu-signature'
-import type { SourceStation, StationPage, StationProvider } from './station-provider'
+import type { SourceStation, StationKind, StationPage, StationProvider } from './station-provider'
 
 /**
  * 附近加油站数据源：百度地图开放平台「地点检索服务」(`place/v2/search`)。
@@ -28,10 +28,14 @@ export class BaiduStationProvider implements StationProvider {
 
   private readonly baseUrl = 'https://api.map.baidu.com'
   private readonly searchPath = '/place/v2/search'
-  private readonly keyword = '加油站'
   private readonly pageSize = 20
   private readonly maxPages = 10
   private readonly requestTimeoutMs = 8000
+
+  /** 百度检索关键词按站点类型切换：油站 vs 充电站 */
+  private keywordFor(kind: StationKind): string {
+    return kind === 'ev' ? '充电站' : '加油站'
+  }
 
   get enabled(): boolean {
     return this.apiKey().length > 0
@@ -50,12 +54,13 @@ export class BaiduStationProvider implements StationProvider {
     return [center]
   }
 
-  async fetchPage(center: GeoPoint, opts?: { cityCode?: string }): Promise<StationPage | null> {
+  async fetchPage(center: GeoPoint, opts?: { cityCode?: string; kind?: StationKind }): Promise<StationPage | null> {
     if (!this.enabled) {
       this.logger.warn('百度加油站 provider 未启用：环境变量 BAIDU_MAP_AK 为空，将跳过全部城市同步（柳州等将无法入库）')
       return null
     }
     const cityName = opts?.cityCode ? this.cityNames[opts.cityCode] : undefined
+    const kind = opts?.kind ?? 'fuel'
     if (!cityName) {
       this.logger.warn(`百度检索跳过未知城市码：${opts?.cityCode ?? 'undefined'}`)
       return null
@@ -67,7 +72,7 @@ export class BaiduStationProvider implements StationProvider {
 
     for (let page = 0; page < this.maxPages; page++) {
       const params: Record<string, string> = {
-        query: this.keyword,
+        query: this.keywordFor(kind),
         region: cityName,
         output: 'json',
         ak,
@@ -92,7 +97,7 @@ export class BaiduStationProvider implements StationProvider {
         if (results.length === 0) break // 已到末页
         this.logger.log(`百度检索 ${cityName} 第 ${page} 页 返回 ${results.length} 条`)
         for (const raw of results) {
-          const station = this.parse(raw)
+          const station = this.parse(raw, kind)
           if (station) items.push(station)
         }
         if (results.length < this.pageSize) break // 不足一页，已是末页
@@ -103,11 +108,11 @@ export class BaiduStationProvider implements StationProvider {
       }
     }
 
-    this.logger.log(`百度加油站查询成功：${cityName} 命中 ${items.length} 条`)
+    this.logger.log(`百度站点查询成功（${kind}）：${cityName} 命中 ${items.length} 条`)
     return { items, count: items.length }
   }
 
-  private parse(raw: unknown): SourceStation | null {
+  private parse(raw: unknown, kind: StationKind = 'fuel'): SourceStation | null {
     const poi = asRecord(raw)
     if (!poi) return null
     const location = asRecord(poi.location)
@@ -117,15 +122,16 @@ export class BaiduStationProvider implements StationProvider {
     const name = toText(poi.name)
     const address = toText(poi.address)
     if (!uid || !name || latitude === null || longitude === null) return null
-    // 排除充电桩等邻近 POI，避免写进加油站台账
-    if (name.includes('充电')) return null
+    // 加油站模式下排除充电桩等邻近 POI；充电站模式下排除加油站/汽修
+    if (kind === 'fuel' && name.includes('充电')) return null
+    if (kind === 'ev' && (name.includes('加油') || name.includes('汽'))) return null
     // 百度坐标为 BD-09，转回库内统一的 GCJ-02
     const gcj = bd09ToGcj02({ latitude, longitude })
     return {
       id: `bd-${uid}`,
       name,
       address,
-      brand: deriveBrand(name, ''),
+      brand: kind === 'ev' ? '充电站' : deriveBrand(name, ''),
       latitude: gcj.latitude,
       longitude: gcj.longitude,
       province: toText(poi.province),

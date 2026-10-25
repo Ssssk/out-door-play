@@ -74,4 +74,18 @@ describe('OsmStationProvider', () => {
     const centers = new OsmStationProvider().sampleCenters(CENTER)
     expect(centers).toEqual([CENTER])
   })
+
+  it('按 kind=ev 查询时 Overpass 改查 charging_station', async () => {
+    fetchMock.mockImplementation(async (url: string, init?: { body?: string }) => {
+      fetchCalls.push({ url, body: init?.body ?? '' })
+      return { ok: true, json: async () => overpassPayload([
+        { type: 'node', id: 31, lat: 24.33, lon: 109.42, tags: { name: '特来电充电站', amenity: 'charging_station' } },
+      ]) }
+    })
+    const result = await new OsmStationProvider().fetchPage(CENTER, { kind: 'ev' })
+    expect(fetchCalls[0].body).toContain('charging_station')
+    expect(fetchCalls[0].body).not.toContain('"fuel"')
+    expect(result?.items).toHaveLength(1)
+    expect(result!.items[0].id).toBe('osm-31')
+  })
 })

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { Injectable, Logger } from '@nestjs/common'
 import type { GeoPoint } from '../../common/geo'
 import { wgs84ToGcj02 } from '../../common/geo'
-import type { SourceStation, StationPage, StationProvider } from './station-provider'
+import type { SourceStation, StationKind, StationPage, StationProvider } from './station-provider'
 import { deriveBrand } from './baidu-station.provider'
 
 /**
@@ -21,9 +21,13 @@ import { deriveBrand } from './baidu-station.provider'
 
 const BASE_URL = 'http://api.tianditu.gov.cn'
 const SEARCH_PATH = '/v2/search'
-const KEYWORD = '加油站'
 const PAGE_SIZE = 50
 const MAX_PAGES = 6
+
+/** 天地图检索关键词按站点类型切换：油站 vs 充电站 */
+function keywordFor(kind: StationKind): string {
+  return kind === 'ev' ? '充电站' : '加油站'
+}
 const REQUEST_TIMEOUT_MS = 10_000
 /** 城市中心 → 检索 bbox 半宽（度）：约 ±55km/±39km，覆盖绝大多数地级市市域 */
 const BBOX_HALF_LNG = 0.5
@@ -63,7 +67,7 @@ export class TiandituStationProvider implements StationProvider {
     return [center]
   }
 
-  async fetchPage(center: GeoPoint, opts?: { cityCode?: string }): Promise<StationPage | null> {
+  async fetchPage(center: GeoPoint, opts?: { cityCode?: string; kind?: StationKind }): Promise<StationPage | null> {
     if (!this.enabled) {
       this.logger.warn('天地图加油站 provider 未启用：环境变量 TIANDITU_MAP_KEY 为空，将跳过全部城市同步')
       return null
@@ -72,6 +76,7 @@ export class TiandituStationProvider implements StationProvider {
       this.logger.warn('天地图检索缺少城市码，跳过')
       return null
     }
+    const kind = opts.kind ?? 'fuel'
 
     const mapBound = [
       (center.longitude - BBOX_HALF_LNG).toFixed(4),
@@ -83,7 +88,7 @@ export class TiandituStationProvider implements StationProvider {
     const items = new Map<string, SourceStation>()
     for (let page = 0; page < MAX_PAGES; page++) {
       const postStr = JSON.stringify({
-        keyWord: KEYWORD,
+        keyWord: keywordFor(kind),
         mapBound,
         queryType: '1',
         start: page * PAGE_SIZE,
@@ -105,7 +110,7 @@ export class TiandituStationProvider implements StationProvider {
         this.logger.log(`天地图检索 ${opts.cityCode} 第 ${page} 页 返回 ${pois.length} 条（总数 ${total}）`)
         if (pois.length === 0) break
         for (const raw of pois) {
-          const station = this.parse(raw)
+          const station = this.parse(raw, kind)
           if (station) items.set(station.id, station)
         }
         if ((page + 1) * PAGE_SIZE >= total) break // 已取完全部结果
@@ -125,22 +130,23 @@ export class TiandituStationProvider implements StationProvider {
     return { items: [...items.values()], count: items.size }
   }
 
-  private parse(raw: unknown): SourceStation | null {
+  private parse(raw: unknown, kind: StationKind = 'fuel'): SourceStation | null {
     const poi = asRecord(raw)
     if (!poi) return null
     const name = toText(poi.name)
     const [rawLongitude, rawLatitude] = toText(poi.lonlat).split(',').map((part) => Number(part))
     if (!name || !Number.isFinite(rawLongitude) || !Number.isFinite(rawLatitude)) return null
-    if (name.includes('充电')) return null
+    if (kind === 'fuel' && name.includes('充电')) return null
+    if (kind === 'ev' && (name.includes('加油') || name.includes('汽'))) return null
     // 天地图坐标为 CGCS2000（≈WGS84），转库内统一 GCJ-02
     const gcj = wgs84ToGcj02({ latitude: rawLatitude, longitude: rawLongitude })
-    // 无 POI id：用「名称+原始坐标」md5 生成稳定 id，保证跨轮同步 upsert/清理语义
-    const id = `tdt-${createHash('md5').update(`${name}|${rawLongitude},${rawLatitude}`, 'utf8').digest('hex').slice(0, 16)}`
+    // 无 POI id：用「类型前缀 + 名称 + 原始坐标」md5 生成稳定 id，按类型区分命名空间避免撞键
+    const id = `tdt-${kind}-${createHash('md5').update(`${name}|${rawLongitude},${rawLatitude}`, 'utf8').digest('hex').slice(0, 16)}`
     return {
       id,
       name,
       address: toText(poi.address),
-      brand: deriveBrand(name, toText(poi.type).split(',').at(-1)?.trim() ?? ''),
+      brand: kind === 'ev' ? '充电站' : deriveBrand(name, toText(poi.type).split(',').at(-1)?.trim() ?? ''),
       latitude: gcj.latitude,
       longitude: gcj.longitude,
     }

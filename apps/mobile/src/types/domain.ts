@@ -70,6 +70,9 @@ export interface FuelStationPage {
   fallback?: 'city'
 }
 
+/** 站点类型：'fuel' 加油站 / 'ev' 充电站 */
+export type StationKind = 'fuel' | 'ev'
+
 export interface FuelStation {
   id: string
   name: string
@@ -81,6 +84,8 @@ export interface FuelStation {
   latitude: number
   longitude: number
   address: string
+  /** 服务端区分加油站 / 充电站（充电站无成品油价格，字段为空） */
+  kind?: StationKind
 }
 
 export interface UserProfile {

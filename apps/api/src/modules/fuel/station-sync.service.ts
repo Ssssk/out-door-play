@@ -3,15 +3,16 @@ import { distanceInKm, roundDistanceKm } from '../../common/geo'
 import { PrismaService } from '../../database/prisma.service'
 import type { GeoPoint } from '../../common/geo'
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import type { SourceStation, StationProvider } from './station-provider'
+import type { SourceStation, StationKind, StationProvider } from './station-provider'
 import { STATION_PROVIDER } from './station-provider'
 
 /**
- * 附近加油站的**定时同步**：把腾讯地点搜索的 POI 拉到我们自己的库，用户请求只读库。
+ * 附近站点（加油站 / 充电站）的**定时同步**：把各数据源的 POI 拉到我们自己的库，用户请求只读库。
  *
  * 为什么不做成请求时实时查询：腾讯**个人开发者 `place/search` 仅 200 次/日**，
  * 且额度由账号下全部 key 共享——实测约 20 次就曾报 `121 每日调用量已达到上限`。
  * 实时查询在真实流量下必然打爆额度；定时同步每天只花几十次调用，且与用户量无关。
+ * 加油站与充电站共用一套同步流程，仅检索关键词 / 分类不同。
  *
  * 生产是单容器（`chumen-api-prod`），所以进程内定时器不会重复执行。
  */
@@ -35,9 +36,10 @@ const DEFAULT_CITY_CODES = ['420100', '450200']
 /**
  * 单次运行的调用预算：OSM 免费无每日上限，这里仅作礼貌限速，
  * 避免对公共 Overpass 实例造成压力。腾讯作为兜底时每城 9 次，需 ≥99；
- * 取 120 留余量，否则排在末位的城市可能因超预算被跳过、无法入库。
+ * 取 240 留余量——加油站与充电站各跑一轮（约各 110 次/日，高德个人 Key 配额远未触顶），
+ * 否则排在末位的城市可能因超预算被跳过、无法入库。
  */
-const DEFAULT_CALL_BUDGET = 120
+const DEFAULT_CALL_BUDGET = 240
 /** 启动后延迟再跑，避开启动高峰 */
 const FIRST_RUN_DELAY_MS = 30 * 1000
 /**
@@ -114,40 +116,43 @@ export class StationSyncService implements OnModuleInit, OnModuleDestroy {
   async sync(): Promise<StationSyncSummary> {
     const summary: StationSyncSummary = { cities: 0, calls: 0, fetched: 0, upserted: 0, removed: 0 }
     if (this.running) return { ...summary, skipped: '上一次同步尚未结束' }
-    if (!this.enabled) return { ...summary, skipped: '加油站同步未开启（STATION_SYNC_ENABLED != true）' }
+    if (!this.enabled) return { ...summary, skipped: '站点同步未开启（STATION_SYNC_ENABLED != true）' }
 
     this.running = true
     const budget = this.callBudget()
+    const kinds: StationKind[] = ['fuel', 'ev']
     this.logger.log(
       `[站点同步] 启动：provider=${this.provider.constructor.name}，` +
-        `城市=[${this.cityCodes().join(', ')}]，预算=${budget} 次，间隔=${DAILY_INTERVAL_MS / 3_600_000}h`,
+        `类型=[${kinds.join(', ')}]，城市=[${this.cityCodes().join(', ')}]，预算=${budget} 次，间隔=${DAILY_INTERVAL_MS / 3_600_000}h`,
     )
     try {
-      for (const cityCode of this.cityCodes()) {
-        if (summary.calls >= budget) {
-          this.logger.warn(`已达本轮调用预算（${budget} 次），剩余城市跳过`)
-          break
-        }
-        summary.cities += 1
-        this.logger.log(`[站点同步] ▶ 城市 ${cityCode} 开始采集`)
-        const collected = await this.collectCity(cityCode, budget - summary.calls)
-        summary.calls += collected.calls
-        summary.fetched += collected.stations.length
-        this.logger.log(`[站点同步] ◀ 城市 ${cityCode} 完成: 取到 ${collected.stations.length} 条, 调用 ${collected.calls} 次`)
-        if (collected.stations.length === 0) {
-          this.logger.warn(`[站点同步] 城市 ${cityCode} 取到 0 条（可能 provider 未启用/Key 无效/接口失败/网络被拦）`)
-          continue
-        }
+      for (const kind of kinds) {
+        for (const cityCode of this.cityCodes()) {
+          if (summary.calls >= budget) {
+            this.logger.warn(`已达本轮调用预算（${budget} 次），剩余城市跳过`)
+            break
+          }
+          summary.cities += 1
+          this.logger.log(`[站点同步] ▶ [${kind}] 城市 ${cityCode} 开始采集`)
+          const collected = await this.collectCity(cityCode, budget - summary.calls, kind)
+          summary.calls += collected.calls
+          summary.fetched += collected.stations.length
+          this.logger.log(`[站点同步] ◀ [${kind}] 城市 ${cityCode} 完成: 取到 ${collected.stations.length} 条, 调用 ${collected.calls} 次`)
+          if (collected.stations.length === 0) {
+            this.logger.warn(`[站点同步] 城市 ${cityCode} 取到 0 条（可能 provider 未启用/Key 无效/接口失败/网络被拦）`)
+            continue
+          }
 
-        summary.upserted += await this.persist(cityCode, collected.stations, collected.center)
-        summary.removed += await this.prune(cityCode, collected.stations)
+          summary.upserted += await this.persist(cityCode, collected.stations, collected.center, kind)
+          summary.removed += await this.prune(cityCode, collected.stations, kind)
+        }
       }
     } finally {
       this.running = false
     }
 
     this.logger.log(
-      `加油站站点同步完成(provider=${this.provider.constructor.name})：城市 ${summary.cities} 个、调用 ${summary.calls} 次、取到 ${summary.fetched} 条、` +
+      `站点同步完成(provider=${this.provider.constructor.name})：类型=${kinds.join('/')} 采集 ${summary.cities} 次、调用 ${summary.calls} 次、取到 ${summary.fetched} 条、` +
         `写入 ${summary.upserted} 条、清理 ${summary.removed} 条`,
     )
     return summary
@@ -164,7 +169,7 @@ export class StationSyncService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** 按数据源提供的采样中心逐个取页；某一中心请求失败就跳过，不再浪费调用 */
-  private async collectCity(cityCode: string, remainingBudget: number) {
+  private async collectCity(cityCode: string, remainingBudget: number, kind: StationKind) {
     const center = CITY_CENTERS.get(cityCode)
     const stations = new Map<string, SourceStation>()
     if (!center) return { stations: [] as SourceStation[], calls: 0, center: { latitude: 0, longitude: 0 } }
@@ -173,7 +178,7 @@ export class StationSyncService implements OnModuleInit, OnModuleDestroy {
     let calls = 0
     for (const sample of this.provider.sampleCenters({ latitude, longitude })) {
       if (calls >= remainingBudget) break
-      const page = await this.provider.fetchPage(sample, { cityCode })
+      const page = await this.provider.fetchPage(sample, { cityCode, kind })
       calls += 1
       if (!page) break
       // 多个中心会取到重叠的站点，按 POI id 去重
@@ -182,11 +187,12 @@ export class StationSyncService implements OnModuleInit, OnModuleDestroy {
     return { stations: [...stations.values()], calls, center: { latitude, longitude } }
   }
 
-  private async persist(cityCode: string, stations: SourceStation[], center: GeoPoint): Promise<number> {
+  private async persist(cityCode: string, stations: SourceStation[], center: GeoPoint, kind: StationKind): Promise<number> {
     for (const station of stations) {
       const data = {
         id: station.id,
         cityCode,
+        kind,
         name: station.name.slice(0, NAME_MAX),
         brand: station.brand.slice(0, BRAND_MAX),
         address: station.address.slice(0, ADDRESS_MAX),
@@ -196,8 +202,8 @@ export class StationSyncService implements OnModuleInit, OnModuleDestroy {
         distanceKm: roundDistanceKm(distanceInKm(center, { latitude: station.latitude, longitude: station.longitude })),
         // 数据源不提供营业时间
         openingHours: '',
-        // 挂牌价正常由省级指导价覆盖，这里只是回落值
-        ...FALLBACK_PRICE,
+        // 挂牌价正常由省级指导价覆盖，这里只是回落值；充电站无成品油指导价，price 落 0（详情页不展示）
+        ...(kind === 'fuel' ? FALLBACK_PRICE : { price92: 0, price95: 0 }),
         enabled: true,
       }
       await this.prisma.fuelStation.upsert({ where: { id: data.id }, update: data, create: data })
@@ -206,17 +212,17 @@ export class StationSyncService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * 清掉该城市里本次没取到的站点（含早前的手工演示数据）。
+   * 清掉该城市里本次没取到的站点（含早前的手工演示数据）。按类型隔离，避免清理油站时误删充电站。
    * 这是一次同步「接管」该城市站点台账的语义，但**只在取到的量足够时才清理**，
    * 否则一次额度耗尽或接口异常就会把整城站点清空。
    */
-  private async prune(cityCode: string, stations: SourceStation[]): Promise<number> {
+  private async prune(cityCode: string, stations: SourceStation[], kind: StationKind): Promise<number> {
     if (stations.length < PRUNE_MIN_FETCHED) {
-      this.logger.warn(`${cityCode} 本次仅取到 ${stations.length} 条，跳过清理以免误删`)
+      this.logger.warn(`${cityCode}(${kind}) 本次仅取到 ${stations.length} 条，跳过清理以免误删`)
       return 0
     }
     const keep = stations.map((station) => station.id)
-    const result = await this.prisma.fuelStation.deleteMany({ where: { cityCode, id: { notIn: keep } } })
+    const result = await this.prisma.fuelStation.deleteMany({ where: { cityCode, kind, id: { notIn: keep } } })
     return result.count
   }
 

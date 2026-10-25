@@ -28,7 +28,7 @@ function createService(opts: {
 } = {}) {
   const rows = opts.rows ?? []
   const totalRows = opts.totalRows ?? rows.length
-  const findMany = vi.fn(async () => rows)
+  const findMany = vi.fn(async (..._args: unknown[]) => rows)
   const count = vi.fn(async () => totalRows)
   const prisma = { fuelStation: { findMany, count } } as never
   const fetchPage = vi.fn(async () => (opts.live === undefined ? null : opts.live ? {
@@ -102,6 +102,18 @@ describe('FuelService.stations 读库优先', () => {
     }))
     const { service } = createService({ rows })
     expect(await service.stations(point, 1, 200)).toMatchObject({ pageSize: 30 })
+  })
+
+  it('按 kind 过滤：充电站模式只返回充电站', async () => {
+    // mock 的 findMany 不过滤 where，这里只放充电站一行，验证分支条件（kind）被正确注入查询
+    const rows: DbRow[] = [
+      { id: 'tx-ev', name: '充电站', brand: '特来电', address: 'b', latitude: 30.4009, longitude: 114.3009, openingHours: '', price92: 0, price95: 0 },
+    ]
+    const { service, findMany } = createService({ rows })
+    const result = await service.stations(point, 1, 5, undefined, 'ev')
+    // DB 查询必须带 kind 过滤条件（mock 的 findMany 不过滤 where，仅校验分支条件被注入）
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ kind: 'ev' }) }))
+    expect(result.items.map((s) => s.id)).toEqual(['tx-ev'])
   })
 })
 

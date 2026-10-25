@@ -104,4 +104,35 @@ describe('BaiduStationProvider', () => {
     expect(url).toContain('sn=')
     expect(url).toContain('region=')
   })
+
+  it('加油站模式只保留加油站，排除充电桩', async () => {
+    const results = [
+      poi({ name: 'xx充电桩', uid: 'c1' }),
+      poi({ name: '中石油加油站', uid: 'g1' }),
+    ]
+    fetchMock.mockResolvedValue({ ok: true, json: async () => payload(results) })
+    const provider = new BaiduStationProvider()
+
+    const result = await provider.fetchPage({ latitude: 24.33, longitude: 109.42 }, { cityCode: '450200', kind: 'fuel' })
+
+    expect(result!.count).toBe(1)
+    expect(result!.items[0].id).toBe('bd-g1')
+  })
+
+  it('充电站模式只保留充电站，排除加油站并改用「充电站」品牌', async () => {
+    const results = [
+      poi({ name: '特来电充电站(柳州)', uid: 'ev1' }),
+      poi({ name: '中国石化加油站', uid: 'gas1' }),
+    ]
+    fetchMock.mockResolvedValue({ ok: true, json: async () => payload(results) })
+    const provider = new BaiduStationProvider()
+
+    const result = await provider.fetchPage({ latitude: 24.33, longitude: 109.42 }, { cityCode: '450200', kind: 'ev' })
+
+    expect(result!.count).toBe(1)
+    expect(result!.items[0].id).toBe('bd-ev1')
+    expect(result!.items[0].brand).toBe('充电站')
+    const url = String(fetchMock.mock.calls[0][0])
+    expect(decodeURIComponent(url)).toContain('充电站')
+  })
 })

@@ -5,7 +5,7 @@ import { FUEL_GRADES, ProvinceFuelPriceProvider, regionFromCityCode } from './pr
 import { STATION_PAGE_SIZE, STATION_PAGE_SIZE_MAX } from './fuel.dto'
 import type { GeoPoint } from '../../common/geo'
 import type { ProvinceFuelPrice } from './province-price.provider'
-import type { StationProvider } from './station-provider'
+import type { StationKind, StationProvider } from './station-provider'
 import { STATION_PROVIDER } from './station-provider'
 
 /** 油价数据来源：省级官方参考价（含 92/95/98/0 四档）/ 暂无 */
@@ -64,16 +64,17 @@ export class FuelService {
    * 当坐标附近没有、但所选城市已同步过站点时，兜底返回该城市全部站点（fallback: 'city'），
    * 避免用户在非覆盖区 / 测试定位时永远看到空白。
    */
-  async stations(point?: GeoPoint | null, page = 1, pageSize = STATION_PAGE_SIZE, cityCode?: string) {
+  async stations(point?: GeoPoint | null, page = 1, pageSize = STATION_PAGE_SIZE, cityCode?: string, kind: StationKind = 'fuel') {
     if (!point) throw new BadRequestException({ code: 'FUEL_LOCATION_REQUIRED', message: '请先开启定位' })
     const currentPage = Math.max(1, Math.trunc(page) || 1)
     const size = Math.min(Math.max(1, Math.trunc(pageSize) || STATION_PAGE_SIZE), STATION_PAGE_SIZE_MAX)
     const start = (currentPage - 1) * size
 
-    // 包围盒粗筛：只取用户附近一小块内的已启用站点
+    // 包围盒粗筛：只取用户附近一小块内、已启用且类型匹配的站点
     const rows = await this.prisma.fuelStation.findMany({
       where: {
         enabled: true,
+        kind,
         latitude: { gte: point.latitude - BOX_HALF_DEG, lte: point.latitude + BOX_HALF_DEG },
         longitude: { gte: point.longitude - BOX_HALF_DEG, lte: point.longitude + BOX_HALF_DEG },
       },
@@ -108,9 +109,9 @@ export class FuelService {
     }
 
     // 附近没有：若全库也为空（尚未同步过 / 同步失败），做一次实时兜底引导（仅 1 次额度）
-    const totalRows = await this.prisma.fuelStation.count({ where: { enabled: true } })
+    const totalRows = await this.prisma.fuelStation.count({ where: { enabled: true, kind } })
     if (totalRows === 0) {
-      const live = await this.stationProvider.fetchPage(point)
+      const live = await this.stationProvider.fetchPage(point, { kind })
       if (live && live.items.length) {
         const mapped = live.items
           .map((station) => ({
@@ -137,7 +138,7 @@ export class FuelService {
     // 距离按用户真实坐标算会很大，故 distanceKm 置空，前端显示「-」并提示城市口径。
     if (cityCode) {
       const rows = await this.prisma.fuelStation.findMany({
-        where: { enabled: true, cityCode },
+        where: { enabled: true, cityCode, kind },
         select: { id: true, name: true, brand: true, address: true, latitude: true, longitude: true, openingHours: true, price92: true, price95: true },
         orderBy: { name: 'asc' },
       })

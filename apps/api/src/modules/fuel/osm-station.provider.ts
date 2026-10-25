@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import type { GeoPoint } from '../../common/geo'
 import { wgs84ToGcj02 } from '../../common/geo'
 import { deriveBrand } from './baidu-station.provider'
-import type { SourceStation, StationPage, StationProvider } from './station-provider'
+import type { SourceStation, StationKind, StationPage, StationProvider } from './station-provider'
 
 /**
  * 加油站数据源：OpenStreetMap Overpass API（开源、免费、无每日配额）。
@@ -37,13 +37,15 @@ export class OsmStationProvider implements StationProvider {
     return [center]
   }
 
-  async fetchPage(center: GeoPoint): Promise<StationPage | null> {
+  async fetchPage(center: GeoPoint, opts?: { kind?: StationKind }): Promise<StationPage | null> {
+    const kind = opts?.kind ?? 'fuel'
     const south = center.latitude - this.halfDelta
     const north = center.latitude + this.halfDelta
     const west = center.longitude - this.halfDelta
     const east = center.longitude + this.halfDelta
+    const amenity = kind === 'ev' ? 'charging_station' : 'fuel'
     const query =
-      `[out:json][timeout:25];node["amenity"="fuel"](${south},${west},${north},${east});` +
+      `[out:json][timeout:25];node["amenity"="${amenity}"](${south},${west},${north},${east});` +
       `out body ${this.perCenterLimit};`
 
     for (const mirror of this.mirrors) {
@@ -57,7 +59,7 @@ export class OsmStationProvider implements StationProvider {
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
         const payload: unknown = await response.json()
         const items = this.parse(payload)
-        this.logger.log(`OSM 加油站查询成功：${mirror} 命中 ${items.length} 条`)
+        this.logger.log(`OSM 站点查询成功（${kind}）：${mirror} 命中 ${items.length} 条`)
         return { items, count: items.length }
       } catch (error) {
         const reason = error instanceof Error ? error.message : String(error)

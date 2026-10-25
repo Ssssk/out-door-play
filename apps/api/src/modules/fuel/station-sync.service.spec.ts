@@ -71,17 +71,18 @@ describe('StationSyncService', () => {
   })
 
   it('samples every grid centre and deduplicates POIs seen more than once', async () => {
-    // 9 个采样中心；p1 在每个中心都会返回，p2~p10 各出现一次
-    const pages = Array.from({ length: 9 }, (_, index) => ({ items: [station('p1'), station(`p${index + 2}`)], count: 20 }))
+    // 加油站 + 充电站各跑一轮：每轮 9 个采样中心，p1 在每个中心都会返回，p2~p10 各出现一次
+    const pages = Array.from({ length: 18 }, (_, index) => ({ items: [station('p1'), station(`p${index + 2}`)], count: 20 }))
     const { service, fetchPage, upsert } = createHarness(pages)
 
     const summary = await service.sync()
 
-    expect(fetchPage).toHaveBeenCalledTimes(9)
-    expect(summary.calls).toBe(9)
-    // p1 + p2..p10 去重后共 10 条，而不是 18 条
-    expect(summary.fetched).toBe(10)
-    expect(upsert).toHaveBeenCalledTimes(10)
+    // 两种站点类型各 9 个中心，共 18 次调用
+    expect(fetchPage).toHaveBeenCalledTimes(18)
+    expect(summary.calls).toBe(18)
+    // 每种类型内 p1 + p2..p10 去重后共 10 条，两种类型合计 20 条
+    expect(summary.fetched).toBe(20)
+    expect(upsert).toHaveBeenCalledTimes(20)
   })
 
   it('stops calling the provider once the run budget is used up', async () => {
@@ -101,9 +102,10 @@ describe('StationSyncService', () => {
 
     const summary = await service.sync()
 
-    // 第二次就失败 → 不再继续打后续 7 个中心
-    expect(fetchPage).toHaveBeenCalledTimes(2)
-    expect(summary.calls).toBe(2)
+    // 加油站：第 1 页有数据、第 2 页 null（请求失败）即停止后续中心 → 2 次；
+    // 充电站：预置的失败页已耗尽，之后命中「空页」(请求成功但无数据) 跑满 9 中心 → 9 次
+    expect(fetchPage).toHaveBeenCalledTimes(11)
+    expect(summary.calls).toBe(11)
     expect(summary.fetched).toBe(1)
   })
 
@@ -123,7 +125,7 @@ describe('StationSyncService', () => {
 
     await service.sync()
 
-    const call = upsert.mock.calls[0][0]
+    const call = upsert.mock.calls[0][0] as unknown as { where: { id: string }; update: Record<string, unknown> }
     expect(call.where).toEqual({ id: 'bd-abc' })
     expect(call.update).toMatchObject({
       cityCode: '420100',
@@ -157,8 +159,10 @@ describe('StationSyncService', () => {
 
     const summary = await service.sync()
 
+    // 预置的成功页仅一个，加油站取到 25 条并清理；充电站因该页已耗尽只命中空页，无数据不清理
+    expect(deleteMany).toHaveBeenCalledTimes(1)
     expect(deleteMany).toHaveBeenCalledWith({
-      where: { cityCode: '420100', id: { notIn: items.map((item) => item.id) } },
+      where: { cityCode: '420100', kind: 'fuel', id: { notIn: items.map((item) => item.id) } },
     })
     expect(summary.removed).toBe(7)
   })

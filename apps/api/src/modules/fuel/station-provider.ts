@@ -1,7 +1,7 @@
 import type { GeoPoint } from '../../common/geo'
 
 /**
- * 加油站数据源统一抽象。
+ * 站点数据源统一抽象（加油站 / 充电站共用）。
  *
  * 同步与「库空实时兜底」都只依赖这个接口，具体实现可插拔：
  * - `BaiduStationProvider`：百度地图地点检索，国内可达、配额约 2000 次/日；
@@ -9,12 +9,15 @@ import type { GeoPoint } from '../../common/geo'
  *
  * 通过 `STATION_PROVIDER` 环境变量选择，默认 `baidu`。
  */
+/** 站点类型：'fuel' 加油站 / 'ev' 充电站 */
+export type StationKind = 'fuel' | 'ev'
+
 export interface SourceStation {
   /** 数据源内唯一 id（不同源加不同前缀避免冲突，如 `tx-` / `osm-`） */
   id: string
   name: string
   address: string
-  /** 由名称/分类推导，识别不出记作「加油站」 */
+  /** 由名称/分类推导，识别不出记作「加油站」或「充电站」 */
   brand: string
   latitude: number
   longitude: number
@@ -32,13 +35,14 @@ export interface StationProvider {
   sampleCenters(center: GeoPoint): GeoPoint[]
 
   /**
-   * 取某个中心点附近的加油站。
+   * 取某个中心点附近的站点。
+   * `kind` 决定检索的是加油站还是充电站（各源按此切换关键词/分类，并隔离过滤）。
    * `pageIndex` / `window` 为可选分页参数（腾讯用得到，OSM 单次取全量可忽略）。
    * 失败时返回 null，调用方据此跳过该中心而非报错。
    */
   fetchPage(
     center: GeoPoint,
-    opts?: { pageIndex?: number; window?: { offset: number; limit: number }; cityCode?: string },
+    opts?: { pageIndex?: number; window?: { offset: number; limit: number }; cityCode?: string; kind?: StationKind },
   ): Promise<StationPage | null>
 }
 

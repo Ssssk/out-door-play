@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import type { GeoPoint } from '../../common/geo'
-import type { SourceStation, StationPage, StationProvider } from './station-provider'
+import type { SourceStation, StationKind, StationPage, StationProvider } from './station-provider'
 import { deriveBrand } from './baidu-station.provider'
 
 /**
@@ -22,10 +22,14 @@ export class AmapStationProvider implements StationProvider {
 
   private readonly baseUrl = 'https://restapi.amap.com'
   private readonly searchPath = '/v3/place/text'
-  private readonly keyword = '加油站'
   private readonly pageSize = 20
   private readonly maxPages = 10
   private readonly requestTimeoutMs = 8000
+
+  /** 高德检索关键词按站点类型切换：油站 vs 充电站 */
+  private keywordFor(kind: StationKind): string {
+    return kind === 'ev' ? '充电站' : '加油站'
+  }
 
   /** 翻页间隔：个人 Key QPS=3，取 400ms（≈2.5 QPS）留出余量（天气等同 Key 调用共享配额） */
   private static readonly QPS_INTERVAL_MS = 400
@@ -47,12 +51,13 @@ export class AmapStationProvider implements StationProvider {
     return [center]
   }
 
-  async fetchPage(_center: GeoPoint, opts?: { cityCode?: string }): Promise<StationPage | null> {
+  async fetchPage(_center: GeoPoint, opts?: { cityCode?: string; kind?: StationKind }): Promise<StationPage | null> {
     if (!this.enabled) {
       this.logger.warn('高德加油站 provider 未启用：环境变量 AMAP_MAP_KEY 为空，将跳过全部城市同步')
       return null
     }
     const cityCode = opts?.cityCode
+    const kind = opts?.kind ?? 'fuel'
     if (!cityCode) {
       this.logger.warn('高德检索缺少城市码，跳过')
       return null
@@ -63,7 +68,7 @@ export class AmapStationProvider implements StationProvider {
       // 高德个人 Key QPS 仅 3 次/秒（infocode 10021 CUQPS_HAS_EXCEEDED_THE_LIMIT），
       // 翻页请求间强制间隔，把速率压到限值以下
       if (page > 1) await sleep(AmapStationProvider.QPS_INTERVAL_MS)
-      const record = await this.requestSearchPage(cityCode, page)
+      const record = await this.requestSearchPage(cityCode, page, kind)
       if (!record) {
         // 单页彻底失败：保留已取到的页（此前整城丢弃导致「取到 0 条」），不足清理阈值时同步侧不会误删
         if (items.length > 0) {
@@ -76,21 +81,21 @@ export class AmapStationProvider implements StationProvider {
       if (pois.length === 0) break // 已到末页
       this.logger.log(`高德检索 ${cityCode} 第 ${page} 页 返回 ${pois.length} 条`)
       for (const raw of pois) {
-        const station = this.parse(raw)
+        const station = this.parse(raw, kind)
         if (station) items.push(station)
       }
       if (pois.length < this.pageSize) break // 不足一页，已是末页
     }
 
-    this.logger.log(`高德加油站查询成功：${cityCode} 命中 ${items.length} 条`)
+    this.logger.log(`高德站点查询成功（${kind}）：${cityCode} 命中 ${items.length} 条`)
     return { items, count: items.length }
   }
 
   /** 请求单页；命中 QPS 超限（10021）时指数退避重试，其余错误直接抛出 */
-  private async requestSearchPage(cityCode: string, page: number): Promise<RawRecord | null> {
+  private async requestSearchPage(cityCode: string, page: number, kind: StationKind): Promise<RawRecord | null> {
     const url =
       `${this.baseUrl}${this.searchPath}?key=${encodeURIComponent(this.apiKey())}` +
-      `&keywords=${encodeURIComponent(this.keyword)}&city=${encodeURIComponent(cityCode)}` +
+      `&keywords=${encodeURIComponent(this.keywordFor(kind))}&city=${encodeURIComponent(cityCode)}` +
       `&citylimit=true&offset=${this.pageSize}&page=${page}`
     let lastReason = ''
     for (let attempt = 1; attempt <= AmapStationProvider.QPS_RETRY_MAX; attempt++) {
@@ -121,21 +126,22 @@ export class AmapStationProvider implements StationProvider {
     return null
   }
 
-  private parse(raw: unknown): SourceStation | null {
+  private parse(raw: unknown, kind: StationKind = 'fuel'): SourceStation | null {
     const poi = asRecord(raw)
     if (!poi) return null
     const id = toText(poi.id)
     const name = toText(poi.name)
     const [longitude, latitude] = toText(poi.location).split(',').map((part) => Number(part))
     if (!id || !name || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return null
-    // 排除充电桩等邻近 POI，避免写进加油站台账
-    if (name.includes('充电')) return null
+    // 加油站模式下排除充电桩等邻近 POI；充电站模式下排除加油站/汽修，避免写错台账
+    if (kind === 'fuel' && name.includes('充电')) return null
+    if (kind === 'ev' && (name.includes('加油') || name.includes('汽'))) return null
     return {
       id: `am-${id}`,
       name,
       address: toText(poi.address),
       // 高德分类形如「汽车服务;加油站;中国石化」，末段常是品牌
-      brand: deriveBrand(name, toText(poi.type).split(';').at(-1)?.trim() ?? ''),
+      brand: kind === 'ev' ? '充电站' : deriveBrand(name, toText(poi.type).split(';').at(-1)?.trim() ?? ''),
       latitude,
       longitude,
       province: toText(poi.pname),

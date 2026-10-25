@@ -156,11 +156,13 @@ model FuelStation {
   longitude    Float
   address      String   @db.VarChar(255)
   enabled      Boolean  @default(true)
+  /** 站点类型判别：'fuel' 加油站 / 'ev' 充电站，共用同一张表 */
+  kind         String   @default("fuel") @db.VarChar(8)
   city         City     @relation(fields: [cityCode], references: [code], onDelete: Restrict)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  @@index([cityCode])
+  @@index([cityCode, kind])
   @@map("fuel_stations")
 }
 

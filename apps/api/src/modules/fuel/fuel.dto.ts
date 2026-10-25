@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer'
-import { IsInt, IsLatitude, IsLongitude, IsOptional, IsString, Matches, Max, Min } from 'class-validator'
+import { IsIn, IsInt, IsLatitude, IsLongitude, IsOptional, IsString, Matches, Max, Min } from 'class-validator'
+import type { StationKind } from './station-provider'
 
 /** 附近加油站默认每页条数（产品要求每页 5 条）；显式传入时仍受 MAX 约束 */
 export const STATION_PAGE_SIZE = 5
@@ -17,4 +18,6 @@ export class FuelStationsDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(STATION_PAGE_SIZE_MAX) pageSize?: number
   // 坐标附近无站点时的兜底城市：返回该城市已同步站点（非空时不消耗腾讯额度）
   @IsOptional() @IsString() @Matches(/^\d{6}$/) cityCode?: string
+  // 站点类型：'fuel' 加油站（默认）/ 'ev' 充电站；老客户端不传则按加油站处理（向后兼容）
+  @IsOptional() @IsIn(['fuel', 'ev']) kind?: StationKind
 }

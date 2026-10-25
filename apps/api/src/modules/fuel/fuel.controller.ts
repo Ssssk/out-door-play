@@ -15,7 +15,7 @@ export class FuelController {
   ) {}
   @Get('prices') prices(@Query() query: FuelPricesDto) { return this.fuel.prices(query.cityCode) }
   @Get('stations') stations(@Query() query: FuelStationsDto) {
-    return this.fuel.stations(parseGeoPoint(query.lat, query.lng), query.page, query.pageSize, query.cityCode)
+    return this.fuel.stations(parseGeoPoint(query.lat, query.lng), query.page, query.pageSize, query.cityCode, query.kind)
   }
   /**
    * 手动触发一次加油站同步，便于发布后立即验证而无需等定时轮询。

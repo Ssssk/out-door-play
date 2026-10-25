@@ -5,7 +5,7 @@ import { useUserLocation } from '@/common/userLocation'
 import { ApiError } from '@/common/request'
 import { useAppStore } from '@/stores/app'
 import type { GeoPoint } from '@/common/location'
-import type { FuelPrice, FuelPriceSource, FuelStation } from '@/types/domain'
+import type { FuelPrice, FuelPriceSource, FuelStation, StationKind } from '@/types/domain'
 
 /** 附近加油站每页条数（产品要求每页 5 条），需与服务端默认保持一致 */
 export const STATION_PAGE_SIZE = 5
@@ -14,6 +14,9 @@ export function useFuel() {
   const appStore = useAppStore()
   const { ensureLocation, openLocationSettings, status: locationStatus } = useUserLocation()
   const prices = shallowRef<FuelPrice[]>([])
+
+  // 当前选中的站点类型：加油站 / 充电站（双 Tab 切换）
+  const stationKind = ref<StationKind>('fuel')
 
   // 服务端已按「距你」由近到远排好并分页，前端只负责拼接，不再重排
   // 没有取得设备坐标前不展示任何站点，避免把演示数据误认为附近 POI。
@@ -36,7 +39,7 @@ export function useFuel() {
   // 省级参考价对应的省份名，仅 source 为 province 时有值
   const priceRegion = ref('')
 
-  async function loadStations(point: GeoPoint | null, targetPage: number, append: boolean, requestId: number) {
+  async function loadStations(point: GeoPoint | null, targetPage: number, append: boolean, requestId: number, kind: StationKind) {
     if (!point) {
       if (!append) {
         stations.value = []
@@ -54,7 +57,7 @@ export function useFuel() {
       stationFallback.value = undefined
     }
     try {
-      const result = await outdoorApi.fuelStations(point, targetPage, appStore.city.code)
+      const result = await outdoorApi.fuelStations(point, targetPage, appStore.city.code, kind)
       if (requestId !== loadRequestId) return
       const items = result.items
       stations.value = append ? [...new Map([...stations.value, ...items].map(s => [s.id, s])).values()] : items
@@ -67,7 +70,7 @@ export function useFuel() {
     } catch (error) {
       if (requestId !== loadRequestId) return
       stationError.value = error instanceof ApiError && error.code === 'FUEL_POI_UNAVAILABLE'
-        ? '附近加油站查询暂不可用，请稍后重试' : '附近加油站加载失败，请重试'
+        ? '附近站点查询暂不可用，请稍后重试' : '附近站点加载失败，请重试'
       // 接口失败时清空首屏，绝不回落到 mock，避免把演示站点当成真实 POI。
       if (!append) {
         stations.value = []
@@ -93,7 +96,7 @@ export function useFuel() {
     }
   }
 
-  /** 首屏、下拉刷新、切回页面：都重置回第一页 */
+  /** 首屏、下拉刷新、切回页面、切 Tab：都重置回第一页 */
   async function loadFuel() {
     const requestId = ++loadRequestId
     loading.value = true
@@ -106,7 +109,7 @@ export function useFuel() {
       const point = await ensureLocation(true)
       if (requestId !== loadRequestId) return
       searchPoint = point
-      await loadStations(point, 1, false, requestId)
+      await loadStations(point, 1, false, requestId, stationKind.value)
       await pricesRequest
     } finally {
       if (requestId === loadRequestId) {
@@ -121,8 +124,15 @@ export function useFuel() {
     if (loading.value || loadingMore.value || !hasMore.value || !searchPoint) return
     loadingMore.value = true
     const requestId = loadRequestId
-    await loadStations(searchPoint, page.value + 1, true, requestId)
+    await loadStations(searchPoint, page.value + 1, true, requestId, stationKind.value)
     if (requestId === loadRequestId) loadingMore.value = false
+  }
+
+  // 切换加油站 / 充电站：重置并重新加载当前页数据
+  function switchStationKind(kind: StationKind) {
+    if (stationKind.value === kind) return
+    stationKind.value = kind
+    void loadFuel()
   }
 
   // onShow 在每次进入或切回加油页时都会触发，保证展示的是服务端最新发布的价格
@@ -133,6 +143,7 @@ export function useFuel() {
   return {
     prices,
     stations,
+    stationKind,
     total,
     hasMore,
     updatedAt,
@@ -147,5 +158,6 @@ export function useFuel() {
     openLocationSettings,
     loadFuel,
     loadMore,
+    switchStationKind,
   }
 }
