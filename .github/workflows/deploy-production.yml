@@ -65,7 +65,8 @@ jobs:
     if: github.ref == 'refs/heads/main'
     needs: build-images
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # 服务器现场构建两个镜像（无缓存，含基础镜像拉取）实测可能超过 45 分钟，曾因此被 GitHub 取消
+    timeout-minutes: 120
     environment: production
     steps:
       - name: Check out source
