@@ -11,6 +11,9 @@
       :markers="markers"
       :include-points="includePoints"
       enable-satellite
+      @markertap="onMarkerTap"
+      @callouttap="onMarkerTap"
+      @tap="onMapTap"
       :show-compass="false"
       :rotate="false"
       :skew="false"
@@ -29,7 +32,7 @@
       <text v-if="line.distanceKm !== null">驾车全程约 {{ line.distanceKm }} km</text>
       <text v-if="line.durationMinutes !== null"> · 约 {{ line.durationMinutes }} 分钟</text>
     </view>
-    <button v-if="line" class="start-btn" @click="goToStart">前往出发地</button>
+    <button v-if="line" class="start-btn" @click="onNavigateAction">{{ navigateLabel }}</button>
   </view>
 </template>
 
@@ -50,6 +53,8 @@ const loading = ref(true)
 const errorMsg = ref('')
 const fatal = ref(false)
 const center = ref({ latitude: 30.3, longitude: 114.3 })
+// 地图上被点选的点：'start' 起点 / 'end' 终点 / null 未选（默认「途经出发地前往终点」）
+const selectedPoint = ref<'start' | 'end' | null>(null)
 
 // 分享标题带路线里程，无数据时退化为通用文案
 const shareTitle = computed(() => {
@@ -101,6 +106,8 @@ async function loadLine() {
   errorMsg.value = ''
   try {
     line.value = await outdoorApi.routeLine(routeId.value)
+    // 换路线/重试后清空选中，按钮回到默认的「途经出发地前往终点」
+    selectedPoint.value = null
     const points = line.value.points
     if (points.length) {
       const mid = points[Math.floor(points.length / 2)]
@@ -125,46 +132,104 @@ const polyline = computed(() => {
   }]
 })
 
-// 起终点用「圆点图标 + 文字标签」的 marker 表达：圆点为预生成的 PNG（transparent 底，
-// 青柠=起点 / 橙=终点），label 挂在 marker 上方区分起终
+// 起终点用「圆点图标 + 常显气泡」表达：label 文字不可点、圆点热区又太小，
+// 改用 callout 气泡承载文字（点击气泡会触发 callouttap），面积远大于图标，手指好点；
+// 被选中的点圆点放大、气泡反色（绿底黑字），与下方按钮呼应
 const markers = computed(() => {
   const points = line.value?.points
   if (!points?.length) return []
-  const build = (point: LinePoint, content: string, iconPath: string, markerId: number) => ({
-    id: markerId,
-    latitude: point.latitude,
-    longitude: point.longitude,
-    iconPath,
-    width: 24,
-    height: 24,
-    anchor: { x: 0.5, y: 0.5 },
-    label: {
-      content,
-      bgColor: '#1A1A1A',
-      color: '#CCFF00',
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: '#CCFF00',
-      padding: 6,
-      textAlign: 'center' as const,
-      anchorX: 0,
-      anchorY: -34,
-    },
-  })
+  const build = (point: LinePoint, content: string, iconPath: string, markerId: number, kind: 'start' | 'end') => {
+    const active = selectedPoint.value === kind
+    return {
+      id: markerId,
+      latitude: point.latitude,
+      longitude: point.longitude,
+      iconPath,
+      width: active ? 40 : 30,
+      height: active ? 40 : 30,
+      anchor: { x: 0.5, y: 0.5 },
+      callout: {
+        content,
+        color: active ? '#1A1A1A' : '#CCFF00',
+        fontSize: 14,
+        bgColor: active ? '#CCFF00' : '#1A1A1A',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: active ? '#1A1A1A' : '#CCFF00',
+        padding: 16,
+        display: 'ALWAYS' as const,
+        textAlign: 'center' as const,
+      },
+    }
+  }
   return [
-    build(points[0], '起', '/static/icons/map-point-start.png', 1),
-    build(points[points.length - 1], '终', '/static/icons/map-point-end.png', 2),
+    build(points[0], '出发地', '/static/icons/map-point-start.png', 1, 'start'),
+    build(points[points.length - 1], '目的地', '/static/icons/map-point-end.png', 2, 'end'),
   ]
 })
 
 const includePoints = computed(() => line.value?.points.map((point) => ({ latitude: point.latitude, longitude: point.longitude })) ?? [])
 
-/** 唤起系统地图导航到轨迹起点（出发地） */
-async function goToStart() {
-  const start = line.value?.points[0]
-  if (!start) return
+/** 底部按钮文案跟随地图上点选的点：起点 → 前往出发地；终点 → 前往目的地；未选 → 途经方案 */
+const navigateLabel = computed(() => {
+  if (selectedPoint.value === 'start') return '前往出发地'
+  if (selectedPoint.value === 'end') return '前往目的地'
+  return '途经出发地前往终点'
+})
+
+/** 点圆点图标(markertap)或文字气泡(callouttap)都走这里：起(1) / 终(2) */
+function onMarkerTap(event: { detail?: { markerId?: number }; markerId?: number }) {
+  const markerId = Number(event?.detail?.markerId ?? event?.markerId)
+  if (markerId === 1) selectedPoint.value = 'start'
+  else if (markerId === 2) selectedPoint.value = 'end'
+}
+
+// 气泡之外再留一层地理兜底：点起/终点附近约 2 公里内也算选中。
+// 部分端 map 的 tap 事件 detail 不带经纬度，拿不到坐标时直接忽略，不误选
+const TAP_HIT_RADIUS_METERS = 2000
+
+/** 两点间近似球面距离（米） */
+function distanceMeters(a: { latitude: number; longitude: number }, b: { latitude: number; longitude: number }) {
+  const toRad = (deg: number) => (deg * Math.PI) / 180
+  const dLat = toRad(b.latitude - a.latitude)
+  const dLng = toRad(b.longitude - a.longitude)
+  const midLat = toRad((a.latitude + b.latitude) / 2)
+  const x = dLng * Math.cos(midLat)
+  return Math.sqrt(dLat * dLat + x * x) * 6371000
+}
+
+function onMapTap(event: { detail?: { latitude?: number; longitude?: number } }) {
+  const points = line.value?.points
+  const latitude = Number(event?.detail?.latitude)
+  const longitude = Number(event?.detail?.longitude)
+  if (!points?.length || Number.isNaN(latitude) || Number.isNaN(longitude)) return
+  const tapped = { latitude, longitude }
+  const toStart = distanceMeters(tapped, points[0])
+  const toEnd = distanceMeters(tapped, points[points.length - 1])
+  if (Math.min(toStart, toEnd) > TAP_HIT_RADIUS_METERS) return
+  selectedPoint.value = toStart <= toEnd ? 'start' : 'end'
+}
+
+/**
+ * 唤起地图导航：
+ * - 点选了起点/终点：单点直达该点
+ * - 未点选：默认「途经出发地前往终点」，一次导航先到出发地再到终点
+ */
+async function onNavigateAction() {
+  const points = line.value?.points
+  if (!points?.length) return
+  const start = points[0]
+  const end = points[points.length - 1]
+  const goingToStart = selectedPoint.value === 'start'
+  const target = goingToStart ? start : end
+  const waypoints = selectedPoint.value !== null || points.length < 2
+    ? []
+    : [{ latitude: start.latitude, longitude: start.longitude, name: '出发地' }]
   try {
-    await openNavigation({ latitude: start.latitude, longitude: start.longitude, name: '出发地' })
+    await openNavigation(
+      { latitude: target.latitude, longitude: target.longitude, name: goingToStart ? '出发地' : '目的地' },
+      { waypoints },
+    )
   } catch {
     uni.showToast({ title: '当前环境无法唤起地图', icon: 'none' })
   }
