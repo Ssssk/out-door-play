@@ -9,7 +9,9 @@ import type { Scene } from '@/types/domain'
 
 defineProps<{ modelValue: Scene }>()
 const emit = defineEmits<{ 'update:modelValue': [scene: Scene] }>()
-const tabs: { id: Scene; label: string }[] = [{ id: 'drive', label: '粗门溜车' }, { id: 'fish', label: '粗门钓鱼' }]
+// 钓鱼场景暂不开放，先只保留「粗门溜车」；恢复时把 fish 项加回即可。
+// 组件本体仍在（吸顶盒子承担头部与列表之间的间距），不渲染会让首页/收藏页布局塌陷
+const tabs: { id: Scene; label: string }[] = [{ id: 'drive', label: '粗门溜车' }]
 let lastClick = 0
 function select(scene: Scene) {
   if (Date.now() - lastClick < 300) return
