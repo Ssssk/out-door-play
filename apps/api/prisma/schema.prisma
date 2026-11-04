@@ -166,6 +166,23 @@ model FuelStation {
   @@map("fuel_stations")
 }
 
+/// 每期省级成品油调价快照：第三方源只返回当期价，故每次取到新的调价日期就落一条，
+/// 按「省份 + 油号 + 调价日期」唯一，历史走势与每次调价记录均由此表提供。
+model FuelPriceSnapshot {
+  id          Int      @id @default(autoincrement())
+  region      String   @db.VarChar(16)
+  regionLabel String   @map("region_label") @db.VarChar(32)
+  grade       String   @db.VarChar(16)
+  price       Float
+  change      Float
+  publishedAt DateTime @map("published_at") @db.Date
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([region, grade, publishedAt])
+  @@index([region, grade, publishedAt])
+  @@map("fuel_price_snapshots")
+}
+
 model User {
   id           String          @id @db.VarChar(64)
   avatarUrl    String          @map("avatar_url") @db.VarChar(255)

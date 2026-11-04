@@ -6,20 +6,19 @@
 
       <view v-if="prices.length === 0" class="price-empty" role="status">这个城市暂时没有油价数据</view>
       <view v-else class="price-grid">
-        <view v-for="price in prices" :key="price.grade" class="price-card">
+        <view v-for="price in prices" :key="price.grade" class="price-card" hover-class="price-card-hover" @click="openHistory(price)">
           <text class="grade">{{ price.grade }}</text>
           <view><text class="price">{{ price.price.toFixed(2) }}</text><text class="unit">元/升</text></view>
           <text class="change" :class="price.change > 0 ? 'up' : price.change < 0 ? 'down' : 'flat'">{{ price.change > 0 ? '↑' : price.change < 0 ? '↓' : '—' }} {{ price.change === 0 ? '持平' : `${Math.abs(price.change).toFixed(2)} 较上期` }}</text>
+          <text class="history-link">查看历史 ›</text>
         </view>
       </view>
 
       <view class="kind-tabs">
-        <view class="kind-tab" :class="{ active: stationKind === 'fuel' }" @click="switchStationKind('fuel')">附近加油站</view>
-        <view class="kind-tab" :class="{ active: stationKind === 'ev' }" @click="switchStationKind('ev')">附近充电站</view>
-      </view>
-
-      <view class="station-heading">
-        <text class="section-title">{{ stationKind === 'ev' ? '附近充电站点' : '附近加油站点' }}</text>
+        <view class="kind-tabs-bar">
+          <view class="kind-tab" :class="{ active: stationKind === 'fuel' }" @click="switchStationKind('fuel')">附近加油站</view>
+          <view class="kind-tab" :class="{ active: stationKind === 'ev' }" @click="switchStationKind('ev')">附近充电站</view>
+        </view>
       </view>
 
       <view v-if="stationFallback === 'city'" class="station-fallback" role="status">
@@ -73,15 +72,16 @@ import BrandHeader from '@/components/BrandHeader.vue'
 import { formatDistanceKm } from '@/common/location'
 import { onShareAppMessage } from '@dcloudio/uni-app'
 import { openNavigation } from '@/common/mapNavigation'
+import { navigate } from '@/common/router'
 import { cities as localCities } from '@/data/mock'
 import { outdoorApi } from '@/api/outdoor'
 import { useAppStore } from '@/stores/app'
-import type { City, FuelStation } from '@/types/domain'
+import type { City, FuelPrice, FuelStation } from '@/types/domain'
 import { useFuel } from './useFuel'
 
 const appStore = useAppStore()
 
-// 城市列表与出车 tab 同源（/v1/cities）；接口不可用时回退本地兜底，保证两端一致
+// 城市列表与「出门」tab 同源（/v1/cities）；接口不可用时回退本地兜底，保证两端一致
 const availableCities = ref<City[]>(localCities)
 async function loadCities() {
   try {
@@ -90,6 +90,11 @@ async function loadCities() {
   } catch { /* 回退本地列表 */ }
 }
 onMounted(() => { void loadCities() })
+
+/** 点油价卡进入该油号的历史调价页；省份口径沿用全局选中城市 */
+function openHistory(price: FuelPrice) {
+  void navigate('/pages/fuel/history/index', { grade: price.grade })
+}
 
 // 兜底提示里展示的城市名：优先用门店选中城市，否则从城市列表查
 const cityName = computed(() => {
@@ -140,21 +145,23 @@ onShareAppMessage(() => ({
 .price-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20rpx; row-gap: 20rpx; }
 .price-empty { padding: 60rpx 0; border: 2rpx solid var(--chumen-line); border-radius: 34rpx; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 24rpx; text-align: center; }
 .price-card { padding: 28rpx 30rpx; border: 2rpx solid var(--chumen-line); border-radius: 34rpx; background: var(--chumen-soft); }
+.price-card-hover { opacity: .86; }
+.history-link { display: block; margin-top: 12rpx; color: var(--chumen-muted); font-size: 22rpx; text-align: right; }
 .grade, .change { display: block; color: var(--chumen-muted); font-size: 24rpx; }
 .price { margin-right: 8rpx; color: var(--chumen-ink); font-size: 46rpx; font-weight: 900; }
 .unit { font-size: 22rpx; }.change { margin-top: 6rpx; }.up { color: #e5484d; }.down { color: #2ba24c; }
-/* 站点标题吸顶：与首页 SceneTabs 同模式——安全区做进盒子 padding（单一背景无接缝），
-   等量负 margin 抵消布局高度；油价卡片抬层级避免被上移的盒子背景盖住。 */
-.station-heading { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; margin: calc(36rpx - var(--chumen-top-inset, var(--status-bar-height, 0px))) -32rpx 22rpx; padding: calc(var(--chumen-top-inset, var(--status-bar-height, 0px)) + 16rpx) 32rpx 16rpx; background: var(--chumen-canvas); }
-/* 加油站 / 充电站 双 Tab：吸顶，与站点标题同级背景，避免接缝 */
-.kind-tabs { position: sticky; top: 0; z-index: 31; display: flex; gap: 18rpx; margin: 26rpx 0 8rpx; padding: calc(var(--chumen-top-inset, var(--status-bar-height, 0px))) 32rpx 0; background: var(--chumen-canvas); }
-.kind-tab { padding: 12rpx 30rpx; border: 2rpx solid var(--chumen-line); border-bottom: 0; border-radius: 22rpx 22rpx 0 0; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 26rpx; font-weight: 700; line-height: 1.4; }
+/* 加油站 / 充电站 双 Tab：胶囊分段控件（仿首页 SceneTabs），吸顶；
+   负 margin 抵消吸顶预留的状态栏 padding——未滚动时与油价卡只留紧凑间距，滚到顶时内容落在状态栏下方 */
+.kind-tabs { position: sticky; top: 0; z-index: 31; display: flex; margin: calc(24rpx - var(--chumen-top-inset, var(--status-bar-height, 0px))) -32rpx 22rpx; padding: calc(var(--chumen-top-inset, var(--status-bar-height, 0px)) + 8rpx) 32rpx 0; background: var(--chumen-canvas); }
+.kind-tabs-bar { display: flex; gap: 16rpx; }
+.kind-tab { padding: 12rpx 34rpx; border: 2rpx solid var(--chumen-line); border-radius: 999rpx; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 26rpx; font-weight: 700; line-height: 1.4; }
 .kind-tab.active { background: var(--chumen-ink); color: var(--chumen-lime); border-color: var(--chumen-ink); }
-.station-heading .section-title { margin: 0; }
-.station-heading > text:last-child { color: var(--chumen-muted); font-size: 22rpx; }
 /* 城市兜底提示：用户坐标附近无站点时，说明下方列表口径为所选城市 */
 .station-fallback { margin: 0 0 18rpx; padding: 16rpx 22rpx; border: 2rpx solid var(--chumen-line); border-radius: 20rpx; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 22rpx; line-height: 1.5; text-align: center; }
-.price-grid, .price-empty { position: relative; z-index: 31; }
+/* 层叠契约：kind-tabs 吸顶盒带负 margin 上移（未滚动时压进油价区底部空隙），
+   因此油价网格必须高于它，否则卡片下半截会被吸顶盒的不透明背景盖住；
+   吸顶 tabs(31) 需高于下方普通列表内容，保证滚动吸顶时胶囊可见可点 */
+.price-grid, .price-empty { position: relative; z-index: 32; }
 .station-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 220rpx; padding: 28rpx; border: 2rpx solid var(--chumen-line); border-radius: 28rpx; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 24rpx; line-height: 1.6; text-align: center; }
 .station-state text { margin-top: 16rpx; }
 .station-action button { min-width: 180rpx; min-height: 68rpx; margin-top: 22rpx; padding: 0 28rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 24rpx; line-height: 68rpx; }

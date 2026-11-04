@@ -1,6 +1,6 @@
 import type { GeoPoint } from '@/common/location'
 import { request, uploadFile } from '@/common/request'
-import type { City, FavoriteItem, FishingSpot, FuelPrice, FuelPriceSource, FuelStationPage, RouteCard, RouteDetail, UserProfile, Weather, StationKind } from '@/types/domain'
+import type { City, FavoriteItem, FishingSpot, FuelPrice, FuelPriceHistory, FuelPriceSource, FuelStationPage, RouteCard, RouteDetail, UserProfile, Weather, StationKind } from '@/types/domain'
 
 export const outdoorApi = {
   cities: () => request<City[]>('/cities'),
@@ -17,6 +17,9 @@ export const outdoorApi = {
   // region 仅在 source 为 province 时返回，用于界面标注「XX省参考价」
   fuelPrices: (cityCode: string) =>
     request<{ items: FuelPrice[]; updatedAt: string; source: FuelPriceSource; region?: string }>(`/fuel/prices?cityCode=${cityCode}`),
+  // 某油号每次调价的历史价（按日期倒序）：二级页走势图与调价列表
+  fuelPriceHistory: (cityCode: string, grade: string) =>
+    request<FuelPriceHistory>(`/fuel/prices/history?cityCode=${encodeURIComponent(cityCode)}&grade=${encodeURIComponent(grade)}`),
   // 传入设备定位坐标时，服务端按真实位置计算距离、由近到远排序后分页返回；
   // cityCode 用于「附近无站点」时兜底返回该城市站点（避免永远空白）；
   // kind 区分加油站 / 充电站，不传默认加油站（向后兼容老端）

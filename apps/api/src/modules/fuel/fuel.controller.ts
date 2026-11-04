@@ -2,7 +2,7 @@ import { Controller, Get, Post, Query, Headers } from '@nestjs/common'
 import { UnauthorizedException } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import { parseGeoPoint } from '../../common/geo'
-import { FuelPricesDto, FuelStationsDto } from './fuel.dto'
+import { FuelPriceHistoryDto, FuelPricesDto, FuelStationsDto } from './fuel.dto'
 import { FuelService } from './fuel.service'
 import { StationSyncService, StationSyncSummary } from './station-sync.service'
 
@@ -14,6 +14,10 @@ export class FuelController {
     private readonly stationSync: StationSyncService,
   ) {}
   @Get('prices') prices(@Query() query: FuelPricesDto) { return this.fuel.prices(query.cityCode) }
+  /** 某油号每次调价的历史价（含完整 YYYY-MM-DD 日期），用于二级页走势图与调价列表 */
+  @Get('prices/history') priceHistory(@Query() query: FuelPriceHistoryDto) {
+    return this.fuel.priceHistory(query.cityCode, query.grade, query.limit)
+  }
   @Get('stations') stations(@Query() query: FuelStationsDto) {
     return this.fuel.stations(parseGeoPoint(query.lat, query.lng), query.page, query.pageSize, query.cityCode, query.kind)
   }

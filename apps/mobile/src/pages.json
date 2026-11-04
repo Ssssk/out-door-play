@@ -6,6 +6,7 @@
   "pages": [
     { "path": "pages/index/index", "style": { "navigationStyle": "custom", "enablePullDownRefresh": true } },
     { "path": "pages/fuel/index", "style": { "navigationStyle": "custom", "enablePullDownRefresh": true } },
+    { "path": "pages/fuel/history/index", "style": { "navigationStyle": "custom", "enablePullDownRefresh": true } },
     { "path": "pages/mine/index", "style": { "navigationStyle": "custom" } },
     { "path": "pages/route-detail/index", "style": { "navigationStyle": "custom" } },
     { "path": "pages/route-map/index", "style": { "navigationStyle": "custom", "disableScroll": true } },
@@ -20,7 +21,7 @@
     "backgroundColor": "#fffef9",
     "borderStyle": "white",
     "list": [
-      { "pagePath": "pages/index/index", "text": "出车", "iconPath": "static/icons/tab-drive.png", "selectedIconPath": "static/icons/tab-drive-active.png" },
+      { "pagePath": "pages/index/index", "text": "出门", "iconPath": "static/icons/tab-drive.png", "selectedIconPath": "static/icons/tab-drive-active.png" },
       { "pagePath": "pages/fuel/index", "text": "加油", "iconPath": "static/icons/tab-fuel.png", "selectedIconPath": "static/icons/tab-fuel-active.png" },
       { "pagePath": "pages/mine/index", "text": "我的", "iconPath": "static/icons/tab-me.png", "selectedIconPath": "static/icons/tab-me-active.png" }
     ]

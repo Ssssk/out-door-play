@@ -56,6 +56,20 @@ export interface FuelPrice {
   change: number
 }
 
+/** 单期调价快照：date 为完整 YYYY-MM-DD，change 为较上期涨跌（元/升） */
+export interface FuelPriceHistoryItem {
+  date: string
+  price: number
+  change: number
+}
+
+/** 某油号的历史调价序列；items 按日期倒序（最新一期在前） */
+export interface FuelPriceHistory {
+  items: FuelPriceHistoryItem[]
+  region: string
+  grade: string
+}
+
 /** 油价数据来源：省级官方参考价 / 暂无（成品油按省定价，无城市级数据源） */
 export type FuelPriceSource = 'province' | 'empty'
 

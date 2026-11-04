@@ -20,17 +20,33 @@ interface DbRow {
   price95: number
 }
 
+interface SnapshotRow {
+  region: string
+  regionLabel: string
+  grade: string
+  price: number
+  change: number
+  publishedAt: Date
+}
+
 function createService(opts: {
   rows?: DbRow[]
   totalRows?: number
   live?: { id: string; name: string; brand: string; address: string; latitude: number; longitude: number }[] | null
   provinceResult?: ProvinceFuelPrice | null
+  snapshots?: SnapshotRow[]
+  upsertError?: boolean
 } = {}) {
   const rows = opts.rows ?? []
   const totalRows = opts.totalRows ?? rows.length
   const findMany = vi.fn(async (..._args: unknown[]) => rows)
   const count = vi.fn(async () => totalRows)
-  const prisma = { fuelStation: { findMany, count } } as never
+  const snapshotUpsert = vi.fn(async () => { if (opts.upsertError) throw new Error('db down') })
+  const snapshotFindMany = vi.fn(async () => opts.snapshots ?? [])
+  const prisma = {
+    fuelStation: { findMany, count },
+    fuelPriceSnapshot: { upsert: snapshotUpsert, findMany: snapshotFindMany },
+  } as never
   const fetchPage = vi.fn(async () => (opts.live === undefined ? null : opts.live ? {
     items: opts.live.map((s) => ({ ...s, province: '湖北省' })),
     count: opts.live.length,
@@ -38,7 +54,10 @@ function createService(opts: {
   const tencent = { fetchPage } as never
   const fetchByRegion = vi.fn(async (_region: string) => opts.provinceResult ?? null)
   const provincePriceProvider = { fetchByRegion } as never
-  return { service: new FuelService(prisma, tencent, provincePriceProvider), findMany, count, fetchPage, fetchByRegion }
+  return {
+    service: new FuelService(prisma, tencent, provincePriceProvider),
+    findMany, count, fetchPage, fetchByRegion, snapshotUpsert, snapshotFindMany,
+  }
 }
 
 describe('FuelService.stations 读库优先', () => {
@@ -138,5 +157,63 @@ describe('FuelService.prices', () => {
   it('reports an empty source when the province source is unavailable', async () => {
     const result = await createService().service.prices('110000')
     expect(result).toEqual({ items: [], updatedAt: '', source: 'empty' })
+  })
+})
+
+describe('FuelService 油价快照与历史', () => {
+  it('取到省级价时按油号落一份调价快照', async () => {
+    const { service, snapshotUpsert } = createService({ provinceResult: provincePrice })
+    await service.prices('420100')
+    expect(snapshotUpsert).toHaveBeenCalledTimes(1)
+    expect(snapshotUpsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: { region_grade_publishedAt: { region: '湖北', grade: '92# 汽油', publishedAt: provincePrice.publishedAt } },
+      create: expect.objectContaining({ region: '湖北', regionLabel: '湖北省', price: 8.31, change: 0.21 }),
+    }))
+  })
+
+  it('同一调价期进程内去重，不重复写库', async () => {
+    const { service, snapshotUpsert } = createService({ provinceResult: provincePrice })
+    await service.prices('420100')
+    await service.prices('420100')
+    expect(snapshotUpsert).toHaveBeenCalledTimes(1)
+  })
+
+  it('快照写入失败不影响今日油价返回', async () => {
+    const { service } = createService({ provinceResult: provincePrice, upsertError: true })
+    const result = await service.prices('420100')
+    expect(result.source).toBe('province')
+    expect(result.items).toEqual(provincePrice.items)
+  })
+
+  it('历史价按日期倒序返回完整 YYYY-MM-DD 与省份口径', async () => {
+    const snapshots: SnapshotRow[] = [
+      { region: '湖北', regionLabel: '湖北省', grade: '92# 汽油', price: 8.31, change: 0.21, publishedAt: new Date(Date.UTC(2026, 8, 12)) },
+      { region: '湖北', regionLabel: '湖北省', grade: '92# 汽油', price: 8.10, change: -0.12, publishedAt: new Date(Date.UTC(2026, 7, 26)) },
+    ]
+    const { service, snapshotFindMany } = createService({ snapshots })
+    const result = await service.priceHistory('420100', '92# 汽油')
+    expect(snapshotFindMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { region: '湖北', grade: '92# 汽油' },
+      orderBy: { publishedAt: 'desc' },
+      take: 24,
+    }))
+    expect(result.items).toEqual([
+      { date: '2026-09-12', price: 8.31, change: 0.21 },
+      { date: '2026-08-26', price: 8.1, change: -0.12 },
+    ])
+    expect(result.region).toBe('湖北省')
+  })
+
+  it('未知城市码或非本平台油号返回空历史且不查库', async () => {
+    const { service, snapshotFindMany } = createService()
+    expect((await service.priceHistory('990000', '92# 汽油')).items).toEqual([])
+    expect((await service.priceHistory('420100', '不存在的油号')).items).toEqual([])
+    expect(snapshotFindMany).not.toHaveBeenCalled()
+  })
+
+  it('历史期数受上限约束', async () => {
+    const { service, snapshotFindMany } = createService()
+    await service.priceHistory('420100', '92# 汽油', 999)
+    expect(snapshotFindMany).toHaveBeenCalledWith(expect.objectContaining({ take: 60 }))
   })
 })

@@ -1,8 +1,8 @@
-import { BadRequestException, Injectable, Inject } from '@nestjs/common'
+import { BadRequestException, Injectable, Inject, Logger } from '@nestjs/common'
 import { PrismaService } from '../../database/prisma.service'
 import { distanceInKm, roundDistanceKm } from '../../common/geo'
 import { FUEL_GRADES, ProvinceFuelPriceProvider, regionFromCityCode } from './province-price.provider'
-import { STATION_PAGE_SIZE, STATION_PAGE_SIZE_MAX } from './fuel.dto'
+import { FUEL_HISTORY_LIMIT, FUEL_HISTORY_LIMIT_MAX, STATION_PAGE_SIZE, STATION_PAGE_SIZE_MAX } from './fuel.dto'
 import type { GeoPoint } from '../../common/geo'
 import type { ProvinceFuelPrice } from './province-price.provider'
 import type { StationKind, StationProvider } from './station-provider'
@@ -21,6 +21,8 @@ export type FuelPriceSource = 'province' | 'empty'
 const STATION_SEARCH_RADIUS_KM = 30
 /** 读库用的经纬度包围盒半宽（度）：≈ ±25km，先粗筛再精确算距，避免全表扫描 */
 const BOX_HALF_DEG = 0.3
+/** 允许查询历史走势的油号（与省级源返回文案一致），避免任意字符串查库 */
+const GRADE_VALUES: readonly string[] = Object.values(FUEL_GRADES)
 
 export interface StationItem {
   id: string
@@ -38,6 +40,10 @@ export interface StationItem {
 
 @Injectable()
 export class FuelService {
+  private readonly logger = new Logger(FuelService.name)
+  /** 同一调价期进程内只写一次库；跨进程或重启后由唯一约束保证幂等 */
+  private readonly snapshotKeys = new Set<string>()
+
   constructor(
     private readonly prisma: PrismaService,
     @Inject(STATION_PROVIDER) private readonly stationProvider: StationProvider,
@@ -51,11 +57,37 @@ export class FuelService {
     if (!province) {
       return { items: [], updatedAt: '', source: 'empty' satisfies FuelPriceSource }
     }
+    // 省级源只返回当期价：每观测到一个新的调价日期就落一份快照，历史走势由此逐期积累
+    await this.persistPriceSnapshot(province)
     return {
       items: province.items,
       updatedAt: this.formatDay(province.publishedAt),
       source: 'province' satisfies FuelPriceSource,
       region: province.regionLabel,
+    }
+  }
+
+  /**
+   * 某油号每次调价的历史价（按日期倒序，最新一期在前）。
+   * 日期返回完整 `YYYY-MM-DD`：`prices()` 的 `updatedAt` 只有 MM-DD，不足以画走势。
+   */
+  async priceHistory(cityCode: string, grade: string, limit = FUEL_HISTORY_LIMIT) {
+    const region = regionFromCityCode(cityCode)
+    const size = Math.min(Math.max(1, Math.trunc(limit) || FUEL_HISTORY_LIMIT), FUEL_HISTORY_LIMIT_MAX)
+    if (!region || !GRADE_VALUES.includes(grade)) return { items: [], region: '', grade }
+    const rows = await this.prisma.fuelPriceSnapshot.findMany({
+      where: { region, grade },
+      orderBy: { publishedAt: 'desc' },
+      take: size,
+    })
+    return {
+      items: rows.map((row) => ({
+        date: row.publishedAt.toISOString().slice(0, 10),
+        price: row.price,
+        change: row.change,
+      })),
+      region: rows[0]?.regionLabel ?? region,
+      grade,
     }
   }
 
@@ -167,6 +199,37 @@ export class FuelService {
   private async fetchProvincePrice(cityCode: string): Promise<ProvinceFuelPrice | null> {
     const region = regionFromCityCode(cityCode)
     return region ? this.provincePrice.fetchByRegion(region) : null
+  }
+
+  /**
+   * 把本次省级价按「省份 × 油号 × 调价日期」写成快照。
+   * 免费源不提供历史序列，只有从启用日起逐期落库才能攒出走势；同期重复写由唯一约束 upsert 幂等，
+   * 且进程内去重避免每次请求都打库。落库失败只告警、不影响今日油价主流程。
+   */
+  private async persistPriceSnapshot(province: ProvinceFuelPrice) {
+    const day = province.publishedAt.toISOString().slice(0, 10)
+    const key = `${province.region}|${day}`
+    if (this.snapshotKeys.has(key)) return
+    try {
+      await Promise.all(province.items.map((item) =>
+        this.prisma.fuelPriceSnapshot.upsert({
+          where: {
+            region_grade_publishedAt: {
+              region: province.region, grade: item.grade, publishedAt: province.publishedAt,
+            },
+          },
+          create: {
+            region: province.region, regionLabel: province.regionLabel,
+            grade: item.grade, price: item.price, change: item.change,
+            publishedAt: province.publishedAt,
+          },
+          update: { regionLabel: province.regionLabel, price: item.price, change: item.change },
+        }),
+      ))
+      this.snapshotKeys.add(key)
+    } catch (error) {
+      this.logger.warn(`油价快照写入失败（下期会重试）：${error instanceof Error ? error.message : String(error)}`)
+    }
   }
 
   /**
