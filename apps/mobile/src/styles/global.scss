@@ -3,6 +3,15 @@ page {
   background: #fff;
   color: var(--chumen-text);
   font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  scrollbar-width: none;
+}
+
+/* 全局隐藏滚动条：App.vue 的非 scoped 样式会编译进 app.wxss / H5 全局样式，
+   所有页面（含各 tab 与二级页）都生效，且不影响滚动本身。 */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 view, text, image, button, input, textarea { box-sizing: border-box; }
