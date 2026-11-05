@@ -189,7 +189,7 @@ jobs:
           release_dir="$deploy_dir/releases/$GITHUB_SHA"
           ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "docker pull docker.1ms.run/library/node:22-bookworm-slim && docker tag docker.1ms.run/library/node:22-bookworm-slim node:22-bookworm-slim && docker pull docker.1ms.run/library/nginx:1.27-alpine && docker tag docker.1ms.run/library/nginx:1.27-alpine nginx:1.27-alpine && docker pull docker.1ms.run/library/mysql:8.4 && docker tag docker.1ms.run/library/mysql:8.4 mysql:8.4 && cd '$release_dir' && docker build --build-arg DEBIAN_MIRROR=http://mirrors.tencent.com/debian --build-arg DEBIAN_SECURITY_MIRROR=http://mirrors.tencent.com/debian-security --build-arg PNPM_REGISTRY=https://registry.npmmirror.com -f docker/api.Dockerfile -t '$API_IMAGE' . && docker build --build-arg PNPM_REGISTRY=https://registry.npmmirror.com -f docker/admin.Dockerfile -t '$WEB_IMAGE' ."
 
-      - name: Migrate and restart
+      - name: Migrate, restart and backfill fuel prices
         shell: bash
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -200,7 +200,7 @@ jobs:
           set -euo pipefail
           deploy_port="${DEPLOY_PORT:-22}"
           deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
-          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api db:deploy && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api admin:sync-permissions && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api migrate:route-covers && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api migrate:clear-description-placeholder && docker compose --env-file .env.production -f compose.prod.yaml up -d --remove-orphans --wait --wait-timeout 120"
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api db:deploy && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api admin:sync-permissions && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api migrate:route-covers && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api migrate:clear-description-placeholder && docker compose --env-file .env.production -f compose.prod.yaml up -d --remove-orphans --wait --wait-timeout 120 && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api backfill:fuel-prices"
 
       - name: Data-source connectivity self-check (inside api container)
         shell: bash
