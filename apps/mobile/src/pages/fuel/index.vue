@@ -7,10 +7,12 @@
       <view v-if="prices.length === 0" class="price-empty" role="status">这个城市暂时没有油价数据</view>
       <view v-else class="price-grid">
         <view v-for="price in prices" :key="price.grade" class="price-card" hover-class="price-card-hover" @click="openHistory(price)">
-          <text class="grade">{{ price.grade }}</text>
+          <view class="price-card-top">
+            <text class="grade">{{ price.grade }}</text>
+            <text class="history-link">查看历史 ›</text>
+          </view>
           <view><text class="price">{{ price.price.toFixed(2) }}</text><text class="unit">元/升</text></view>
           <text class="change" :class="price.change > 0 ? 'up' : price.change < 0 ? 'down' : 'flat'">{{ price.change > 0 ? '↑' : price.change < 0 ? '↓' : '—' }} {{ price.change === 0 ? '持平' : `${Math.abs(price.change).toFixed(2)} 较上期` }}</text>
-          <text class="history-link">查看历史 ›</text>
         </view>
       </view>
 
@@ -144,9 +146,11 @@ onShareAppMessage(() => ({
 .updated-at { display: block; margin: 34rpx 0 20rpx; color: var(--chumen-muted); font-size: 22rpx; text-align: right; }
 .price-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20rpx; row-gap: 20rpx; }
 .price-empty { padding: 60rpx 0; border: 2rpx solid var(--chumen-line); border-radius: 34rpx; background: var(--chumen-soft); color: var(--chumen-muted); font-size: 24rpx; text-align: center; }
-.price-card { padding: 28rpx 30rpx; border: 2rpx solid var(--chumen-line); border-radius: 34rpx; background: var(--chumen-soft); }
+/* 卡片留出更舒展的高度：三行信息（油号 / 价格 / 涨跌）纵向均分，避免挤在一起 */
+.price-card { display: flex; flex-direction: column; justify-content: space-between; min-height: 220rpx; padding: 32rpx 30rpx; border: 2rpx solid var(--chumen-line); border-radius: 34rpx; background: var(--chumen-soft); }
 .price-card-hover { opacity: .86; }
-.history-link { display: block; margin-top: 12rpx; color: var(--chumen-muted); font-size: 22rpx; text-align: right; }
+.price-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10rpx; }
+.history-link { color: var(--chumen-muted); font-size: 22rpx; white-space: nowrap; }
 .grade, .change { display: block; color: var(--chumen-muted); font-size: 24rpx; }
 .price { margin-right: 8rpx; color: var(--chumen-ink); font-size: 46rpx; font-weight: 900; }
 .unit { font-size: 22rpx; }.change { margin-top: 6rpx; }.up { color: #e5484d; }.down { color: #2ba24c; }

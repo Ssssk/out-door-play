@@ -13,12 +13,6 @@
       </view>
 
       <template v-else>
-        <view class="summary card-surface">
-          <text class="summary-label">{{ region ? `${region}参考价` : '省级参考价' }}</text>
-          <text class="summary-price">{{ latest ? latest.price.toFixed(2) : '—' }}<text class="summary-unit"> 元/升</text></text>
-          <text class="summary-meta">{{ latest ? latest.date : '—' }} 调价 · 共 {{ items.length }} 期记录</text>
-        </view>
-
         <view class="chart-card card-surface">
           <view class="section-head">
             <text class="section-title">价格走势</text>
@@ -81,7 +75,6 @@ import type { FuelPriceHistoryItem } from '@/types/domain'
 const appStore = useAppStore()
 const grade = ref('')
 const items = ref<FuelPriceHistoryItem[]>([])
-const region = ref('')
 const loading = ref(true)
 const loadError = ref('')
 const chartWidth = CHART_WIDTH
@@ -91,7 +84,6 @@ const chartHeight = CHART_HEIGHT
 const chart = computed(() =>
   buildPriceChart([...items.value].reverse().map((item) => ({ date: item.date, price: item.price }))),
 )
-const latest = computed(() => items.value[0] ?? null)
 const minPrice = computed(() => chart.value.min)
 const maxPrice = computed(() => chart.value.max)
 const firstDate = computed(() => chart.value.coords[0]?.date ?? '')
@@ -118,7 +110,6 @@ async function load() {
   try {
     const result = await outdoorApi.fuelPriceHistory(appStore.city.code, grade.value)
     items.value = result.items
-    region.value = result.region
   } catch (error) {
     loadError.value = userFacingError(error, '历史油价加载失败')
   } finally {
@@ -138,10 +129,6 @@ function changeText(change: number) {
 .state { display: flex; flex-direction: column; align-items: center; gap: 16rpx; padding: 120rpx 32rpx; color: var(--chumen-muted); font-size: 26rpx; text-align: center; }
 .state button { min-height: 60rpx; margin-top: 8rpx; padding: 0 30rpx; border-radius: 999rpx; background: var(--chumen-ink); color: var(--chumen-lime); font-size: 24rpx; line-height: 60rpx; }
 .state-hint { font-size: 22rpx; }
-.summary { display: flex; flex-direction: column; gap: 8rpx; padding: 32rpx; border-radius: 34rpx; }
-.summary-label, .summary-meta { color: var(--chumen-muted); font-size: 24rpx; }
-.summary-price { color: var(--chumen-ink); font-size: 60rpx; font-weight: 900; }
-.summary-unit { font-size: 24rpx; font-weight: 500; }
 .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20rpx; }
 .section-title { color: var(--chumen-ink); font-size: 30rpx; font-weight: 800; }
 .chart-range { color: var(--chumen-muted); font-size: 22rpx; }
