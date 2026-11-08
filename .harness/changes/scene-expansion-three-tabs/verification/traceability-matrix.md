@@ -66,3 +66,18 @@
 | 契约 | `pnpm test:contract` | 26 operation / 6 contract 通过 |
 | 静态检查 | `pnpm lint`、`pnpm format:check` | 0 error（既有 45 warning）、格式通过 |
 | Harness | `node .harness/scripts/validate-harness.mjs` | Warnings 0 / Errors 0 |
+
+## 线上只读冒烟（2026-11-08，正式环境）
+
+真实结果见 `evidence/2026-11-08-production-deploy.md` 与 `deployment-2026-11-08.evidence.json`。这些是 **HTTP 只读探测**，不替代后台 Chrome E2E 与微信小程序真机 UAT，因此矩阵中对应行仍 `not-run`。
+
+| 覆盖项 | 生产结果 |
+|---|---|
+| `GET /v1/config/scene-tabs` | 200，3 项默认 `drive / play / wash` |
+| `scene=play`（含 `subType=fishing`） | 200，钓鱼数据 `scene=play` + `subType=fishing` |
+| `scene=wash` | 200，0 条（一期空态） |
+| `scene=fish` 兼容读 | 200，2 条 |
+| `scene=drive&subType=fishing` | 422 `SCENE_SUBTYPE_INVALID` |
+| 详情端点 `/v1/routes/:id` | 200，按 scene 集合放行 |
+| `/admin/routes` 与视图分块 | 200；`RoutesView` / `SceneTabsConfigView` 含 3 tab 与子类型文案 |
+| Expand Migration + 幂等回填 + 发布前备份 | 流水线步骤全部 `success` |

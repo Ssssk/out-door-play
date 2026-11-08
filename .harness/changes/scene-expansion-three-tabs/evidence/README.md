@@ -1,6 +1,6 @@
 # 证据目录说明
 
-> 当前目录尚无执行证据。需求/设计 Gate 已批准、Change 为 `implementing`，但验证与发布证据尚未产生，所有验证 `not-run`。
+> 现有执行证据：本地静态 / 单元 / 契约（`*-2026-11-08.evidence.json`）、正式环境部署与线上只读冒烟（`deployment-2026-11-08.evidence.json`）。需求/设计 Gate 已批准，Change 仍为 `implementing`；真实 MySQL 集成、备份恢复演练、微信端 UAT、E2E、独立 Reviewer 与后续 Gate 均 `not-run`。
 
 ## 命名与内容
 

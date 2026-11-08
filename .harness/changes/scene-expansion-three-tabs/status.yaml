@@ -43,6 +43,6 @@ approvals:
   release_owner: "pending"
 
 blocking_risks:
-  - "Q-E04：授权人、目标环境、动作范围已由用户 2026-11-08 部署指令明确（approvals/2026-11-08-production-deploy.md），发布前备份点已由流水线生成；恢复演练、维护窗口与发布后观察仍 not-run"
+  - "Q-E04：正式环境部署已于 2026-11-08 执行成功（run 42483370291，evidence/2026-11-08-production-deploy.md），发布前备份步骤 success；恢复演练、微信端 UAT、独立 Reviewer、既有安全门禁失败与发布/完成 Gate 仍 not-run，Q-E04 不视为已关闭"
   - "生产 ENUM 变更与数据回填需要明确授权、备份点与恢复演练"
   - "微信小程序体验版/真机验收与独立 Reviewer 尚未执行"

@@ -1,6 +1,6 @@
 # 实施任务
 
-> **当前状态**：需求 Gate 与设计 Gate 已于 2026-11-08 由用户书面批准（`approvals/2026-11-08-requirements-design.md`），`status.yaml` 进入 `implementing`。代码、本地静态/单元/契约/构建检查完成，证据见 `evidence/2026-11-08-implementation-phase2.md`。Q-E04 的备份点已由发布工作流前置步骤覆盖，但恢复演练、目标端 UAT、独立 Reviewer 仍未执行；实现及之后 Gate 保持 `pending`。用户于 2026-11-08 给出正式环境部署指令，见 `approvals/2026-11-08-production-deploy.md`。
+> **当前状态**：需求 Gate 与设计 Gate 已于 2026-11-08 由用户书面批准（`approvals/2026-11-08-requirements-design.md`），`status.yaml` 进入 `implementing`。代码、本地静态/单元/契约/构建检查完成，证据见 `evidence/2026-11-08-implementation-phase2.md`；正式环境（API + 后台）已按用户指令发布成功，证据见 `evidence/2026-11-08-production-deploy.md`。恢复演练、微信端 UAT、浏览器 E2E、独立 Reviewer 与既有安全门禁失败仍未关闭；实现及之后 Gate 保持 `pending`。部署授权见 `approvals/2026-11-08-production-deploy.md`。
 
 - [x] TASK-E01 `[FR-EXP-001][AC-EXP-001]` 2026-11-08 完成：四条冲突逐条裁决、Q-E01 ~ Q-E03 书面确认、需求/设计 Gate 批准、`source-baseline.json` 标为 `verified`；Q-E04 仍留发布 Gate 前关闭
 - [ ] TASK-E02 `[NFR-MIG-001][AC-EXP-015]` **静态评估已交付**（`backend/ddl-assessment.md`）；本机无 Docker / `DATABASE_URL`，容器化 MySQL 同版本演练、行数、锁等待、复制延迟、P95 实测仍 `not-run`
@@ -16,8 +16,8 @@
 - [x] TASK-E12 `[AC-EXP-013]` `contracts/openapi.yaml` 已登记；`pnpm test:contract` 输出 `OpenAPI contract passed for 26 operation(s) across 6 contract(s)`
 - [ ] TASK-E13 `[AC-EXP-003]` 至 `[AC-EXP-016]` 本地单元（API 145 / mobile 76 / admin 4）、组件、静态与契约已执行；集成（真实 MySQL）、E2E、性能、可访问性、UAT `not-run`
 - [ ] TASK-E14 `[NFR-COMPAT-001][AC-EXP-014]` 四组合滚动兼容矩阵、恢复演练与微信真机验证 `not-run`
-- [ ] TASK-E15 `[FR-EXP-003][NFR-MIG-001]` 已获得正式环境部署指令并在 `.github/workflows/deploy-production.yml` 接入「发布前备份 → Expand Migration → dry-run → apply → 幂等校验」；实执行结果待发布流水线证据
-- [ ] TASK-E16 `[DEC-E12]` API + 后台发布待流水线执行；小程序体验版上传、UAT、微信审核与正式发布 `not-run`
+- [x] TASK-E15 `[FR-EXP-003][NFR-MIG-001]` 正式部署流水线 run `42483370291` 实执行成功：发布前备份 `success`、Expand Migration `success`、回填 dry-run/apply/幂等校验 `success`；线上 `play+fishing` 数据可见、`fish` 读兼容保持。恢复演练仍 `not-run`
+- [ ] TASK-E16 `[DEC-E12]` **API + 后台已于 2026-11-08 发布到 `https://www.chumenliuliu.cloud/admin/routes`**；小程序体验版上传、真机 UAT、微信审核与正式发布 `not-run`
 - [ ] TASK-E17 `[07-knowledge.md]` `knowledge-retrieval` 复核、迁移经验沉淀与 Wiki 同步待 Change 完成后执行
 - [ ] TASK-E18 `[completion.md]` 独立 Reviewer 评审、Gate 一致性检查与完成报告 `not-run`
 

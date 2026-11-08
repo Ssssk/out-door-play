@@ -1,6 +1,6 @@
 # 发布计划
 
-> 状态：发布流水线脚本已就绪，实执行 `not-run`。发布 Gate 必须由授权人批准；AI 不得代批。用户于 2026-11-08 给出正式环境部署指令，范围见 `approvals/2026-11-08-production-deploy.md`。
+> 状态：API + 后台已于 2026-11-08 发布成功（GitHub Actions `Deploy production` run `42483370291`，`completed / success`，证据 `evidence/2026-11-08-production-deploy.md`）。小程序端发布、发布 Gate 与完成 Gate 仍 `not-run`；发布 Gate 必须由授权人批准，AI 不得代批。用户部署指令与范围见 `approvals/2026-11-08-production-deploy.md`。
 
 ## 前置条件
 

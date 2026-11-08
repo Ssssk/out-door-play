@@ -1,0 +1,16 @@
+{
+  "changeId": "CHG-SCENE-EXPANSION-001",
+  "type": "deployment",
+  "status": "passed",
+  "commit": "e389b1123cee7da39c03b9cd2ff69c37ad948977",
+  "environment": "production / www.chumenliuliu.cloud / GitHub Actions Deploy production run 42483370291 / compose.prod.yaml",
+  "startedAt": "2026-11-08T13:06:39Z",
+  "finishedAt": "2026-11-08T13:17:39Z",
+  "command": "gh workflow run deploy-production.yml --ref main（由一次性 run 42483363862 派发）；流水线执行 build-images / 发布前 mysqldump 备份 / prisma migrate deploy / 幂等回填 dry-run+apply+verify / 重启 / 站点同步 / 冒烟；随后 curl 只读探测生产端点",
+  "exitCode": 0,
+  "summary": "Deploy production #80 completed/success，build-images 与 deploy 两个 job 的 16 个步骤全部 success（含新增备份步骤与回填幂等校验）。线上 /v1/config/scene-tabs 返回 3 项默认；scene=play 与 play+subType=fishing 返回 2 条钓鱼数据；scene=wash 返回 0 条空态；scene=fish 旧包读兼容 200；drive+fishing 返回 422 SCENE_SUBTYPE_INVALID；详情按集合放行；/admin/routes 200 且 RoutesView/SceneTabsConfigView 分块含 3 tab 与子类型文案。恢复演练、微信端 UAT、浏览器 E2E 与独立 Reviewer 仍 not-run；Harness Contract 既有安全门禁失败未通过。",
+  "runner": "GitHub Actions（workflow_dispatch，触发链 shijingkun -> github-actions[bot]）+ AI 实现者只读探测",
+  "requirementIds": ["FR-EXP-001", "FR-EXP-003", "FR-EXP-004", "FR-EXP-005", "FR-EXP-006", "FR-EXP-007", "FR-EXP-008", "FR-EXP-009", "FR-CFG-006"],
+  "acceptanceIds": ["AC-EXP-001", "AC-EXP-002", "AC-EXP-004", "AC-EXP-005", "AC-EXP-007", "AC-EXP-011", "AC-EXP-012", "AC-EXP-013", "AC-EXP-014"],
+  "report": "evidence/2026-11-08-production-deploy.md"
+}
