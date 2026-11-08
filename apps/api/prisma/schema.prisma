@@ -10,6 +10,15 @@ datasource db {
 enum Scene {
   drive
   fish
+  play
+  wash
+}
+
+/// 粗门玩玩的子类型；仅 scene=play 时允许非空（CHG-SCENE-EXPANSION-001）
+enum PlayType {
+  fishing
+  camping
+  checkin
 }
 
 enum RouteStatus {
@@ -96,6 +105,7 @@ model Discovery {
   id              String      @id @db.VarChar(64)
   cityCode        String      @map("city_code") @db.VarChar(6)
   scene           Scene
+  subType         PlayType?   @map("sub_type")
   title           String      @db.VarChar(128)
   rank            Int
   rankTag         String      @map("rank_tag") @db.VarChar(64)
@@ -140,6 +150,7 @@ model Discovery {
   updatedAt       DateTime    @updatedAt @map("updated_at")
 
   @@index([cityCode, scene])
+  @@index([cityCode, scene, subType])
   @@map("discoveries")
 }
 

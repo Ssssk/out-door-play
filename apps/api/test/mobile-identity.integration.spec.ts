@@ -36,7 +36,7 @@ describe('mobile identity MySQL integration', () => {
     prisma = app.get(PrismaService)
     // Vitest/esbuild 不发射 Nest constructor metadata；显式注入真实 Prisma 与 provider。
     identity = new IdentityService(prisma, new WechatIdentityProvider(), new DevIdentityProvider())
-    users = new UserService(prisma)
+    users = new UserService(prisma, { enabledScenes: async () => new Set(['drive']) } as never)
 
     await prisma.city.upsert({
       where: { code: cityCode },

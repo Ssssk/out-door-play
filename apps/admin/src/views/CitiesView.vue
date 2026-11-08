@@ -100,7 +100,7 @@ onMounted(load)
 </script>
 
 <template>
-  <PageHeader title="城市管理" group="路线运营" description="城市开关与场景配置实时影响小程序端可见范围">
+  <PageHeader title="城市管理" group="路线运营" description="城市开关影响该城市数据；场景标记仅用于资料维护">
     <el-button v-if="canWrite" type="primary" @click="openCreate">+ 新增城市</el-button>
   </PageHeader>
 
@@ -153,7 +153,7 @@ onMounted(load)
         <el-checkbox-group v-model="form.scenes">
           <el-checkbox v-for="scene in SCENES" :key="scene.value" :value="scene.value" :label="scene.value">{{ scene.label }}</el-checkbox>
         </el-checkbox-group>
-        <div class="field-hint">关闭的场景在小程序端不可见（影响首页 tab 与列表）</div>
+        <div class="field-hint">城市场景标记仅用于资料维护，不影响小程序端显隐；首页分类请到「系统配置 / 首页分类目录」配置</div>
       </el-form-item>
       <el-form-item label="启用">
         <el-switch v-model="form.enabled" />

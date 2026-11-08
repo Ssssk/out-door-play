@@ -1,0 +1,45 @@
+id: "CHG-HOME-CATEGORY-001"
+name: "home-category-visibility"
+change_type: "feature"
+state: "implementing"
+risk_level: "medium"
+owner: "用户（产品、架构与 UX Owner）"
+created_at: "2026-11-08"
+updated_at: "2026-11-08"
+
+scope:
+  frontend: true
+  backend: true
+  api: true
+  database: true
+  redis: false
+  messaging: false
+  security: true
+  deployment: true
+  ux: true
+  performance: true
+  operations: true
+  compliance: false
+
+gates:
+  requirements: "passed"
+  design: "passed"
+  implementation: "pending"
+  verification: "pending"
+  security: "pending"
+  uat: "pending"
+  operations: "pending"
+  release: "pending"
+  completion: "pending"
+
+approvals:
+  product_owner: "用户"
+  architecture_owner: "用户"
+  ux_owner: "用户"
+  security_owner: "pending"
+  operations_owner: "pending"
+  product_acceptance_owner: "pending"
+  reviewer: "pending"
+  release_owner: "pending"
+
+blocking_risks: []

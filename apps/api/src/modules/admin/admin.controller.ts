@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UploadedFile, UseInterceptors } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
-import { ApiTags } from '@nestjs/swagger'
+import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import { AdminService } from './admin.service'
 import { CurrentAdmin, CurrentRequestId, RequireAdminPermissions } from '../admin-auth/admin-auth.decorators'
 import type { AdminActor } from '../admin-auth/admin-auth.types'
@@ -15,6 +15,7 @@ import {
   UpdateFeedStatusDto,
   UpdateFuelStationDto,
   UpdateQrConfigDto,
+  UpdateSceneTabsDto,
   UpsertRankingDto,
   UpdateRouteDto,
   UpdateUserNoteDto,
@@ -48,6 +49,12 @@ export class AdminController {
   @RequireAdminPermissions('user:ban') @Patch('users/:id/note') updateUserNote(@Param('id') id: string, @Body() input: UpdateUserNoteDto) { return this.admin.updateUserNote(id, input) }
   @RequireAdminPermissions('config:read') @Get('config/qrcodes') qrcodes() { return this.admin.qrcodes() }
   @RequireAdminPermissions('config:write') @Put('config/qrcodes') updateQrcodes(@Body() input: UpdateQrConfigDto) { return this.admin.updateQrcodes(input) }
+  @RequireAdminPermissions('config:read') @Get('config/scene-tabs')
+  @ApiOperation({ operationId: 'getAdminSceneTabs', summary: '管理端读取首页分类全量配置' })
+  sceneTabs() { return this.admin.sceneTabsConfig() }
+  @RequireAdminPermissions('config:write') @Put('config/scene-tabs')
+  @ApiOperation({ operationId: 'updateAdminSceneTabs', summary: '管理端保存首页分类配置' })
+  updateSceneTabs(@Body() input: UpdateSceneTabsDto, @CurrentAdmin() actor: AdminActor) { return this.admin.updateSceneTabsConfig(input, actor) }
   @RequireAdminPermissions('feed:read') @Get('feeds') feeds() { return this.admin.feeds() }
   @RequireAdminPermissions('feed:audit') @Patch('feeds/:id/status') updateFeedStatus(@Param('id') id: string, @Body() input: UpdateFeedStatusDto) { return this.admin.updateFeedStatus(id, input) }
   @RequireAdminPermissions('analytics:read') @Get('analytics') analytics() { return this.admin.analytics() }

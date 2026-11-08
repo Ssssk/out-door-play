@@ -1,12 +1,13 @@
 import type { GeoPoint } from '@/common/location'
 import { request, uploadFile } from '@/common/request'
-import type { City, FavoriteItem, FishingSpot, FuelPrice, FuelPriceHistory, FuelPriceSource, FuelStationPage, RouteCard, RouteDetail, UserProfile, Weather, StationKind } from '@/types/domain'
+import type { City, FavoriteItem, FishingSpot, FuelPrice, FuelPriceHistory, FuelPriceSource, FuelStationPage, PlayType, RouteCard, RouteDetail, Scene, SceneTabsConfigView, UserProfile, Weather, StationKind } from '@/types/domain'
 
 export const outdoorApi = {
   cities: () => request<City[]>('/cities'),
   weather: (cityCode: string) => request<Weather>(`/weather/current?cityCode=${encodeURIComponent(cityCode)}`),
-  routes: (cityCode: string, scene: 'drive' | 'fish') =>
-    request<RouteCard[]>(`/routes?city=${encodeURIComponent(cityCode)}&scene=${encodeURIComponent(scene)}&limit=10`),
+  // scene 含兼容读值 fish（旧包/旧服）；subType 仅 scene=play 时传入，其它场景传了会 422
+  routes: (cityCode: string, scene: Scene, subType?: PlayType) =>
+    request<RouteCard[]>(`/routes?city=${encodeURIComponent(cityCode)}&scene=${encodeURIComponent(scene)}${subType ? `&subType=${encodeURIComponent(subType)}` : ''}&limit=10`),
   route: (id: string) => request<RouteDetail>(`/routes/${encodeURIComponent(id)}`),
   // 「查看完整路线」：驾车轨迹（GCJ-02 点串）。服务端一次规划后永久缓存，重复请求不消耗配额
   routeLine: (id: string) =>
@@ -28,10 +29,12 @@ export const outdoorApi = {
   me: () => request<UserProfile>('/user/me', { auth: 'required' }),
   // 运营后台「上传二维码」配置；未配置时返回空串，页面回退默认入口
   qrcodes: () => request<{ fanGroup: string; contact: string; fanGroupAt: string | null; contactAt: string | null }>('/config/qrcodes'),
+  // 运营后台「系统配置 / 首页分类目录」：只读启用分类；失败由 useSceneTabs 回退内置默认
+  sceneTabs: () => request<SceneTabsConfigView>('/config/scene-tabs'),
   // 微信小程序 wx.request 不支持 PATCH（会直接 fail 成网络错误），故走服务端保留的 POST /user/me 兼容入口
   saveMe: (data: { nickname: string; avatarUrl?: string; phone?: string }) => request<UserProfile>('/user/me', { method: 'POST', data, auth: 'required' }),
   uploadAvatar: (filePath: string) => uploadFile<UserProfile>('/user/avatar', filePath),
-  favorites: (scene: 'drive' | 'fish') => request<FavoriteItem[]>(`/user/favorites?scene=${scene}`, { auth: 'required' }),
+  favorites: (scene: Scene, subType?: PlayType) => request<FavoriteItem[]>(`/user/favorites?scene=${encodeURIComponent(scene)}${subType ? `&subType=${encodeURIComponent(subType)}` : ''}`, { auth: 'required' }),
   addFavorite: (discoveryId: string) => request<{ discoveryId: string; favorited: true }>('/user/favorites', { method: 'POST', data: { discoveryId }, auth: 'required' }),
   removeFavorite: (discoveryId: string) => request<{ discoveryId: string; favorited: false }>(`/user/favorites/${encodeURIComponent(discoveryId)}`, { method: 'DELETE', auth: 'required' }),
 }

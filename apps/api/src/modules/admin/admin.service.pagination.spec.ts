@@ -38,7 +38,7 @@ function routeRow(id: string, title: string): Record<string, unknown> {
 describe('AdminService.routes 分页', () => {
   it('默认返回第一页 20 条，并给出 total 与全局排名', async () => {
     const prisma = fakePrisma({ total: 42, rows: [routeRow('route-1', '八分山日落线'), routeRow('route-2', '东湖绿道线')] })
-    const result = await new AdminService(prisma).routes({})
+    const result = await new AdminService(prisma, {} as never).routes({})
 
     expect(result.page).toBe(1)
     expect(result.pageSize).toBe(20)
@@ -53,7 +53,7 @@ describe('AdminService.routes 分页', () => {
 
   it('第二页的 listRank 延续上一页，不重新从 1 开始', async () => {
     const prisma = fakePrisma({ total: 42, rows: [routeRow('route-21', '第二十一条')] })
-    const result = await new AdminService(prisma).routes({ page: 3, pageSize: 10 })
+    const result = await new AdminService(prisma, {} as never).routes({ page: 3, pageSize: 10 })
 
     expect(result.items[0].listRank).toBe(21)
     const args = vi.mocked(prisma.discovery.findMany).mock.calls[0][0] as { skip?: number; take?: number }
@@ -63,20 +63,31 @@ describe('AdminService.routes 分页', () => {
 
   it('关键词与场景下推到数据库 where，而不是拉全量后在内存里过滤', async () => {
     const prisma = fakePrisma({ total: 3, rows: [] })
-    await new AdminService(prisma).routes({ keyword: ' 日落 ', scene: 'fish' })
+    await new AdminService(prisma, {} as never).routes({ keyword: ' 日落 ', scene: 'fish' })
 
     const where = vi.mocked(prisma.discovery.findMany).mock.calls[0][0] as { where?: Record<string, unknown> }
-    expect(where.where).toMatchObject({ scene: 'fish' })
     expect(where.where?.OR).toEqual([
+      { scene: 'fish' },
+      { scene: 'play', subType: 'fishing' },
+    ])
+    expect(where.where?.AND).toEqual([{ OR: [
       { title: { contains: '日落' } },
       { city: { is: { name: { contains: '日落' } } } },
-    ])
+    ] }])
     expect(vi.mocked(prisma.discovery.count)).toHaveBeenCalledTimes(1)
+  })
+
+  it('子类型筛选下推到数据库 where', async () => {
+    const prisma = fakePrisma({ total: 1, rows: [] })
+    await new AdminService(prisma, {} as never).routes({ scene: 'play', subType: 'camping' })
+
+    const where = vi.mocked(prisma.discovery.findMany).mock.calls[0][0] as { where?: Record<string, unknown> }
+    expect(where.where).toMatchObject({ scene: 'play', subType: 'camping' })
   })
 
   it('无筛选条件时不带 where 过滤', async () => {
     const prisma = fakePrisma({ total: 0, rows: [] })
-    const result = await new AdminService(prisma).routes()
+    const result = await new AdminService(prisma, {} as never).routes()
 
     expect(result).toEqual({ items: [], total: 0, page: 1, pageSize: 20 })
     const where = vi.mocked(prisma.discovery.findMany).mock.calls[0][0] as { where?: Record<string, unknown> }

@@ -22,4 +22,4 @@ echo "  gh run watch"
 echo "  （或）gh run list --workflow=deploy-production.yml"
 echo "  （或）gh run view --web      # 打开网页，production 环境如需审批在此 Approve"
 echo
-echo "部署会自动：构建镜像 → 上传 → prisma migrate deploy（应用 20261025000000_add_station_kind 迁移）→ 重启容器 → 站点同步 → 冒烟测试。"
+echo "部署会自动：构建镜像 → 上传 → 发布前数据库备份 → prisma migrate deploy（含 scene_expansion_expand）→ 重启容器 → 钓鱼数据幂等回填 dry-run/apply/校验 → 站点同步 → 冒烟测试。"

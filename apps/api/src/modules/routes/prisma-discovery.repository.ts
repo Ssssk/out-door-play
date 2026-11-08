@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../../database/prisma.service'
+import { normalizeScene, isBusinessScene } from '../../common/scenes'
+import type { BusinessScene, PlayType, SceneFilter } from '../../common/scenes'
+import type { Prisma } from '../../generated/prisma/client'
 import type { DiscoveryRepository, DiscoveryScene } from './discovery.repository'
 
 const publicDiscoverySelect = {
   id: true,
   scene: true,
+  subType: true,
   title: true,
   rank: true,
   rankTag: true,
@@ -42,6 +46,33 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
     })
   }
 
+  private asFilter(input: SceneFilter | DiscoveryScene | DiscoveryScene[]): SceneFilter {
+    if (typeof input === 'string') return normalizeScene(input)
+    if (Array.isArray(input)) {
+      const scenes = input.filter(isBusinessScene) as BusinessScene[]
+      const legacy = input.includes('fish')
+      if (legacy && !scenes.includes('play')) scenes.push('play')
+      return { scenes, subType: legacy ? 'fishing' : null, legacy }
+    }
+    return input
+  }
+
+  /** 兼容期 legacy=true 时同时命中尚未回填的 fish 行与已回填的 play+fishing 行 */
+  private sceneWhere(filter: SceneFilter): Prisma.DiscoveryWhereInput {
+    if (filter.legacy) {
+      return {
+        OR: [
+          { scene: 'fish' },
+          { scene: { in: filter.scenes }, subType: filter.subType ?? 'fishing' },
+        ],
+      }
+    }
+    return {
+      scene: { in: filter.scenes },
+      ...(filter.subType ? { subType: filter.subType } : {}),
+    }
+  }
+
   /**
    * 榜单标签：路线卡片左上角的「榜单名 Top N」由后台「热门榜单配置」的
    * coverRouteIds 顺序推导（第 1 条即 Top 1），未进榜单的路线不展示标签。
@@ -72,10 +103,11 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
     })
   }
 
-  async list(scene: DiscoveryScene, limit: number, cityCode?: string) {
+  async list(input: SceneFilter | DiscoveryScene, limit: number, cityCode?: string) {
+    const filter = this.asFilter(input)
     const records = await this.prisma.discovery.findMany({
       where: {
-        scene,
+        ...this.sceneWhere(filter),
         status: 'online',
         city: { enabled: true },
         ...(cityCode ? { cityCode } : {}),
@@ -87,9 +119,16 @@ export class PrismaDiscoveryRepository implements DiscoveryRepository {
     return this.applyRankingLabels(records)
   }
 
-  async find(id: string, scene: DiscoveryScene) {
+  async find(id: string, input: SceneFilter | DiscoveryScene | DiscoveryScene[], subType?: PlayType | null) {
+    const filter = this.asFilter(input)
     const record = await this.prisma.discovery.findFirst({
-      where: { id, scene, status: 'online', city: { enabled: true } },
+      where: {
+        id,
+        status: 'online',
+        city: { enabled: true },
+        ...this.sceneWhere(filter),
+        ...(!filter.legacy && subType ? { subType } : {}),
+      },
       select: publicDiscoverySelect,
     })
     // 详情与列表使用同一份榜单标签口径，否则详情会显示库里原始的 rank/rankTag（如「Top 0」）

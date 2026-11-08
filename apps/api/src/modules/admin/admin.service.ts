@@ -1,9 +1,16 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common'
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, PayloadTooLargeException, UnprocessableEntityException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { AdminActor } from '../admin-auth/admin-auth.types'
 import { PrismaService } from '../../database/prisma.service'
+import { SceneTabsConfigService } from '../config/scene-tabs-config.service'
+import {
+  BUSINESS_SCENES, LEGACY_SCENES, SCENE_LABELS, SCENE_SUBTYPE_INVALID, SceneSubTypeInvalidError,
+  isBusinessScene, isFishingRecord, normalizeScene, writableSceneSubType,
+} from '../../common/scenes'
+import type { PlayType, SceneQuery } from '../../common/scenes'
+import type { UpdateSceneTabsDto } from './admin.dto'
 import type { Prisma } from '../../generated/prisma/client'
 import type {
   CreateCityDto,
@@ -39,7 +46,10 @@ const MAX_ROUTE_COVER_BYTES = 5 * 1024 * 1024
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sceneTabs: SceneTabsConfigService,
+  ) {}
 
   async stats() {
     const dayAgo = new Date(Date.now() - 24 * 3600 * 1000)
@@ -78,10 +88,16 @@ export class AdminService {
     const page = query.page ?? DEFAULT_ROUTE_PAGE
     const pageSize = query.pageSize ?? DEFAULT_ROUTE_PAGE_SIZE
     const keyword = query.keyword?.trim()
+    // 场景 OR 与关键词 OR 必须分层，否则后一个会覆盖前一个（fish 兼容 / 关键词同时使用时漏过滤）
     const where: Prisma.DiscoveryWhereInput = {
-      ...(query.scene ? { scene: query.scene } : {}),
+      ...(query.scene === 'fish'
+        ? { OR: [{ scene: 'fish' }, { scene: 'play', subType: 'fishing' }] }
+        : query.scene ? { scene: query.scene } : {}),
+      ...(query.subType ? { subType: query.subType } : {}),
       // 关键词只下推 title / cityName：tags 是 JSON 列，MySQL 无法可靠做数组内模糊匹配
-      ...(keyword ? { OR: [{ title: { contains: keyword } }, { city: { is: { name: { contains: keyword } } } }] } : {}),
+      ...(keyword
+        ? { AND: [{ OR: [{ title: { contains: keyword } }, { city: { is: { name: { contains: keyword } } } }] }] }
+        : {}),
     }
     const [total, records, rankings] = await Promise.all([
       this.prisma.discovery.count({ where }),
@@ -144,12 +160,22 @@ export class AdminService {
     if (!city) throw new NotFoundException('关联城市不存在，请先在城市与位置中维护该城市')
 
     const scene = input.scene
-    const defaultCoverImageUrl = scene === 'fish' ? '/static/fishing/card-fishing-1.jpg' : '/static/routes/card-route-1.jpg'
+    let subType: PlayType | null
+    try {
+      subType = writableSceneSubType(scene, input.subType)
+    } catch (error) {
+      if (error instanceof SceneSubTypeInvalidError) {
+        throw new UnprocessableEntityException({ code: SCENE_SUBTYPE_INVALID, message: error.message })
+      }
+      throw error
+    }
+    const defaultCoverImageUrl = isFishingRecord(scene, subType) ? '/static/fishing/card-fishing-1.jpg' : '/static/routes/card-route-1.jpg'
     return this.prisma.discovery.create({
       data: {
         id: `route-${randomUUID()}`,
         cityCode: input.cityCode,
         scene,
+        subType,
         title: input.title.trim(),
         rank: input.rank ?? 0,
         rankTag: input.rankTag?.trim() || '',
@@ -191,7 +217,24 @@ export class AdminService {
       const city = await this.prisma.city.findUnique({ where: { code: input.cityCode } })
       if (!city) throw new NotFoundException('关联城市不存在，请先在城市与位置中维护该城市')
     }
-    return this.prisma.discovery.update({ where: { id }, data: input })
+    const { scene, subType, ...rest } = input
+    const data: Prisma.DiscoveryUpdateInput = { ...rest }
+    if (isBusinessScene(scene)) {
+      const current = await this.prisma.discovery.findUnique({ where: { id }, select: { subType: true } })
+      try {
+        data.scene = scene
+        data.subType = writableSceneSubType(scene, subType ?? current?.subType ?? null)
+      } catch (error) {
+        if (error instanceof SceneSubTypeInvalidError) {
+          throw new UnprocessableEntityException({ code: SCENE_SUBTYPE_INVALID, message: error.message })
+        }
+        throw error
+      }
+    } else if (subType !== undefined) {
+      data.subType = subType
+    }
+    // fish 是兼容读值：编辑历史记录时不把 scene 写成新值，避免绕过写入白名单
+    return this.prisma.discovery.update({ where: { id }, data })
   }
 
   async saveRouteCover(id: string, file: Express.Multer.File | undefined) {
@@ -268,16 +311,21 @@ export class AdminService {
   }
 
   /** 新建/编辑榜单共用校验：封面路线必须存在且同场景（指定城市时还要同城市，RULE-RANK-004） */
-  private async validateCoverRoutes(scene: 'drive' | 'fish', cityCode: string | undefined, coverRouteIds: string[]) {
+  private async validateCoverRoutes(scene: SceneQuery, cityCode: string | undefined, coverRouteIds: string[]) {
     const routes = await this.prisma.discovery.findMany({
       where: { id: { in: coverRouteIds } },
-      select: { id: true, scene: true, cityCode: true, status: true, title: true },
+      select: { id: true, scene: true, subType: true, cityCode: true, status: true, title: true },
     })
     if (routes.length !== coverRouteIds.length) throw new BadRequestException('封面路线中存在不存在的路线，请刷新后重试')
     const offline = routes.filter((route) => route.status === 'offline')
     if (offline.length) throw new BadRequestException(`以下路线已下架，不能作为封面：${offline.map((route) => route.title).join('、')}`)
-    const wrongScene = routes.filter((route) => route.scene !== scene)
-    if (wrongScene.length) throw new BadRequestException(`封面路线场景须与榜单一致（${scene === 'fish' ? '钓鱼' : '溜车'}）：${wrongScene.map((route) => route.title).join('、')}`)
+    const target = normalizeScene(scene)
+    const wrongScene = routes.filter((route) => {
+      if (target.legacy) return !isFishingRecord(route.scene, route.subType)
+      return route.scene !== scene || (route.scene === 'play' && target.subType !== null && route.subType !== target.subType)
+    })
+    const label = scene === 'fish' ? '钓鱼（粗门玩玩）' : SCENE_LABELS[scene]
+    if (wrongScene.length) throw new BadRequestException(`封面路线场景须与榜单一致（${label}）：${wrongScene.map((route) => route.title).join('、')}`)
     if (cityCode) {
       const wrongCity = routes.filter((route) => route.cityCode !== cityCode)
       if (wrongCity.length) throw new BadRequestException(`封面路线须与榜单城市一致：${wrongCity.map((route) => route.title).join('、')}`)
@@ -396,11 +444,11 @@ export class AdminService {
     return { code }
   }
 
-  /** 场景开关：关闭后 C 端该城市对应场景数据不再返回 */
+  /** 城市资料场景标记，不参与 C 端显隐；首页分类显隐由 system_configs.scene_tabs 决定 */
   async updateCityScenes(code: string, scenes: string[]) {
     const found = await this.prisma.city.findUnique({ where: { code } })
     if (!found) throw new NotFoundException('城市不存在')
-    const allowed = ['drive', 'fish'] as const
+    const allowed = [...BUSINESS_SCENES, ...LEGACY_SCENES]
     const filtered = allowed.filter((scene) => scenes.includes(scene))
     return this.prisma.city.update({ where: { code }, data: { scenes: filtered } })
   }
@@ -436,6 +484,16 @@ export class AdminService {
       create: { key: QR_CONFIG_KEY, value: value as object },
     })
     return { ...value, savedAt: now }
+  }
+
+  /** 首页分类目录：管理端读取全量配置（CHG-HOME-CATEGORY-001） */
+  sceneTabsConfig() {
+    return this.sceneTabs.adminView()
+  }
+
+  /** 首页分类目录：管理端整份替换写入，并发由 expectedUpdatedAt 条件更新保证 */
+  updateSceneTabsConfig(input: UpdateSceneTabsDto, actor?: AdminActor) {
+    return this.sceneTabs.update(input.items, input.expectedUpdatedAt, actor?.id ?? 'unknown')
   }
 
   async users() {

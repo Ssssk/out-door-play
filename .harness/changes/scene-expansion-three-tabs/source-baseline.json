@@ -1,0 +1,69 @@
+{
+  "change_id": "CHG-SCENE-EXPANSION-001",
+  "verification_status": "verified",
+  "verified_by": "用户（项目 Owner，兼产品 Owner 与架构 Owner）",
+  "verified_at": "2026-11-08",
+  "pending_reason": null,
+  "sources": [
+    {
+      "id": "SRC-E01",
+      "kind": "user-decision-structured",
+      "title": "用户 2026-11-08 结构化裁决：实现口径选「新增业务场景」；钓鱼并入粗门玩玩子类型（钓鱼/露营/打卡）",
+      "location": "本会话 question_answer 消息",
+      "classification": "authoritative",
+      "version": "unversioned",
+      "sha256": null,
+      "captured_at": "2026-11-08T00:00:00Z"
+    },
+    {
+      "id": "SRC-E02",
+      "kind": "user-request-with-screenshot",
+      "title": "用户 2026-11-08 后台「路线列表」截图与「这里的路线 tab 需要新建：粗门溜车、粗门玩玩、粗门洗车 3 个 tab」",
+      "location": "本会话用户消息（截图为内嵌图片，未落盘；界面对应 apps/admin/src/views/RoutesView.vue:251-263）",
+      "classification": "authoritative",
+      "version": "unversioned",
+      "sha256": null,
+      "captured_at": "2026-11-08T00:00:00Z"
+    },
+    {
+      "id": "SRC-E03",
+      "kind": "approved-change-decisions",
+      "title": "CHG-HOME-CATEGORY-001 已批准决策 DEC-002 / DEC-004 / DEC-010 与 FR-CFG-003、FR-CFG-005、FR-CFG-006",
+      "location": ".harness/changes/home-category-visibility/01-clarification.md、02-requirements.md、approvals/2026-11-08-requirements-design.md",
+      "classification": "authoritative",
+      "version": "approved-2026-11-08",
+      "sha256": null,
+      "captured_at": "2026-11-08T00:00:00Z"
+    },
+    {
+      "id": "SRC-E04",
+      "kind": "code-fact-baseline",
+      "title": "2026-11-08 当前工作树代码事实：Prisma enum/migrations/seed、后端 DTO 与服务、小程序类型与详情页、后台 RoutesView、scene_tabs 配置实现",
+      "location": "仓库当前工作树（含 CHG-HOME-CATEGORY-001 未提交实现）；逐项路径见 00-request.md 与 04-impact-analysis.md",
+      "classification": "supporting",
+      "version": "working-tree-2026-11-08",
+      "sha256": null,
+      "captured_at": "2026-11-08T00:00:00Z"
+    }
+  ],
+  "requirement_mappings": [
+    { "requirementId": "FR-EXP-001", "sourceIds": ["SRC-E01", "SRC-E04"], "anchor": "用户裁决 / schema.prisma:10-13" },
+    { "requirementId": "FR-EXP-002", "sourceIds": ["SRC-E01"], "anchor": "「粗门玩玩就包括：钓鱼、露营、打卡」" },
+    { "requirementId": "FR-EXP-003", "sourceIds": ["SRC-E01", "SRC-E04"], "anchor": "用户裁决 / seed.ts:33-66,69-75,144-151" },
+    { "requirementId": "FR-EXP-004", "sourceIds": ["SRC-E01", "SRC-E02"], "anchor": "后台路线列表截图 / RoutesView.vue:254" },
+    { "requirementId": "FR-EXP-005", "sourceIds": ["SRC-E01", "SRC-E04"], "anchor": "用户裁决 / RoutesView.vue:44-51,166-190" },
+    { "requirementId": "FR-EXP-006", "sourceIds": ["SRC-E01", "SRC-E03"], "anchor": "用户裁决 / DEC-010 冲突" },
+    { "requirementId": "FR-EXP-007", "sourceIds": ["SRC-E01", "SRC-E03"], "anchor": "用户裁决 / DEC-002" },
+    { "requirementId": "FR-EXP-008", "sourceIds": ["SRC-E03", "SRC-E04"], "anchor": "routes.service.ts:27-33、fishing-detail:48-53" },
+    { "requirementId": "FR-EXP-009", "sourceIds": ["SRC-E03", "SRC-E04"], "anchor": "scene-tabs-config.service.ts:31,34-41、SceneTabsConfigView.vue:10-12" },
+    { "requirementId": "FR-EXP-010", "sourceIds": ["SRC-E04"], "anchor": "CitiesView.vue、RankingsView.vue、prisma/seed.ts" },
+    { "requirementId": "FR-EXP-011", "sourceIds": ["SRC-E03"], "anchor": "admin-auth Guard、配置乐观锁" },
+    { "requirementId": "FR-EXP-012", "sourceIds": ["SRC-E04"], "anchor": "旧小程序包白名单 / AGENTS.md §9" },
+    { "requirementId": "NFR-MIG-001", "sourceIds": ["SRC-E04"], "anchor": "AGENTS.md §9、§13 迁移与破坏性操作约束" },
+    { "requirementId": "NFR-COMPAT-001", "sourceIds": ["SRC-E04"], "anchor": "DEC-E02 / DEC-E12 滚动共存窗口" },
+    { "requirementId": "NFR-SEC-001", "sourceIds": ["SRC-E04"], "anchor": "AGENTS.md §8 运行时 DTO 校验与服务端授权" },
+    { "requirementId": "NFR-PERF-001", "sourceIds": ["SRC-E04"], "anchor": "discoveries_city_code_scene_idx 现有索引" },
+    { "requirementId": "NFR-OBS-001", "sourceIds": ["SRC-E04"], "anchor": "AGENTS.md §12 证据与真实性" },
+    { "requirementId": "NFR-A11Y-001", "sourceIds": ["SRC-E04"], "anchor": "RoutesView.vue:253-256、SceneTabs.vue:2-4" }
+  ]
+}

@@ -57,7 +57,7 @@ export const driveRoutes: RouteDetail[] = [
 
 export const fishingSpots: FishingSpot[] = [
   {
-    id: 'liangzihu', scene: 'fish', title: '梁子湖翘嘴鲌野钓基地', rank: 3, rankTag: '钓点/野钓热门榜',
+    id: 'liangzihu', scene: 'play', subType: 'fishing', title: '梁子湖翘嘴鲌野钓基地', rank: 3, rankTag: '钓点/野钓热门榜',
     distanceKm: 6.2, lengthKm: 12, elevationM: 8, shoreKm: 12, depthM: 8, difficulty: '进阶级',
     coverImageUrl: '/static/fishing/card-fishing-1.jpg', entryPoint: '梁子湖东岸公共入口', mainArea: '芦苇湾深水区',
     gear: '路亚竿·手竿', durationLabel: '4-6h', bestTime: '清晨·傍晚',
@@ -65,14 +65,14 @@ export const fishingSpots: FishingSpot[] = [
     tags: ['翘嘴鲌', '野钓', '湖库'], latitude: 30.174, longitude: 114.674,
   },
   {
-    id: 'mulanhu', scene: 'fish', title: '木兰湖库钓综合体', rank: 5, rankTag: '钓点/野钓热门榜',
+    id: 'mulanhu', scene: 'play', subType: 'fishing', title: '木兰湖库钓综合体', rank: 5, rankTag: '钓点/野钓热门榜',
     distanceKm: 9.4, lengthKm: 18.5, elevationM: 15, shoreKm: 18.5, depthM: 15, difficulty: '挑战级',
     coverImageUrl: '/static/fishing/card-fishing-2.jpg', entryPoint: '木兰湖西门', mainArea: '北岸深水区',
     gear: '长竿·矶竿', durationLabel: '6-8h', bestTime: '傍晚', description: '库区岸线丰富，深浅交替，适合有经验的钓友。',
     tags: ['库钓', '深水'], latitude: 31.105, longitude: 114.407,
   },
   {
-    id: 'houguanhu', scene: 'fish', title: '后官湖路亚钓场', rank: 8, rankTag: '钓点/野钓热门榜',
+    id: 'houguanhu', scene: 'play', subType: 'fishing', title: '后官湖路亚钓场', rank: 8, rankTag: '钓点/野钓热门榜',
     distanceKm: 11, lengthKm: 6.5, elevationM: 4, shoreKm: 6.5, depthM: 4, difficulty: '入门级',
     coverImageUrl: '/static/fishing/card-fishing-3.jpg', entryPoint: '后官湖绿道入口', mainArea: '桥下缓流区',
     gear: '轻型路亚竿', durationLabel: '2-4h', bestTime: '清晨', description: '交通便利、岸边平缓，适合路亚新手练习。',
@@ -91,5 +91,5 @@ export const mockUser: UserProfile = { avatarUrl: '/static/icons/avatar-mine.png
 export const favoriteItems: FavoriteItem[] = [
   { id: 'bafen-shanlu', type: 'route', scene: 'drive', title: driveRoutes[0].title, subtitle: '5.0km · 落差 220m · 入门级', thumbUrl: driveRoutes[0].coverImageUrl },
   { id: 'qinglongshan', type: 'route', scene: 'drive', title: driveRoutes[2].title, subtitle: '18.5km · 落差 145m · 轻松级', thumbUrl: driveRoutes[2].coverImageUrl },
-  { id: 'liangzihu', type: 'spot', scene: 'fish', title: fishingSpots[0].title, subtitle: '翘嘴鲌 · 清晨与傍晚', thumbUrl: fishingSpots[0].coverImageUrl },
+  { id: 'liangzihu', type: 'spot', scene: 'play', subType: 'fishing', title: fishingSpots[0].title, subtitle: '翘嘴鲌 · 清晨与傍晚', thumbUrl: fishingSpots[0].coverImageUrl },
 ]

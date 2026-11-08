@@ -189,6 +189,22 @@ jobs:
           release_dir="$deploy_dir/releases/$GITHUB_SHA"
           ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "docker pull docker.1ms.run/library/node:22-bookworm-slim && docker tag docker.1ms.run/library/node:22-bookworm-slim node:22-bookworm-slim && docker pull docker.1ms.run/library/nginx:1.27-alpine && docker tag docker.1ms.run/library/nginx:1.27-alpine nginx:1.27-alpine && docker pull docker.1ms.run/library/mysql:8.4 && docker tag docker.1ms.run/library/mysql:8.4 mysql:8.4 && cd '$release_dir' && docker build --build-arg DEBIAN_MIRROR=http://mirrors.tencent.com/debian --build-arg DEBIAN_SECURITY_MIRROR=http://mirrors.tencent.com/debian-security --build-arg PNPM_REGISTRY=https://registry.npmmirror.com -f docker/api.Dockerfile -t '$API_IMAGE' . && docker build --build-arg PNPM_REGISTRY=https://registry.npmmirror.com -f docker/admin.Dockerfile -t '$WEB_IMAGE' ."
 
+      - name: Backup production database before schema expansion
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
+        run: |
+          set -euo pipefail
+          deploy_port="${DEPLOY_PORT:-22}"
+          deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
+          backup_rel="backups/pre-scene-expansion-${GITHUB_SHA}.sql.gz"
+          # ENUM 扩展与数据回填前留一个可恢复的物理备份点；不含任何凭证输出。
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i "$HOME/.ssh/id_deploy" -p "$deploy_port" \
+            "$DEPLOY_USER@$DEPLOY_HOST" "cd '$deploy_dir' && mkdir -p backups && docker compose --env-file .env.production -f compose.prod.yaml up -d db --wait --wait-timeout 120 && docker compose --env-file .env.production -f compose.prod.yaml exec -T db sh -c 'export MYSQL_PWD=\"\$MYSQL_ROOT_PASSWORD\"; mysqldump -uroot --single-transaction --routines --triggers \"\$MYSQL_DATABASE\"' | gzip > '$backup_rel' && test -s '$backup_rel' && ls -lh '$backup_rel'"
+
       - name: Migrate, restart and backfill fuel prices
         shell: bash
         env:
@@ -201,6 +217,30 @@ jobs:
           deploy_port="${DEPLOY_PORT:-22}"
           deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
           ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" "cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api db:deploy && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api admin:sync-permissions && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api migrate:route-covers && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api migrate:clear-description-placeholder && docker compose --env-file .env.production -f compose.prod.yaml up -d --remove-orphans --wait --wait-timeout 120 && docker compose --env-file .env.production -f compose.prod.yaml run --rm api pnpm --filter @chumen/api backfill:fuel-prices"
+
+      - name: Backfill fish -> play/fishing (dry-run, apply, verify)
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
+        run: |
+          set -euo pipefail
+          deploy_port="${DEPLOY_PORT:-22}"
+          deploy_dir="${DEPLOY_DIR:-/opt/chumen}"
+          operator="deploy-production@${GITHUB_SHA}"
+          compose="cd '$deploy_dir' && docker compose --env-file .env.production -f compose.prod.yaml"
+          echo "=== dry-run（输出受影响行数与恢复 SQL，不写库） ==="
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i "$HOME/.ssh/id_deploy" -p "$deploy_port" \
+            "$DEPLOY_USER@$DEPLOY_HOST" "${compose} run --rm -e BACKFILL_OPERATOR='$operator' api pnpm --filter @chumen/api backfill:scene-play"
+          echo "=== apply（幂等） ==="
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i "$HOME/.ssh/id_deploy" -p "$deploy_port" \
+            "$DEPLOY_USER@$DEPLOY_HOST" "${compose} run --rm -e BACKFILL_OPERATOR='$operator' api pnpm --filter @chumen/api backfill:scene-play:apply"
+          echo "=== verify（重复执行变更数必须为 0） ==="
+          verify="$(ssh -i "$HOME/.ssh/id_deploy" -p "$deploy_port" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "${compose} run --rm -e BACKFILL_OPERATOR='$operator' api pnpm --filter @chumen/api backfill:scene-play")"
+          printf '%s\n' "$verify" | grep -q 'mode=dry-run preview=0 discoveries / 0 rankings / 0 cities / 0 config'
 
       - name: Data-source connectivity self-check (inside api container)
         shell: bash

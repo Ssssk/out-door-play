@@ -1,0 +1,68 @@
+{
+  "change_id": "CHG-HOME-CATEGORY-001",
+  "verification_status": "verified",
+  "verified_by": "用户（项目 Owner）",
+  "verified_at": "2026-11-08T07:11:04Z",
+  "verification_note": "Q-001 由用户回复「确认」核对：SRC-001/SRC-002 截图内容即本 Change 范围，来源与需求映射完整。截图为会话内嵌图片、未落盘、无哈希，该限制仍然成立，sha256 保持 null，不伪造。",
+  "sources": [
+    {
+      "id": "SRC-001",
+      "kind": "user-request-with-screenshot",
+      "title": "用户 2026-11-08 会话「让我们回到首页tab 自定义配置需求」「就是这个需求」及首页分类目录截图",
+      "location": "本会话用户消息（截图为内嵌图片，未落盘；对应界面元素见 apps/mobile/src/components/SceneTabs.vue）",
+      "classification": "authoritative",
+      "version": "unversioned",
+      "sha256": null,
+      "captured_at": "2026-11-08T00:00:00Z"
+    },
+    {
+      "id": "SRC-002",
+      "kind": "user-request-with-screenshot",
+      "title": "用户 2026-11-08 会话「按这个来，且在这个后台tab 进行模块设计」及运营后台截图",
+      "location": "本会话用户消息（截图为内嵌图片，未落盘；对应模块见 apps/admin/src/router/index.ts 与 apps/admin/src/layout/AdminLayout.vue 的系统配置分组）",
+      "classification": "authoritative",
+      "version": "unversioned",
+      "sha256": null,
+      "captured_at": "2026-11-08T00:00:00Z"
+    },
+    {
+      "id": "SRC-003",
+      "kind": "code-fact-baseline",
+      "title": "2026-11-08 当前工作树代码事实（SceneTabs.vue、useDiscovery.ts、config/admin/routes/user 模块、SystemConfig、contractPaths、后台配置页）",
+      "location": "仓库当前工作树；逐项路径与行号见 00-request.md 与 04-impact-analysis.md",
+      "classification": "supporting",
+      "version": "working-tree-2026-11-08",
+      "sha256": null,
+      "captured_at": "2026-11-08T00:00:00Z"
+    },
+    {
+      "id": "SRC-004",
+      "kind": "user-decision-verbal",
+      "title": "此前方案讨论中用户已确认的默认口径：拒列表留详情、City.scenes 二期、场景白名单、复用 system_configs 与 config:read/write",
+      "location": "本会话前文讨论结论（口述，无独立文档）",
+      "classification": "authoritative",
+      "version": "unversioned",
+      "sha256": null,
+      "captured_at": "2026-11-08T00:00:00Z"
+    }
+  ],
+  "requirement_mappings": [
+    { "requirementId": "FR-CFG-001", "sourceIds": ["SRC-001", "SRC-004", "SRC-003"], "anchor": "首页截图 / 默认方案 / SceneTabs.vue:12-14" },
+    { "requirementId": "FR-CFG-002", "sourceIds": ["SRC-002", "SRC-003"], "anchor": "后台截图 / router/index.ts:23、AdminLayout.vue:20-22、QrConfigView.vue" },
+    { "requirementId": "FR-CFG-003", "sourceIds": ["SRC-004", "SRC-003"], "anchor": "DEC-002 / routes.controller.ts:14-16、user.service.ts:66-68" },
+    { "requirementId": "FR-CFG-004", "sourceIds": ["SRC-001", "SRC-004"], "anchor": "首页截图 / 默认方案（名称与排序可配）" },
+    { "requirementId": "FR-CFG-005", "sourceIds": ["SRC-004", "SRC-003"], "anchor": "DEC-002 / routes.service.ts:17-23、详情页 onLoad/onShareAppMessage" },
+    { "requirementId": "FR-CFG-006", "sourceIds": ["SRC-004", "SRC-003"], "anchor": "DEC-004 / Prisma enum Scene、routes.dto.ts:6、admin.service.ts:403" },
+    { "requirementId": "FR-CFG-007", "sourceIds": ["SRC-004", "SRC-003"], "anchor": "服务端兜底口径 / SceneTabs.vue:13 布局依赖注释" },
+    { "requirementId": "FR-CFG-008", "sourceIds": ["SRC-003"], "anchor": "useDiscovery.ts:208-218、favorites/index.vue:43、pages/mine/index.vue:71-74" },
+    { "requirementId": "FR-CFG-009", "sourceIds": ["SRC-003"], "anchor": "useDiscovery.ts:20-22,181-200、common/listCache.ts" },
+    { "requirementId": "FR-CFG-010", "sourceIds": ["SRC-003", "SRC-004"], "anchor": "CitiesView.vue:103,156、admin.service.ts:344 / DEC-003" },
+    { "requirementId": "FR-CFG-011", "sourceIds": ["SRC-003", "SRC-004"], "anchor": "admin.controller.ts:49-50、admin-auth.guard.ts:36 / DEC-007" },
+    { "requirementId": "NFR-PERF-001", "sourceIds": ["SRC-003"], "anchor": "config.controller.ts:18-29 单行主键读范式" },
+    { "requirementId": "NFR-RELI-001", "sourceIds": ["SRC-003", "SRC-004"], "anchor": "pages/mine/index.vue:71-74 配置失败回退范式 / DEC-009" },
+    { "requirementId": "NFR-SEC-001", "sourceIds": ["SRC-003"], "anchor": ".harness/wiki/09-认证与权限模型.md:21 服务端必须重新授权" },
+    { "requirementId": "NFR-COMPAT-001", "sourceIds": ["SRC-004", "SRC-003"], "anchor": "DEC-010 / DEC-012 默认配置与发布顺序" },
+    { "requirementId": "NFR-OBS-001", "sourceIds": ["SRC-003"], "anchor": "AGENTS.md 第12节证据与真实性、日志脱敏要求" },
+    { "requirementId": "NFR-A11Y-001", "sourceIds": ["SRC-003"], "anchor": "SceneTabs.vue:2-4 现有 a11y 属性与 :28 触控高度" }
+  ]
+}

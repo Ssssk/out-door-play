@@ -6,9 +6,9 @@
     <view class="hero-content">
       <text class="title">{{ item.title }}</text>
       <view class="hero-metrics">
-        <view><text>{{ item.lengthKm.toFixed(1) }}KM</text><text>{{ item.scene === 'fish' ? '环湖岸线' : '路线长度' }}</text></view>
-        <view><text>{{ verticalMetric }}</text><text>{{ item.scene === 'fish' ? '平均水深' : '路线落差' }}</text></view>
-        <view><text>{{ item.difficulty }}</text><text>{{ item.scene === 'fish' ? '鱼获难度' : '难度等级' }}</text></view>
+        <view><text>{{ item.lengthKm.toFixed(1) }}KM</text><text>{{ fishing ? '环湖岸线' : '路线长度' }}</text></view>
+        <view><text>{{ verticalMetric }}</text><text>{{ fishing ? '平均水深' : '路线落差' }}</text></view>
+        <view><text>{{ item.difficulty }}</text><text>{{ fishing ? '鱼获难度' : '难度等级' }}</text></view>
       </view>
     </view>
   </view>
@@ -17,10 +17,12 @@
 import { computed } from 'vue'
 import { resolveAssetUrl } from '@/common/assetUrl'
 import { formatDistanceKm } from '@/common/location'
+import { isFishingRecord } from '@/common/scenes'
 import type { RouteCard } from '@/types/domain'
 const props = defineProps<{ item: RouteCard }>()
+const fishing = computed(() => isFishingRecord(props.item.scene, props.item.subType))
 const verticalMetric = computed(() => {
-  const value = props.item.scene === 'fish' ? props.item.depthM : props.item.elevationM
+  const value = fishing.value ? props.item.depthM : props.item.elevationM
   return value === null ? '--' : `${value}M`
 })
 </script>

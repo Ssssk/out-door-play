@@ -17,6 +17,8 @@ const contractPaths = [
   '../../.harness/changes/mobile-identity-foundation/contracts/openapi.yaml',
   '../../.harness/changes/mobile-discovery/contracts/openapi.yaml',
   '../../.harness/changes/prd-v1-1-rebuild/contracts/fuel-openapi.yaml',
+  '../../.harness/changes/home-category-visibility/contracts/openapi.yaml',
+  '../../.harness/changes/scene-expansion-three-tabs/contracts/openapi.yaml',
 ]
 
 function readContract(relativePath: string): ContractDocument {

@@ -1,0 +1,6 @@
+schemaVersion: 1
+events: []
+# 本 Change 不引入 RabbitMQ 或任何事件：DEC-008 明确不引入消息中间件，ADR-006 要求无批准用例不引入新基础设施。
+# 配置变更的生效路径是「管理端保存 → MySQL system_configs → 小程序 onShow 拉取 GET /v1/config/scene-tabs」，
+# 属于同步读模型，无 eventId / eventType / schemaVersion / occurredAt / traceId 信封，无重试、DLQ 与重放需求。
+# 服务端日志记录见 05-design.md「可观测性」，日志不是事件契约，不登记到本文件。

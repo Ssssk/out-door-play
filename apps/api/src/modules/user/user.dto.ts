@@ -1,5 +1,10 @@
 import { Transform } from 'class-transformer'
 import { IsIn, IsOptional, IsString, Length, Matches, MaxLength, MinLength } from 'class-validator'
+import { BUSINESS_SCENES, LEGACY_SCENES, PLAY_TYPES } from '../../common/scenes'
+import type { PlayType, SceneQuery } from '../../common/scenes'
+
+const SCENE_QUERY_VALUES = [...BUSINESS_SCENES, ...LEGACY_SCENES]
+
 export class UpdateUserDto {
   @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
@@ -29,8 +34,10 @@ export interface UploadedImage {
 }
 
 export class FavoriteQueryDto {
-  @IsIn(['drive', 'fish'])
-  scene!: 'drive' | 'fish'
+  @IsIn(SCENE_QUERY_VALUES)
+  scene!: SceneQuery
+
+  @IsOptional() @IsIn([...PLAY_TYPES]) subType?: PlayType
 }
 
 export class AddFavoriteDto {

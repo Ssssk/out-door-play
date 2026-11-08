@@ -21,6 +21,7 @@ const router = createRouter({
       { path: 'users', name: 'Users', component: () => import('../views/UsersView.vue'), meta: { title: '用户管理', group: '用户与内容', permission: 'user:read' } },
       { path: 'feeds', name: 'Feeds', component: () => import('../views/FeedsView.vue'), meta: { title: '评论与举报', group: '用户与内容', permission: 'feed:read' } },
       { path: 'system-config', name: 'SystemConfig', component: () => import('../views/QrConfigView.vue'), meta: { title: '上传二维码', group: '系统配置', permission: 'config:read' } },
+  { path: 'system-config/scene-tabs', name: 'SceneTabsConfig', component: () => import('../views/SceneTabsConfigView.vue'), meta: { title: '首页分类目录', group: '系统配置', permission: 'config:read' } },
       { path: 'analytics', name: 'Analytics', component: () => import('../views/AnalyticsView.vue'), meta: { title: '曝光与点击', group: '数据', permission: 'analytics:read' } },
       { path: 'reports', name: 'Reports', component: () => import('../views/ReportsView.vue'), meta: { title: '导出报表', group: '数据', permission: 'report:read' } },
     ],

@@ -1,0 +1,21 @@
+# 拟议 SLO 目标值；尚未接入指标采集，也未经过 Operations Gate 确认。
+# 指标名需在就绪评审时对照现有可观测实现核对，不得把本文件当作已生效事实。
+service: "chumen-api"
+owner: "后端 Owner / 运维 Owner（Operations Gate 指定）"
+measurement_window: "30d"
+status: "not-run"
+slis:
+  availability:
+    query: "拟议：非 5xx 响应数 / 总响应数（指标名待就绪评审核对）"
+    target: "99.9%（30d）"
+  latency:
+    query: "拟议：路线列表接口 P95 响应时间（指标名待就绪评审核对）"
+    target: "P95 <= 200ms，与 NFR-PERF-001 一致"
+  correctness:
+    query: "拟议：1 - SCENE_SUBTYPE_INVALID 写入 / 场景写入总数（指标名待就绪评审核对）"
+    target: "非法组合 100% 被拒绝且不落库；列表查询无 5xx"
+error_budget_policy: "错误预算消耗超过 50% 时暂停非关键发布；出现 P0/P1 时直接阻塞发布 Gate，由发布负责人裁决。"
+alert_routes:
+  - "拟议：5xx 升高 → 运维值班"
+  - "拟议：非法子类型突增 / 兼容映射失败 → 后端 Owner"
+  - "拟议：回填失败或行数不一致 → 数据库 Owner + 发布负责人"

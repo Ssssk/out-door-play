@@ -7,7 +7,8 @@ import { resolveDistanceKm } from '@/common/location'
 import { useUserLocation } from '@/common/userLocation'
 import { cities as localCities } from '@/data/mock'
 import { useAppStore } from '@/stores/app'
-import type { City, RouteCard, Scene } from '@/types/domain'
+import type { BusinessScene, City, RouteCard, Scene, SceneTabsConfigView } from '@/types/domain'
+import { currentSceneTabs, useSceneTabs } from './useSceneTabs'
 
 export type DiscoveryStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error'
 
@@ -16,9 +17,9 @@ function sortableDistance(distanceKm: number | null | undefined) {
   return typeof distanceKm === 'number' && Number.isFinite(distanceKm) ? distanceKm : Number.POSITIVE_INFINITY
 }
 
-/** 列表缓存 key：城市 + 场景 */
+/** 列表缓存 key：城市 + 场景 + 配置版本；配置变化时旧缓存自动失效，隐藏场景数据不会复活 */
 function listCacheKey(cityCode: string, scene: Scene) {
-  return `routes:${cityCode}:${scene}`
+  return `routes:${cityCode}:${scene}:${currentSceneTabs().revision}`
 }
 
 const CITIES_CACHE_KEY = 'cities'
@@ -32,7 +33,8 @@ const STALE_REFRESH_GAP_MS = 30 * 1000
 export function useDiscovery(options: { prefetch?: boolean } = {}) {
   const appStore = useAppStore()
   const { ensureLocation } = useUserLocation()
-  const scene = ref<Scene>('drive')
+  const { tabs: sceneTabs, enabledScenes, refresh: refreshSceneTabs } = useSceneTabs()
+  const scene = ref<BusinessScene>('drive')
   const rawRoutes = shallowRef<RouteCard[]>([])
   const availableCities = shallowRef<City[]>([])
   const loading = ref(false)
@@ -97,7 +99,7 @@ export function useDiscovery(options: { prefetch?: boolean } = {}) {
   function loadRoutes(force = false) {
     const requestedScene = scene.value
     const requestedCity = appStore.city.code
-    const requestKey = `${requestedCity}:${requestedScene}`
+    const requestKey = `${requestedCity}:${requestedScene}:${currentSceneTabs().revision}`
     if (pendingKey === requestKey && pendingRequest) return pendingRequest
 
     const request = executeRouteLoad(requestedCity, requestedScene, force)
@@ -180,7 +182,10 @@ export function useDiscovery(options: { prefetch?: boolean } = {}) {
    */
   async function prefetch(currentCity: string, currentScene: Scene) {
     const targets: Array<{ city: string; scene: Scene }> = [
-      { city: currentCity, scene: currentScene === 'drive' ? 'fish' : 'drive' },
+      // 只预取运营启用的场景，避免隐藏分类被预取或从缓存复活
+      ...enabledScenes.value
+        .filter((target) => target !== currentScene)
+        .map((target) => ({ city: currentCity, scene: target })),
       ...availableCities.value
         .filter((city) => city.code !== currentCity)
         .map((city) => ({ city: city.code, scene: currentScene })),
@@ -199,7 +204,17 @@ export function useDiscovery(options: { prefetch?: boolean } = {}) {
     }
   }
 
-  async function changeScene(next: Scene) {
+  /** 配置到达后校正当前选中场景：被隐藏时回退到首个启用项并强制刷新列表 */
+  function applyConfig(config: SceneTabsConfigView) {
+    if (!active) return
+    const first = config.items[0]
+    if (first && !config.items.some((tab) => tab.scene === scene.value)) {
+      scene.value = first.scene
+      void loadRoutes(true)
+    }
+  }
+
+  async function changeScene(next: BusinessScene) {
     if (next === scene.value) return
     scene.value = next
     await loadRoutes()
@@ -207,6 +222,8 @@ export function useDiscovery(options: { prefetch?: boolean } = {}) {
 
   onLoad(async () => {
     await launchLock.waitReady()
+    // 配置拉取与首屏并行：失败时由 useSceneTabs 回退默认，不阻塞列表渲染
+    void refreshSceneTabs().then(applyConfig)
     // 定位与列表并行获取，定位到达后 distances 会自动重算，不阻塞列表渲染。
     void loadLocation()
     await loadCities()
@@ -214,8 +231,11 @@ export function useDiscovery(options: { prefetch?: boolean } = {}) {
   })
   // 下拉刷新是用户主动行为，绕过缓存取最新数据
   onPullDownRefresh(() => loadRoutes(true))
-  // 切后台再回首页/从其他 tab 返回：数据超时节流后静默刷新，避免一直展示旧列表
-  onShow(() => refreshIfStale())
+  // 切后台再回首页/从其他 tab 返回：刷新配置与刷新过期数据并行，互不阻塞
+  onShow(() => {
+    void refreshSceneTabs().then(applyConfig)
+    refreshIfStale()
+  })
   onUnload(() => {
     active = false
     requestSequence += 1
@@ -223,6 +243,7 @@ export function useDiscovery(options: { prefetch?: boolean } = {}) {
 
   return {
     scene,
+    sceneTabs,
     routes,
     availableCities,
     loading,

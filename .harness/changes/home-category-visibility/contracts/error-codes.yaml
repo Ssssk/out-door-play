@@ -1,0 +1,16 @@
+version: 1
+errors:
+  - code: COMMON_VALIDATION_FAILED
+    httpStatus: 422
+    meaning: "DTO 运行时校验失败：expectedUpdatedAt 缺失或格式非法、items 为空、label 为空或超过 12 字符、sort 非 0-9999 整数、含未知字段"
+    clientAction: "后台逐项展示中文校验提示；保留表单内容与 current token，不自动重试"
+  - code: CONFIG_INVALID
+    httpStatus: 422
+    meaning: "业务规则校验失败：scene 不在 drive/fish 白名单、scene 重复、0 个 enabled=true 项、revision 非法"
+    clientAction: "后台展示具体规则说明，整笔保存不落库；不展示内部异常文本"
+  - code: CONFIG_VERSION_CONFLICT
+    httpStatus: 409
+    meaning: "expectedUpdatedAt 与当前 system_configs.updated_at 不一致（并发保存或首次创建时 key 唯一约束冲突）"
+    clientAction: "提示「配置已被其他运营更新，请刷新后重试」并自动重新拉取配置，不静默覆盖"
+# 403 权限拒绝沿用 apps/api/src/modules/admin-auth 现有 Guard 的稳定错误码，本 Change 不新增错误码定义。
+# 配置读取失败/JSON 损坏不产生新错误码：服务端按 DEC-008 记录日志并返回内置默认配置（HTTP 200）。

@@ -1,17 +1,41 @@
 import { describe, expect, it, vi } from 'vitest'
 import { PrismaDiscoveryRepository } from './prisma-discovery.repository'
 
-describe('PrismaDiscoveryRepository', () => {
+describe('PrismaDiscoveryRepository（CHG-SCENE-EXPANSION-001）', () => {
   it('filters public discoveries and applies deterministic Top N ordering', async () => {
     const findMany = vi.fn().mockResolvedValue([])
     const repository = new PrismaDiscoveryRepository({ discovery: { findMany } } as never)
 
-    await repository.list('fish', 10, '420100')
+    await repository.list('drive', 10, '420100')
 
     expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { scene: 'fish', status: 'online', city: { enabled: true }, cityCode: '420100' },
+      where: { scene: { in: ['drive'] }, status: 'online', city: { enabled: true }, cityCode: '420100' },
       orderBy: [{ rank: 'asc' }, { distanceKm: 'asc' }, { id: 'asc' }],
       take: 10,
+    }))
+  })
+
+  it('GIVEN 兼容期 fish WHEN 查询列表 THEN 同时命中未回填 fish 与 play+fishing', async () => {
+    const findMany = vi.fn().mockResolvedValue([])
+    const repository = new PrismaDiscoveryRepository({ discovery: { findMany } } as never)
+
+    await repository.list('fish', 10)
+
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        OR: [{ scene: 'fish' }, { scene: { in: ['play'] }, subType: 'fishing' }],
+      }),
+    }))
+  })
+
+  it('GIVEN play 子类型 WHEN 查询列表 THEN 下推 subType 条件', async () => {
+    const findMany = vi.fn().mockResolvedValue([])
+    const repository = new PrismaDiscoveryRepository({ discovery: { findMany } } as never)
+
+    await repository.list({ scenes: ['play'], subType: 'camping', legacy: false }, 10)
+
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ scene: { in: ['play'] }, subType: 'camping' }),
     }))
   })
 
@@ -58,7 +82,7 @@ describe('PrismaDiscoveryRepository', () => {
     await repository.find('bafen-shanlu', 'drive')
 
     expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: 'bafen-shanlu', scene: 'drive', status: 'online', city: { enabled: true } },
+      where: { id: 'bafen-shanlu', scene: { in: ['drive'] }, status: 'online', city: { enabled: true } },
     }))
   })
 })

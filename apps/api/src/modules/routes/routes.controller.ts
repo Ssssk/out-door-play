@@ -13,7 +13,7 @@ export class RoutesController {
   ) {}
   @Get('routes')
   @ApiOperation({ operationId: 'listDiscoveries' })
-  list(@Query() query: ListRoutesDto) { return this.routes.list(query.scene, query.limit, query.city) }
+  list(@Query() query: ListRoutesDto) { return this.routes.list(query.scene, query.limit, query.city, query.subType ?? null) }
 
   @Get('routes/:id')
   @ApiOperation({ operationId: 'getRouteDetail' })

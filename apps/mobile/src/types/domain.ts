@@ -1,4 +1,27 @@
-export type Scene = 'drive' | 'fish'
+/** 三个顶层业务分类；新写入只取这 3 值 */
+export type BusinessScene = 'drive' | 'play' | 'wash'
+
+/** 兼容期读值：旧包 / 旧服仍可能返回 fish；新包不得写入，也不作为分类项 */
+export type LegacyScene = 'fish'
+
+export type Scene = BusinessScene | LegacyScene
+
+/** 粗门玩玩的子类型；其它场景为 null */
+export type PlayType = 'fishing' | 'camping' | 'checkin'
+
+/** 首页分类目录（运营后台可配）：小程序只读启用项 */
+export interface SceneTabView {
+  scene: BusinessScene
+  label: string
+  sort: number
+}
+
+export interface SceneTabsConfigView {
+  revision: number
+  updatedAt: string | null
+  items: SceneTabView[]
+}
+
 export type Difficulty = '入门级' | '轻松级' | '普通级' | '进阶级' | '挑战级'
 
 export interface City {
@@ -9,6 +32,8 @@ export interface City {
 export interface RouteCard {
   id: string
   scene: Scene
+  /** 仅 play 下非空；旧服务端不返回该字段，故可选 */
+  subType?: PlayType | null
   title: string
   rank: number
   rankTag: string
@@ -113,6 +138,7 @@ export interface FavoriteItem {
   id: string
   type: 'route' | 'spot'
   scene: Scene
+  subType?: PlayType | null
   title: string
   subtitle: string
   thumbUrl: string

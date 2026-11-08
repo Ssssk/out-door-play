@@ -1,6 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { RouteCard } from '@/types/domain'
+import { isFishingRecord } from '@/common/scenes'
+import type { PlayType, RouteCard, Scene } from '@/types/domain'
 
 const lifecycle = vi.hoisted(() => ({
   load: undefined as undefined | (() => Promise<void>),
@@ -8,7 +9,7 @@ const lifecycle = vi.hoisted(() => ({
   show: undefined as undefined | (() => void),
   unload: undefined as undefined | (() => void),
 }))
-const api = vi.hoisted(() => ({ cities: vi.fn(), routes: vi.fn() }))
+const api = vi.hoisted(() => ({ cities: vi.fn(), routes: vi.fn(), sceneTabs: vi.fn() }))
 
 vi.mock('@dcloudio/uni-app', () => ({
   onLoad: (callback: () => Promise<void>) => { lifecycle.load = callback },
@@ -21,22 +22,35 @@ vi.mock('@/common/launchLock', () => ({ launchLock: { waitReady: () => Promise.r
 
 import { clearListCache } from '@/common/listCache'
 import { useDiscovery } from './useDiscovery'
+import { useSceneTabs } from './useSceneTabs'
 import { useAppStore } from '@/stores/app'
 
-function card(id: string, scene: 'drive' | 'fish'): RouteCard {
+function card(id: string, scene: Scene, subType?: PlayType): RouteCard {
+  const fishing = isFishingRecord(scene, subType ?? null)
   return {
     id,
     scene,
+    subType: subType ?? null,
     title: id,
     rank: 1,
     rankTag: '热门榜',
     distanceKm: 1,
     lengthKm: 2,
-    elevationM: scene === 'drive' ? 3 : null,
-    depthM: scene === 'fish' ? 4 : null,
+    elevationM: fishing ? null : 3,
+    depthM: fishing ? 4 : null,
     difficulty: '入门级',
     coverImageUrl: '/cover.jpg',
   }
+}
+
+const threeTabs = {
+  revision: 2,
+  updatedAt: '2026-11-08T00:00:00.000Z',
+  items: [
+    { scene: 'drive', label: '粗门溜车', sort: 10 },
+    { scene: 'play', label: '粗门玩玩', sort: 20 },
+    { scene: 'wash', label: '粗门洗车', sort: 30 },
+  ],
 }
 
 function deferred<T>() {
@@ -51,11 +65,14 @@ function flush() {
 }
 
 describe('useDiscovery', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     setActivePinia(createPinia())
     clearListCache()
     api.cities.mockReset().mockResolvedValue([{ code: '420100', name: '武汉' }])
     api.routes.mockReset()
+    api.sceneTabs.mockReset().mockResolvedValue({ revision: 0, updatedAt: null, items: [{ scene: 'drive', label: '粗门溜车', sort: 10 }] })
+    // 分类配置是模块级共享快照：每个用例开始前重置为本地兜底，避免跨用例污染
+    await useSceneTabs().refresh()
     lifecycle.load = undefined
     lifecycle.pullDown = undefined
     lifecycle.show = undefined
@@ -72,15 +89,15 @@ describe('useDiscovery', () => {
     const latest = deferred<RouteCard[]>()
     api.routes.mockReturnValueOnce(earlier.promise).mockReturnValueOnce(latest.promise)
 
-    const earlierLoad = state.changeScene('fish')
+    const earlierLoad = state.changeScene('play')
     useAppStore().selectCity({ code: '110000', name: '北京' })
     const latestLoad = state.loadRoutes()
-    latest.resolve([card('latest-fish', 'fish')])
+    latest.resolve([card('latest-play', 'play', 'camping')])
     await latestLoad
-    earlier.resolve([card('stale-fish', 'fish')])
+    earlier.resolve([card('stale-play', 'play', 'camping')])
     await earlierLoad
 
-    expect(state.routes.value.map((item) => item.id)).toEqual(['latest-fish'])
+    expect(state.routes.value.map((item) => item.id)).toEqual(['latest-play'])
     expect(state.status.value).toBe('ready')
     expect(state.loading.value).toBe(false)
   })
@@ -174,18 +191,56 @@ describe('useDiscovery', () => {
     expect(state.status.value).toBe('ready')
   })
 
-  it('prefetches the other scene and the other cities after the first screen', async () => {
+  it('GIVEN 服务端 3 项默认 WHEN 首屏预取 THEN 预取 play/wash 与其它城市，不发 fish', async () => {
     api.cities.mockResolvedValue([{ code: '420100', name: '武汉' }, { code: '110000', name: '北京' }])
     api.routes.mockResolvedValue([card('initial-drive', 'drive')])
+    api.sceneTabs.mockResolvedValue(threeTabs)
+    await useSceneTabs().refresh()
     const state = useDiscovery()
     await lifecycle.load?.()
     await flush()
 
     const requested = api.routes.mock.calls.map(([city, scene]) => `${city}:${scene}`)
     expect(requested).toContain('420100:drive')
-    // 本城市另一个场景 + 其他城市都被预取进缓存，切过去时无需等待
-    expect(requested).toContain('420100:fish')
+    expect(requested).toContain('420100:play')
+    expect(requested).toContain('420100:wash')
     expect(requested).toContain('110000:drive')
+    expect(requested).not.toContain('420100:fish')
+    expect(state.sceneTabs.value.map((tab) => tab.scene)).toEqual(['drive', 'play', 'wash'])
     expect(state.routes.value.map((item) => item.id)).toEqual(['initial-drive'])
+  })
+
+  it('GIVEN 配置接口 404（新包 + 旧服）WHEN 首屏加载 THEN 降级到仅 drive 且不请求 play/wash', async () => {
+    api.cities.mockResolvedValue([{ code: '420100', name: '武汉' }])
+    api.routes.mockResolvedValue([card('initial-drive', 'drive')])
+    api.sceneTabs.mockRejectedValue(new Error('404'))
+    await useSceneTabs().refresh()
+
+    const state = useDiscovery()
+    await lifecycle.load?.()
+    await flush()
+
+    const requested = api.routes.mock.calls.map(([city, scene]) => `${city}:${scene}`)
+    expect(requested).toContain('420100:drive')
+    expect(requested).not.toContain('420100:play')
+    expect(requested).not.toContain('420100:wash')
+    expect(state.sceneTabs.value.map((tab) => tab.scene)).toEqual(['drive'])
+  })
+
+  it('GIVEN 3 个分类 WHEN 依次切换 THEN 直接请求 play/wash，不请求兼容值 fish', async () => {
+    api.cities.mockResolvedValue([{ code: '420100', name: '武汉' }])
+    api.routes.mockResolvedValue([card('initial-drive', 'drive')])
+    api.sceneTabs.mockResolvedValue(threeTabs)
+    await useSceneTabs().refresh()
+
+    const state = useDiscovery({ prefetch: false })
+    await lifecycle.load?.()
+    await state.changeScene('play')
+    await state.changeScene('wash')
+
+    const requestedScenes = api.routes.mock.calls.map(([, scene]) => scene)
+    expect(requestedScenes).toContain('play')
+    expect(requestedScenes).toContain('wash')
+    expect(requestedScenes).not.toContain('fish')
   })
 })

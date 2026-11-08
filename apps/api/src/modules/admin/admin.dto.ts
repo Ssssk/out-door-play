@@ -1,5 +1,29 @@
 import { Type } from 'class-transformer'
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsIn, IsInt, IsNumber, IsOptional, IsString, Length, Max, MaxLength, Min, MinLength } from 'class-validator'
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsISO8601, IsIn, IsInt, IsNumber, IsOptional, IsString, Length, Max, MaxLength, Min, MinLength, ValidateIf, ValidateNested } from 'class-validator'
+import { BUSINESS_SCENES, LEGACY_SCENES, PLAY_TYPES } from '../../common/scenes'
+import type { BusinessScene, PlayType, SceneQuery } from '../../common/scenes'
+
+const SCENE_QUERY_VALUES = [...BUSINESS_SCENES, ...LEGACY_SCENES]
+
+/** 首页分类目录：单条分类项（场景固定 3 值，运营不能自造 scene） */
+export class SceneTabDto {
+  @IsIn([...BUSINESS_SCENES]) scene!: BusinessScene
+  @IsString() @Length(1, 12) label!: string
+  @IsBoolean() enabled!: boolean
+  @IsInt() @Min(0) @Max(9999) sort!: number
+}
+
+/** expectedUpdatedAt 必填且允许 null（未配置时）；null 跳过格式校验，undefined 会触发 422 */
+export class UpdateSceneTabsDto {
+  @ValidateIf((_object: object, value: unknown) => value !== null)
+  @IsISO8601({ strict: true })
+  expectedUpdatedAt!: string | null
+
+  @IsArray() @ArrayMinSize(1) @ArrayMaxSize(3)
+  @ValidateNested({ each: true })
+  @Type(() => SceneTabDto)
+  items!: SceneTabDto[]
+}
 
 export class RouteActionDto {
   @IsString() @MinLength(8) @MaxLength(64) actionId!: string
@@ -10,7 +34,9 @@ export class RouteActionDto {
 export class UpdateRouteDto {
   @IsOptional() @IsString() @Length(6, 6) cityCode?: string
   @IsOptional() @IsString() @MaxLength(128) title?: string
-  @IsOptional() @IsIn(['drive', 'fish']) scene?: 'drive' | 'fish'
+  /** 编辑历史 fish 记录时允许传 fish，用例层不会把它写成新值 */
+  @IsOptional() @IsIn(SCENE_QUERY_VALUES) scene?: SceneQuery
+  @IsOptional() @IsIn([...PLAY_TYPES]) subType?: PlayType
   @IsOptional() @IsString() @MaxLength(32) difficulty?: string
   @IsOptional() @IsIn(['easy', 'normal', 'hard']) level?: 'easy' | 'normal' | 'hard'
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100) rankWeight?: number
@@ -36,7 +62,8 @@ export class UpdateRouteDto {
 export class CreateRouteDto {
   @IsString() @MinLength(2) @MaxLength(128) title!: string
   @IsString() @Length(6, 6) cityCode!: string
-  @IsIn(['drive', 'fish']) scene!: 'drive' | 'fish'
+  @IsIn([...BUSINESS_SCENES]) scene!: BusinessScene
+  @IsOptional() @IsIn([...PLAY_TYPES]) subType?: PlayType
   @IsString() @MinLength(1) @MaxLength(32) difficulty!: string
   @IsOptional() @IsString() @MaxLength(64) rankTag?: string
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100) rankWeight?: number
@@ -65,13 +92,14 @@ export class CreateRouteDto {
   @IsOptional() @Type(() => Number) @IsNumber() @Min(-90) @Max(90) endLatitude?: number
 }
 
-/** 后台路线列表查询：服务端分页 + 关键词/场景过滤（不传分页参数时按默认第一页） */
+/** 后台路线列表查询：服务端分页 + 关键词/场景/子类型过滤（不传分页参数时按默认第一页） */
 export class RouteListQueryDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100000) page?: number
   /** 单页条数上限 100，避免后台一次拉全表 */
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) pageSize?: number
   @IsOptional() @IsString() @MaxLength(64) keyword?: string
-  @IsOptional() @IsIn(['drive', 'fish']) scene?: 'drive' | 'fish'
+  @IsOptional() @IsIn(SCENE_QUERY_VALUES) scene?: SceneQuery
+  @IsOptional() @IsIn([...PLAY_TYPES]) subType?: PlayType
 }
 
 export class UpdateRankingDto {
@@ -85,19 +113,19 @@ export class ToggleCityDto { @IsBoolean() enabled!: boolean }
 export class CreateCityDto {
   @IsString() @Length(6, 6) code!: string
   @IsString() @MinLength(1) @MaxLength(32) name!: string
-  @IsOptional() @IsArray() @IsIn(['drive', 'fish'], { each: true }) scenes?: string[]
+  @IsOptional() @IsArray() @IsIn(SCENE_QUERY_VALUES, { each: true }) scenes?: string[]
   @IsOptional() @IsBoolean() enabled?: boolean
 }
 
 /** 编辑城市：名称/场景/启用均可调整 */
 export class UpdateCityDto {
   @IsOptional() @IsString() @MinLength(1) @MaxLength(32) name?: string
-  @IsOptional() @IsArray() @IsIn(['drive', 'fish'], { each: true }) scenes?: string[]
+  @IsOptional() @IsArray() @IsIn(SCENE_QUERY_VALUES, { each: true }) scenes?: string[]
   @IsOptional() @IsBoolean() enabled?: boolean
 }
 
 export class UpdateCityScenesDto {
-  @IsArray() @IsIn(['drive', 'fish'], { each: true }) scenes!: string[]
+  @IsArray() @IsIn(SCENE_QUERY_VALUES, { each: true }) scenes!: string[]
 }
 
 export class UpdateQrConfigDto {
@@ -125,8 +153,7 @@ export class CreateReportDto {
 /** 新建/编辑榜单：封面路线至少 1 条（web-rankings.md RULE-RANK-004） */
 export class UpsertRankingDto {
   @IsString() @MinLength(1) @MaxLength(128) name!: string
-  @IsIn(['drive', 'fish']) scene!: 'drive' | 'fish'
+  @IsIn(SCENE_QUERY_VALUES) scene!: SceneQuery
   @IsOptional() @IsString() @MinLength(6) @MaxLength(6) cityCode?: string
   @IsArray() @ArrayMinSize(1) @IsString({ each: true }) coverRouteIds!: string[]
 }
-

@@ -2,7 +2,7 @@
   <AppShell>
     <view class="page-content favorites-page">
       <PageHeader title="我的收藏" fallback="/pages/mine/index" />
-      <SceneTabs v-model="scene" />
+      <SceneTabs v-model="scene" :tabs="sceneTabs" />
 
       <view v-if="loading" class="favorite-list">
         <ListRowSkeleton v-for="index in 3" :key="index" />
@@ -33,14 +33,23 @@ import { resolveAssetUrl } from '@/common/assetUrl'
 import { navigate } from '@/common/router'
 import { onShareAppMessage } from '@dcloudio/uni-app'
 import { requireAuth } from '@/common/requireAuth'
-import type { FavoriteItem, Scene } from '@/types/domain'
+import { useSceneTabs } from '@/pages/index/useSceneTabs'
+import type { BusinessScene, FavoriteItem } from '@/types/domain'
 
-const scene = ref<Scene>('drive')
+const { tabs: sceneTabs, refresh: refreshSceneTabs } = useSceneTabs()
+const scene = ref<BusinessScene>('drive')
 const items = ref<FavoriteItem[]>([])
 const loading = ref(false)
 const loadError = ref('')
 
-onShow(() => { void load() })
+onShow(() => {
+  // 配置刷新与收藏加载并行；当前选中项被隐藏时回退到首个启用项，由 watch 重新加载
+  void refreshSceneTabs().then((config) => {
+    const first = config.items[0]
+    if (first && !config.items.some((tab) => tab.scene === scene.value)) scene.value = first.scene
+  })
+  void load()
+})
 watch(scene, () => { void load() })
 
 async function load() {

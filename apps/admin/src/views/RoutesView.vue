@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { apiDelete, apiGet, apiPatch, apiPost, apiUpload } from '../api/client'
 import PageHeader from '../components/PageHeader.vue'
-import type { CityItem, Paginated, RouteItem, Scene } from '../types/admin'
+import type { CityItem, Paginated, PlayType, RouteItem, Scene } from '../types/admin'
 import { useAuthStore } from '../stores/auth'
 import routeCover1 from '../../../mobile/src/static/routes/card-route-1.jpg'
 import routeCover2 from '../../../mobile/src/static/routes/card-route-2.jpg'
@@ -22,6 +22,31 @@ const bundledCoverImages: Record<string, string> = {
   '/static/fishing/card-fishing-3.jpg': fishingCover3,
 }
 
+/** 3 个顶层业务分类，fish 只作历史数据兼容，不再作为筛选入口（CHG-SCENE-EXPANSION-001） */
+const SCENE_TABS: Array<{ value: Scene | ''; label: string }> = [
+  { value: '', label: '全部' },
+  { value: 'drive', label: '粗门溜车' },
+  { value: 'play', label: '粗门玩玩' },
+  { value: 'wash', label: '粗门洗车' },
+]
+const PLAY_SUBTYPE_TABS: Array<{ value: PlayType | ''; label: string }> = [
+  { value: '', label: '全部类型' },
+  { value: 'fishing', label: '钓鱼' },
+  { value: 'camping', label: '露营' },
+  { value: 'checkin', label: '打卡' },
+]
+const SCENE_OPTIONS: Array<{ value: Scene; label: string }> = [
+  { value: 'drive', label: '粗门溜车' },
+  { value: 'play', label: '粗门玩玩' },
+  { value: 'wash', label: '粗门洗车' },
+  { value: 'fish', label: '钓鱼（历史兼容，不可新建）' },
+]
+const PLAY_SUBTYPE_OPTIONS: Array<{ value: PlayType; label: string }> = [
+  { value: 'fishing', label: '钓鱼' },
+  { value: 'camping', label: '露营' },
+  { value: 'checkin', label: '打卡' },
+]
+
 const auth = useAuthStore()
 const router = useRouter()
 const loading = ref(true)
@@ -29,6 +54,7 @@ const routes = ref<RouteItem[]>([])
 const cities = ref<CityItem[]>([])
 const keyword = ref('')
 const sceneFilter = ref<Scene | ''>('')
+const subTypeFilter = ref<PlayType | ''>('')
 const canEdit = auth.hasPermission('route:edit')
 
 // 服务端分页：筛选条件变化只影响当前页，因此换条件必须回到第 1 页
@@ -42,7 +68,7 @@ const saving = ref(false)
 const editingId = ref<string | null>(null)
 const lockedScene = ref<Scene>('drive')
 interface RouteForm {
-  title: string; scene: Scene; cityCode: string; difficulty: string; level: string
+  title: string; scene: Scene; subType: PlayType | ''; cityCode: string; difficulty: string; level: string
   bestTime: string; durationLabel: string; description: string
   startLng: number | null; startLat: number | null
   lengthKm: number | null; elevationM: number | null; carType: string; startPoint: string; endPoint: string
@@ -50,13 +76,15 @@ interface RouteForm {
   shoreKm: number | null; depthM: number | null; entryPoint: string; mainArea: string; gear: string
 }
 const emptyForm = (scene: Scene): RouteForm => ({
-  title: '', scene, cityCode: '', difficulty: '入门级', level: 'easy',
+  title: '', scene, subType: scene === 'play' ? 'fishing' : '', cityCode: '', difficulty: '入门级', level: 'easy',
   bestTime: '', durationLabel: '', description: '',
   startLng: null, startLat: null,
   lengthKm: null, elevationM: null, carType: '', startPoint: '', endPoint: '', endLng: null, endLat: null,
   shoreKm: null, depthM: null, entryPoint: '', mainArea: '', gear: '',
 })
 const form = ref<RouteForm>(emptyForm('drive'))
+const isFishingForm = computed(() =>
+  (form.value.scene === 'play' && form.value.subType === 'fishing') || form.value.scene === 'fish')
 
 const coverFile = ref<File | undefined>()
 const coverPreviewUrl = ref('')
@@ -66,7 +94,7 @@ const editCoverUrl = ref('')
 const LEVEL_OPTIONS = ['入门级', '轻松级', '进阶级', '挑战级']
 const BESTTIME_OPTIONS = ['全天', '清晨 04:30-09:30', '上午 08:30-12:00', '下午 13:00-17:00', '傍晚 16:00-19:30（日落）', '夜间 19:00-23:00', '清晨+傍晚 05:00-10:00 / 16:00-19:00']
 
-const sceneLabel = (value: string) => (value === 'fish' ? '钓鱼' : value === 'drive' ? '溜车' : value)
+const sceneLabel = (value: string) => ({ drive: '溜车', play: '玩玩', wash: '洗车', fish: '钓鱼（历史）' }[value] || value)
 const statusLabel = (value: string) => ({ online: '正常', pending: '待审核', offline: '下架' }[value] || value)
 function formatCreatedAt(value?: string) {
   if (!value) return '—'
@@ -82,12 +110,14 @@ function coverImageSrc(url: string) {
 async function load() {
   loading.value = true
   try {
+    const subType = sceneFilter.value === 'play' && subTypeFilter.value ? subTypeFilter.value : undefined
     const [loadedRoutes, loadedCities] = await Promise.all([
       apiGet<Paginated<RouteItem>>('/admin/routes', {
         page: page.value,
         pageSize: pageSize.value,
         keyword: keyword.value.trim(),
         scene: sceneFilter.value,
+        subType,
       }),
       auth.hasPermission('city:read') ? apiGet<CityItem[]>('/admin/cities') : Promise.resolve([] as CityItem[]),
     ])
@@ -107,7 +137,12 @@ watch(keyword, () => {
   window.clearTimeout(keywordTimer)
   keywordTimer = window.setTimeout(() => { page.value = 1; void load() }, 300)
 })
-watch(sceneFilter, () => { page.value = 1; void load() })
+// 场景切换时清掉不再适用的子类型；筛选变化回到第 1 页
+watch([sceneFilter, subTypeFilter], () => {
+  if (sceneFilter.value !== 'play' && subTypeFilter.value) { subTypeFilter.value = ''; return }
+  page.value = 1
+  void load()
+})
 function onPageSizeChange() { page.value = 1; void load() }
 
 function clearCoverSelection() {
@@ -148,10 +183,12 @@ function openCreate(scene: Scene) {
 function openEdit(tableRow: unknown) {
   const item = tableRow as RouteItem
   editingId.value = item.id
+  lockedScene.value = item.scene
   clearCoverSelection()
   editCoverUrl.value = item.coverImageUrl || ''
   form.value = {
-    title: item.title, scene: item.scene, cityCode: item.cityCode, difficulty: item.difficulty, level: item.level || 'easy',
+    title: item.title, scene: item.scene, subType: item.subType ?? (item.scene === 'fish' ? 'fishing' : ''),
+    cityCode: item.cityCode, difficulty: item.difficulty, level: item.level || 'easy',
     bestTime: item.bestTime || '', durationLabel: item.durationLabel || '', description: item.description || '',
     startLng: item.longitude ?? null, startLat: item.latitude ?? null,
     lengthKm: item.lengthKm ?? null, elevationM: item.elevationM ?? null,
@@ -167,6 +204,7 @@ function collectPayload() {
   const base = {
     title: form.value.title.trim(),
     scene: form.value.scene,
+    subType: form.value.scene === 'play' ? form.value.subType : undefined,
     cityCode: form.value.cityCode,
     difficulty: form.value.difficulty || '入门级',
     level: (form.value.level || undefined) as 'easy' | 'normal' | 'hard' | undefined,
@@ -176,7 +214,7 @@ function collectPayload() {
     latitude: form.value.startLat ?? undefined,
     longitude: form.value.startLng ?? undefined,
   }
-  const sceneFields = form.value.scene === 'fish'
+  const sceneFields = isFishingForm.value
     ? {
       shoreKm: form.value.shoreKm ?? undefined, depthM: form.value.depthM ?? undefined,
       entryPoint: form.value.entryPoint.trim(), mainArea: form.value.mainArea.trim(), gear: form.value.gear.trim(),
@@ -192,6 +230,7 @@ function collectPayload() {
 async function save() {
   if (!form.value.title.trim()) { ElMessage.warning('请填写路线名'); return }
   if (!form.value.cityCode) { ElMessage.warning('请选择关联城市'); return }
+  if (form.value.scene === 'play' && !form.value.subType) { ElMessage.warning('请选择粗门玩玩的子类型'); return }
   saving.value = true
   let metadataSaved = false
   let createdId = editingId.value
@@ -250,16 +289,25 @@ onBeforeUnmount(() => { window.clearTimeout(keywordTimer); clearCoverSelection()
 
   <section class="panel">
     <div class="panel__toolbar">
-      <div class="scene-tabs">
-        <button v-for="tab in [{ value: '', label: '全部' }, { value: 'drive', label: '溜车' }, { value: 'fish', label: '钓鱼' }]" :key="tab.value"
+      <div class="scene-tabs" role="tablist" aria-label="路线场景筛选">
+        <button v-for="tab in SCENE_TABS" :key="tab.value"
           class="scene-tab" :class="{ active: sceneFilter === tab.value }" role="tab" :aria-selected="sceneFilter === tab.value"
-          @click="sceneFilter = tab.value as Scene | ''">{{ tab.label }}</button>
+          @click="sceneFilter = tab.value">{{ tab.label }}</button>
       </div>
       <div class="spacer" />
       <template v-if="canEdit">
         <el-button type="primary" @click="openCreate('drive')">+ 新建溜车路线</el-button>
-        <el-button type="info" plain @click="openCreate('fish')">+ 新建钓鱼路线</el-button>
+        <el-button type="primary" plain @click="openCreate('play')">+ 新建玩玩路线</el-button>
+        <el-button type="info" plain @click="openCreate('wash')">+ 新建洗车路线</el-button>
       </template>
+    </div>
+    <div v-if="sceneFilter === 'play'" class="subtype-bar">
+      <span class="subtype-label">粗门玩玩子类型</span>
+      <div class="scene-tabs" role="tablist" aria-label="玩玩子类型筛选">
+        <button v-for="tab in PLAY_SUBTYPE_TABS" :key="tab.value"
+          class="scene-tab" :class="{ active: subTypeFilter === tab.value }" role="tab" :aria-selected="subTypeFilter === tab.value"
+          @click="subTypeFilter = tab.value">{{ tab.label }}</button>
+      </div>
     </div>
 
     <el-table v-loading="loading" :data="routes" row-key="id">
@@ -292,7 +340,7 @@ onBeforeUnmount(() => { window.clearTimeout(keywordTimer); clearCoverSelection()
         </template>
       </el-table-column>
       <template #empty>
-        <span class="muted small">{{ keyword.trim() || sceneFilter ? '没有符合筛选条件的路线' : '暂无路线数据' }}</span>
+        <span class="muted small">{{ keyword.trim() || sceneFilter || subTypeFilter ? '没有符合筛选条件的路线' : '暂无路线数据' }}</span>
       </template>
     </el-table>
 
@@ -315,10 +363,18 @@ onBeforeUnmount(() => { window.clearTimeout(keywordTimer); clearCoverSelection()
     <el-form label-position="top">
       <div class="route-form-grid">
         <el-form-item label="路线名" required>
-          <el-input v-model="form.title" maxlength="128" show-word-limit :placeholder="form.scene === 'fish' ? '例：梁子湖翘嘴鲌野钓基地' : '例：八分山日落自驾观光线'" />
+          <el-input v-model="form.title" maxlength="128" show-word-limit :placeholder="isFishingForm ? '例：梁子湖翘嘴鲌野钓基地' : '例：八分山日落自驾观光线'" />
         </el-form-item>
         <el-form-item label="场景" required>
-          <el-select v-model="form.scene" :disabled="!editingId" style="width: 100%"><el-option label="溜车" value="drive" /><el-option label="钓鱼" value="fish" /></el-select>
+          <el-select v-model="form.scene" :disabled="!editingId" style="width: 100%">
+            <el-option v-for="option in SCENE_OPTIONS" :key="option.value" :label="option.label" :value="option.value" :disabled="option.value === 'fish'" />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="form.scene === 'play'" label="粗门玩玩子类型" required>
+          <el-select v-model="form.subType" style="width: 100%">
+            <el-option v-for="option in PLAY_SUBTYPE_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
+          </el-select>
+          <div class="field-hint">钓鱼 / 露营 / 打卡；选择「钓鱼」时展示钓点专属字段</div>
         </el-form-item>
         <el-form-item label="城市" required>
           <el-select v-model="form.cityCode" filterable placeholder="请选择城市" style="width: 100%">
@@ -345,7 +401,7 @@ onBeforeUnmount(() => { window.clearTimeout(keywordTimer); clearCoverSelection()
         <el-form-item label="耗时"><el-input v-model="form.durationLabel" placeholder="约 1.5 小时" /></el-form-item>
       </div>
 
-      <div v-if="form.scene === 'fish'" class="route-form-grid">
+      <div v-if="isFishingForm" class="route-form-grid">
         <el-form-item label="环湖岸线 (km)"><el-input-number v-model="form.shoreKm" :min="0" :precision="1" style="width: 100%" /></el-form-item>
         <el-form-item label="平均水深 (m)"><el-input-number v-model="form.depthM" :min="0" :precision="1" style="width: 100%" /></el-form-item>
         <el-form-item label="钓点入口"><el-input v-model="form.entryPoint" placeholder="例：梁子湖码头" /></el-form-item>
@@ -397,7 +453,7 @@ onBeforeUnmount(() => { window.clearTimeout(keywordTimer); clearCoverSelection()
         </div>
       </div>
 
-      <el-form-item label="简介"><el-input v-model="form.description" type="textarea" :rows="3" :placeholder="form.scene === 'fish' ? '请填写具体的钓点详情' : '请填写具体的路线详情'" /></el-form-item>
+      <el-form-item label="简介"><el-input v-model="form.description" type="textarea" :rows="3" :placeholder="isFishingForm ? '请填写具体的钓点详情' : '请填写具体的路线详情'" /></el-form-item>
     </el-form>
     <template #footer>
       <el-button @click="dialogVisible = false">取消</el-button>
@@ -411,6 +467,9 @@ onBeforeUnmount(() => { window.clearTimeout(keywordTimer); clearCoverSelection()
 .scene-tabs { display: inline-flex; gap: 6px; }
 .scene-tab { min-height: 32px; padding: 0 16px; border: 1px solid var(--el-border-color); border-radius: 999px; background: #fff; color: var(--el-text-color-regular); font-size: 13px; cursor: pointer; }
 .scene-tab.active { border-color: var(--el-color-primary); background: var(--el-color-primary-light-9); color: var(--el-color-primary); font-weight: 600; }
+.scene-tab:focus-visible { outline: 2px solid var(--el-color-primary); outline-offset: 2px; }
+.subtype-bar { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.subtype-label { color: var(--el-text-color-secondary); font-size: 13px; }
 .field-hint { margin: 4px 0 12px; color: var(--el-text-color-secondary); font-size: 12px; }
 .muted { color: var(--el-text-color-secondary); }
 .small { font-size: 12px; }

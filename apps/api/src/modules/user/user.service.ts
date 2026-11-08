@@ -1,8 +1,12 @@
-import { BadRequestException, Injectable, NotFoundException, PayloadTooLargeException, UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, NotFoundException, PayloadTooLargeException, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { PrismaService } from '../../database/prisma.service'
+import { SceneTabsConfigService } from '../config/scene-tabs-config.service'
+import { normalizeScene, isFishingRecord, SCENE_SUBTYPE_INVALID, SceneSubTypeInvalidError } from '../../common/scenes'
+import type { PlayType, SceneQuery } from '../../common/scenes'
+import type { Prisma } from '../../generated/prisma/client'
 import type { UpdateUserDto, UploadedImage } from './user.dto'
 
 const AVATAR_MIME_EXTENSIONS: Record<string, string> = {
@@ -14,7 +18,12 @@ const MAX_AVATAR_BYTES = 5 * 1024 * 1024
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(UserService.name)
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sceneTabs: SceneTabsConfigService,
+  ) {}
 
   async me(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -63,17 +72,41 @@ export class UserService {
     return this.me(userId)
   }
 
-  async favorites(userId: string, scene: 'drive' | 'fish') {
+  async favorites(userId: string, scene: SceneQuery, subType?: PlayType | null) {
+    let filter
+    try {
+      filter = normalizeScene(scene, subType ?? null)
+    } catch (error) {
+      if (error instanceof SceneSubTypeInvalidError) {
+        throw new UnprocessableEntityException({ code: SCENE_SUBTYPE_INVALID, message: error.message })
+      }
+      throw error
+    }
+    // 归一化后再做显隐判断：兼容映射不得绕过「拒列表、留详情」
+    if (!(await this.sceneTabs.enabledScenes()).has(filter.scenes[0]!)) {
+      this.logger.log({ event: 'scene_tabs_list_denied', scene, resolvedScene: filter.scenes[0], resource: 'favorites' })
+      return []
+    }
+    const discoveryWhere: Prisma.DiscoveryWhereInput = filter.legacy
+      ? { OR: [{ scene: 'fish' }, { scene: 'play', subType: 'fishing' }] }
+      : { scene: { in: filter.scenes }, ...(filter.subType ? { subType: filter.subType } : {}) }
     const records = await this.prisma.favorite.findMany({
-      where: { userId, discovery: { scene, status: 'online' } },
+      where: { userId, discovery: { status: 'online', ...discoveryWhere } },
       include: { discovery: true },
       orderBy: { createdAt: 'asc' },
     })
     return records.map(({ discovery: item }) => {
+      const fishing = isFishingRecord(item.scene, item.subType)
       const tags = Array.isArray(item.tags) ? item.tags : []
       return {
-        id: item.id, type: item.scene === 'fish' ? 'spot' : 'route', scene: item.scene, title: item.title,
-        subtitle: item.scene === 'fish' ? `${String(tags[0] || '')} · ${item.bestTime}` : `${item.lengthKm.toFixed(1)}km · 落差 ${item.elevationM}m · ${item.difficulty}`,
+        id: item.id,
+        type: fishing ? 'spot' : 'route',
+        scene: item.scene,
+        subType: item.subType,
+        title: item.title,
+        subtitle: fishing
+          ? `${String(tags[0] || '')} · ${item.bestTime}`
+          : `${item.lengthKm.toFixed(1)}km · 落差 ${item.elevationM}m · ${item.difficulty}`,
         thumbUrl: item.coverImageUrl,
       }
     })

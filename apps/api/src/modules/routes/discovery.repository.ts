@@ -1,4 +1,7 @@
-export type DiscoveryScene = 'drive' | 'fish'
+import type { PlayType, SceneQuery, SceneFilter } from '../../common/scenes'
+
+export type DiscoveryScene = SceneQuery
+export type { SceneFilter } from '../../common/scenes'
 
 export interface PublicCityRecord {
   code: string
@@ -9,6 +12,7 @@ export interface PublicCityRecord {
 export interface PublicDiscoveryRecord {
   id: string
   scene: DiscoveryScene
+  subType: PlayType | null
   title: string
   rank: number
   rankTag: string
@@ -36,8 +40,10 @@ export interface PublicDiscoveryRecord {
 
 export interface DiscoveryRepository {
   listCities(): Promise<PublicCityRecord[]>
-  list(scene: DiscoveryScene, limit: number, cityCode?: string): Promise<PublicDiscoveryRecord[]>
-  find(id: string, scene: DiscoveryScene): Promise<PublicDiscoveryRecord | null>
+  /** 兼容既有调用：直接传 scene 字符串时内部做归一化 */
+  list(filter: SceneFilter | DiscoveryScene, limit: number, cityCode?: string): Promise<PublicDiscoveryRecord[]>
+  /** 详情按集合放行，永不引入分类显隐判断 */
+  find(id: string, filter: SceneFilter | DiscoveryScene | DiscoveryScene[], subType?: PlayType | null): Promise<PublicDiscoveryRecord | null>
 }
 
 export const DISCOVERY_REPOSITORY = Symbol('DISCOVERY_REPOSITORY')

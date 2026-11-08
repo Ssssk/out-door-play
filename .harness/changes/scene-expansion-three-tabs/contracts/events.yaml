@@ -1,0 +1,5 @@
+schemaVersion: 1
+events: []
+# 本 Change 不引入 RabbitMQ 或领域事件：ADR-006 要求无批准用例不引入消息中间件。
+# 分类变更路径为「Migration 回填 → MySQL → 小程序 onShow 拉取 /v1/config/scene-tabs」，属同步读模型。
+# 结构化日志事件（scene_legacy_mapping / scene_subtype_invalid / scene_backfill_batch / scene_tabs_list_denied）不是事件契约，不登记到本文件。

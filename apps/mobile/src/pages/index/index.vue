@@ -9,7 +9,7 @@
         @retry-cities="loadCities(true)"
       />
 
-      <SceneTabs :model-value="scene" @update:model-value="changeScene" />
+      <SceneTabs :model-value="scene" :tabs="sceneTabs" @update:model-value="changeScene" />
 
       <!-- 加载中（含下拉刷新）用骨架卡占位：避免旧列表挂半天、新数据到了才突然切换 -->
       <view v-if="status === 'loading' || loading" class="route-list">
@@ -43,11 +43,13 @@ import RouteCardSkeleton from '@/components/RouteCardSkeleton.vue'
 import SceneTabs from '@/components/SceneTabs.vue'
 import { onShareAppMessage } from '@dcloudio/uni-app'
 import { navigate } from '@/common/router'
+import { isFishingRecord } from '@/common/scenes'
 import type { RouteCard } from '@/types/domain'
 import { useDiscovery } from './useDiscovery'
 
 const {
   scene,
+  sceneTabs,
   routes,
   availableCities,
   loading,
@@ -60,8 +62,9 @@ const {
 } = useDiscovery()
 
 function openDetail(item: RouteCard) {
-  const path = item.scene === 'fish' ? '/pages/fishing-detail/index' : '/pages/route-detail/index'
-  void navigate(path, item.scene === 'fish' ? { spotId: item.id } : { routeId: item.id })
+  const fishing = isFishingRecord(item.scene, item.subType)
+  const path = fishing ? '/pages/fishing-detail/index' : '/pages/route-detail/index'
+  void navigate(path, fishing ? { spotId: item.id } : { routeId: item.id })
 }
 
 onShareAppMessage(() => ({ title: '粗门溜溜 · 周末一起出门溜溜', path: '/pages/index/index' }))

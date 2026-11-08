@@ -2,12 +2,12 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { DataAnalysis, Location, MapLocation, Postcard, User } from '@element-plus/icons-vue'
+import { DataAnalysis, Location, MapLocation, Menu, Postcard, User } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
-// 运营确认的五个入口；隐藏的功能保留路由和服务端权限检查。
+// 运营确认的入口；隐藏的功能保留路由和服务端权限检查。
 const allMenus = [
   { group: '用户与内容', items: [
     { path: '/users', label: '用户管理', icon: User, permission: 'user:read' },
@@ -19,6 +19,7 @@ const allMenus = [
   ] },
   { group: '系统配置', items: [
     { path: '/system-config', label: '上传二维码', icon: Postcard, permission: 'config:read' },
+    { path: '/system-config/scene-tabs', label: '首页分类目录', icon: Menu, permission: 'config:read' },
   ] },
 ]
 const menus = computed(() => allMenus.map((section) => ({ ...section, items: section.items.filter((item) => auth.hasPermission(item.permission)) })).filter((section) => section.items.length))

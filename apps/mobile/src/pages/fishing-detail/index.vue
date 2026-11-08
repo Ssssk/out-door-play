@@ -55,6 +55,7 @@ onShareAppMessage(() => ({ title: spot.value?.title || '粗门溜溜钓点', pat
 async function loadFavorite() {
   await launchLock.waitReady()
   if (!spot.value || !authStore.isAuthenticated) { isFavorite.value = false; return }
+  // 兼容期读值 fish：新服映射为 play + fishing，旧服直接支持；改传 play 会让「新包 + 旧服」返回 422
   try { isFavorite.value = (await outdoorApi.favorites('fish')).some((item) => item.id === spot.value?.id) }
   catch { /* 收藏列表失败不影响公开详情，写操作仍会显示明确错误。 */ }
 }

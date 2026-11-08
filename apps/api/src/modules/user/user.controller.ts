@@ -35,7 +35,7 @@ export class UserController {
 
   @Get('favorites')
   @ApiOperation({ operationId: 'listCurrentUserFavorites' })
-  favorites(@Req() request: MobileAuthenticatedRequest, @Query() query: FavoriteQueryDto) { return this.users.favorites(request.mobileAuth.userId, query.scene) }
+  favorites(@Req() request: MobileAuthenticatedRequest, @Query() query: FavoriteQueryDto) { return this.users.favorites(request.mobileAuth.userId, query.scene, query.subType ?? null) }
 
   @Post('favorites')
   @HttpCode(HttpStatus.OK)

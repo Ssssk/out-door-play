@@ -1,0 +1,23 @@
+version: 1
+errors:
+  - code: COMMON_VALIDATION_FAILED
+    httpStatus: 422
+    meaning: "DTO 运行时校验失败：未知 scene、scene=fish 用于写入、subType 非枚举值、scene 与 subType 组合缺字段、expectedUpdatedAt 非法、items 越界"
+    clientAction: "后台逐项展示中文提示，保留表单内容与并发 token，不自动重试"
+  - code: SCENE_SUBTYPE_INVALID
+    httpStatus: 422
+    meaning: "业务组合不合法：scene=play 但 subType 为空；scene 非 play 但 subType 非空；新写入使用兼容值 fish"
+    clientAction: "提示「粗门玩玩需选择子类型」或「该分类不支持子类型」，整笔不落库"
+  - code: CONFIG_INVALID
+    httpStatus: 422
+    meaning: "首页分类配置业务规则失败：scene 不在 drive/play/wash、scene 重复、0 个启用项、items 超过 3 项"
+    clientAction: "展示具体规则说明；旧配置残留 fish 时读取端兜底默认 3 项而不报错"
+  - code: CONFIG_VERSION_CONFLICT
+    httpStatus: 409
+    meaning: "首页分类配置并发保存，expectedUpdatedAt 已过期"
+    clientAction: "提示「配置已被其他运营更新，请刷新后重试」并自动重拉"
+  - code: DISCOVERY_NOT_FOUND
+    httpStatus: 404
+    meaning: "详情 id 未命中（含兼容期 scene 集合放行后仍未命中），沿用既有错误码"
+    clientAction: "详情页展示既有未找到状态，不泄漏内部异常"
+# 403 权限拒绝沿用 admin-auth / mobile-auth Guard 的稳定错误码，本 Change 不新增权限码。

@@ -1,19 +1,20 @@
 <template>
   <view class="scene-tabs" role="tablist" aria-label="出门场景">
-    <button v-for="tab in tabs" :key="tab.id" class="scene-tab" :class="{ active: modelValue === tab.id }" role="tab" :aria-selected="modelValue === tab.id" @click="select(tab.id)">{{ tab.label }}</button>
+    <button v-for="tab in tabs" :key="tab.scene" class="scene-tab" :class="{ active: modelValue === tab.scene }" role="tab" :aria-selected="modelValue === tab.scene" @click="select(tab.scene)">{{ tab.label }}</button>
   </view>
 </template>
 
 <script setup lang="ts">
-import type { Scene } from '@/types/domain'
+import { FALLBACK_SCENE_TABS } from '@/pages/index/useSceneTabs'
+import type { BusinessScene, SceneTabView } from '@/types/domain'
 
-defineProps<{ modelValue: Scene }>()
-const emit = defineEmits<{ 'update:modelValue': [scene: Scene] }>()
-// 钓鱼场景暂不开放，先只保留「粗门溜车」；恢复时把 fish 项加回即可。
-// 组件本体仍在（吸顶盒子承担头部与列表之间的间距），不渲染会让首页/收藏页布局塌陷
-const tabs: { id: Scene; label: string }[] = [{ id: 'drive', label: '粗门溜车' }]
+// 分类项由运营配置注入（首页/收藏页共用 useSceneTabs）；未注入时用本地兜底（仅 drive），保证吸顶盒子不塌陷
+withDefaults(defineProps<{ modelValue: BusinessScene; tabs?: SceneTabView[] }>(), {
+  tabs: () => FALLBACK_SCENE_TABS.items,
+})
+const emit = defineEmits<{ 'update:modelValue': [scene: BusinessScene] }>()
 let lastClick = 0
-function select(scene: Scene) {
+function select(scene: BusinessScene) {
   if (Date.now() - lastClick < 300) return
   lastClick = Date.now()
   emit('update:modelValue', scene)

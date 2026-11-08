@@ -1,0 +1,176 @@
+openapi: 3.0.3
+info:
+  title: "scene-expansion-three-tabs API delta"
+  version: "1.0.0"
+  description: "三业务分类（drive/play/wash）与 play 子类型（fishing/camping/checkin）的接口增量。fish 仅在兼容期作为读参数保留。"
+# 说明：仅登记已核对运行时 operationId 的接口；带路径参数的详情接口 delta 在实现阶段核对后补入。
+paths:
+  /v1/routes:
+    get:
+      operationId: listDiscoveries
+      summary: 发现列表（场景扩展为 3 类，支持可选子类型）
+      tags: [routes]
+      security: []
+      parameters:
+        - name: city
+          in: query
+          required: false
+          schema: { type: string }
+        - name: scene
+          in: query
+          required: false
+          schema: { $ref: '#/components/schemas/SceneQuery' }
+        - name: subType
+          in: query
+          required: false
+          schema: { $ref: '#/components/schemas/PlayType' }
+          description: 仅 scene=play（或兼容值 fish）时允许；其它场景传入返回 422
+      responses:
+        '200':
+          description: 卡片列表；隐藏场景返回空数组；新增 subType 字段
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/DiscoveryCard' }
+        '422':
+          description: COMMON_VALIDATION_FAILED 或 SCENE_SUBTYPE_INVALID
+  /v1/user/favorites:
+    get:
+      operationId: listCurrentUserFavorites
+      summary: 收藏列表（场景扩展为 3 类，支持可选子类型）
+      tags: [user]
+      parameters:
+        - name: scene
+          in: query
+          required: true
+          schema: { $ref: '#/components/schemas/SceneQuery' }
+        - name: subType
+          in: query
+          required: false
+          schema: { $ref: '#/components/schemas/PlayType' }
+      responses:
+        '200':
+          description: 收藏条目；隐藏场景返回空数组
+  /v1/config/scene-tabs:
+    get:
+      operationId: getPublicSceneTabs
+      summary: 小程序端读取首页启用分类（服务端默认 3 项）
+      description: "两层默认（2026-11-08 裁决）：服务端下发默认 3 项全启用；小程序本地故障/旧服兜底仅 drive，配置接口 404/5xx/超时/损坏时降级到仅 drive，不得用内置 3 项默认替代。"
+      tags: [config]
+      security: []
+      responses:
+        '200':
+          description: 仅启用分类，按 sort 稳定排序
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PublicSceneTabs' }
+  /v1/admin/config/scene-tabs:
+    get:
+      operationId: getAdminSceneTabs
+      summary: 管理端读取首页分类全量配置
+      tags: [admin-config]
+      security:
+        - adminSession: []
+      responses:
+        '200':
+          description: 全量 3 项与并发 token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminSceneTabs' }
+    put:
+      operationId: updateAdminSceneTabs
+      summary: 管理端保存首页分类配置
+      tags: [admin-config]
+      security:
+        - adminSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateSceneTabsRequest' }
+      responses:
+        '200':
+          description: 保存成功，revision 递增
+        '409':
+          description: CONFIG_VERSION_CONFLICT
+        '422':
+          description: COMMON_VALIDATION_FAILED / CONFIG_INVALID / SCENE_SUBTYPE_INVALID
+components:
+  securitySchemes:
+    adminSession:
+      type: apiKey
+      in: cookie
+      name: session
+      description: 沿用现有管理端 Cookie 会话与 CSRF，本 Change 不新增鉴权方式
+  schemas:
+    BusinessScene:
+      type: string
+      enum: [drive, play, wash]
+      description: 3 个顶层业务分类；新写入只能取这 3 值
+    SceneQuery:
+      type: string
+      enum: [drive, play, wash, fish]
+      description: fish 为兼容期读参数，服务端映射为 play + fishing；写入接口不接受 fish
+    PlayType:
+      type: string
+      enum: [fishing, camping, checkin]
+      description: 粗门玩玩的 3 个子类型，中文为钓鱼 / 露营 / 打卡
+    DiscoveryCard:
+      type: object
+      required: [id, scene, title]
+      properties:
+        id: { type: string }
+        scene: { $ref: '#/components/schemas/BusinessScene' }
+        subType:
+          allOf: [{ $ref: '#/components/schemas/PlayType' }]
+          nullable: true
+        title: { type: string }
+        rank: { type: integer }
+        coverImageUrl: { type: string }
+    PublicSceneTab:
+      type: object
+      required: [scene, label, sort]
+      properties:
+        scene: { $ref: '#/components/schemas/BusinessScene' }
+        label: { type: string, minLength: 1, maxLength: 12 }
+        sort: { type: integer, minimum: 0, maximum: 9999 }
+    PublicSceneTabs:
+      type: object
+      required: [revision, updatedAt, items]
+      properties:
+        revision: { type: integer, minimum: 0 }
+        updatedAt: { type: string, format: date-time, nullable: true }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items: { $ref: '#/components/schemas/PublicSceneTab' }
+    AdminSceneTab:
+      allOf:
+        - { $ref: '#/components/schemas/PublicSceneTab' }
+        - type: object
+          required: [enabled]
+          properties:
+            enabled: { type: boolean }
+    AdminSceneTabs:
+      type: object
+      required: [revision, updatedAt, items]
+      properties:
+        revision: { type: integer, minimum: 0 }
+        updatedAt: { type: string, format: date-time, nullable: true }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items: { $ref: '#/components/schemas/AdminSceneTab' }
+    UpdateSceneTabsRequest:
+      type: object
+      required: [expectedUpdatedAt, items]
+      properties:
+        expectedUpdatedAt: { type: string, format: date-time, nullable: true }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items: { $ref: '#/components/schemas/AdminSceneTab' }

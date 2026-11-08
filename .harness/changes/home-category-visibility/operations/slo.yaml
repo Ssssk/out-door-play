@@ -1,0 +1,22 @@
+service: "chumen-api / config-scene-tabs"
+owner: "用户（项目 Owner，兼产品/设计/UAT/发布）；Operations 与独立 Reviewer 签署待对应 Gate 执行时确认"
+measurement_window: "30d"
+scope: "GET /v1/config/scene-tabs 与按配置过滤的 GET /v1/routes、GET /v1/user/favorites"
+slis:
+  availability:
+    query: "配置接口成功响应数 / 总请求数（按 requestId/traceId 聚合 Nest 结构化日志；生产无独立 APM 时以集成测试与压测报告作为替代证据，由 Operations Gate 裁决）"
+    target: ">= 99.9%（30d 窗口）；故障注入下小程序首屏可渲染率 100%"
+  latency:
+    query: "配置接口服务端处理耗时 P95/P99（20 RPS、5 分钟、容器化 MySQL/InnoDB）"
+    target: "P95 <= 200ms、P99 <= 500ms，错误率 < 0.1%"
+  correctness:
+    query: "隐藏场景列表返回空数组的比例 / 隐藏场景请求数；详情接口 200 比例 / 详情请求数"
+    target: "隐藏场景列表拒绝率 100%，详情可用率 100%，配置保存并发冲突不出现静默覆盖"
+error_budget_policy: "超出错误预算时暂停一切配置变更，先执行「恢复默认」止损；P0/P1 未关闭不得继续发布或扩大灰度，需发布负责人与 Operations Owner 共同裁决"
+alert_routes:
+  - role: "发布负责人 / Incident Commander"
+    trigger: "配置接口 5xx 激增、分类为空、详情不可用"
+    channel: "项目现有协作渠道（Q-004 指定具体频道）"
+  - role: "Operations Owner"
+    trigger: "scene_tabs_config_invalid 日志持续增长、并发冲突异常升高"
+    channel: "项目现有协作渠道（Q-004 指定具体频道）"

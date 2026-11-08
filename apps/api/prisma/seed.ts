@@ -72,7 +72,7 @@ async function main() {
     const data = {
       ...city,
       enabled: !disabledCities.has(city.code),
-      scenes: fishingCities.has(city.code) ? ['drive', 'fish'] : ['drive'],
+      scenes: fishingCities.has(city.code) ? ['drive', 'play', 'wash'] : ['drive'],
     }
     await prisma.city.upsert({ where: { code: city.code }, update: data, create: data })
   }
@@ -144,8 +144,8 @@ async function main() {
   const rankings = [
     { id: 'weekend-drive-wuhan', name: '武汉 · 周末溜车热门榜', scene: 'drive' as const, cityCode: '420100', coverageCount: 8, weight: 92, status: RankingStatus.online },
     { id: 'mountain-drive-wuhan', name: '武汉 · 跑山穿越 Top10', scene: 'drive' as const, cityCode: '420100', coverageCount: 10, weight: 78, status: RankingStatus.online },
-    { id: 'wild-fishing', name: '钓点 · 野钓热门榜', scene: 'fish' as const, cityCode: null, coverageCount: 8, weight: 88, status: RankingStatus.online },
-    { id: 'lake-fishing', name: '湖库垂钓营地榜', scene: 'fish' as const, cityCode: null, coverageCount: 6, weight: 65, status: RankingStatus.online },
+    { id: 'wild-fishing', name: '钓点 · 野钓热门榜', scene: 'play' as const, cityCode: null, coverageCount: 8, weight: 88, status: RankingStatus.online },
+    { id: 'lake-fishing', name: '湖库垂钓营地榜', scene: 'play' as const, cityCode: null, coverageCount: 6, weight: 65, status: RankingStatus.online },
     { id: 'suburb-drive-beijing', name: '北京 · 城郊自驾 Top5', scene: 'drive' as const, cityCode: '110000', coverageCount: 5, weight: 40, status: RankingStatus.pending },
     { id: 'national-day', name: '国庆特别榜', scene: 'drive' as const, cityCode: null, coverageCount: 5, weight: 30, status: RankingStatus.offline },
   ]

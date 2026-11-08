@@ -1,0 +1,14 @@
+{
+  "change_id": "CHG-HOME-CATEGORY-001",
+  "decisions": {
+    "requirements": { "status": "passed", "approver": "用户（项目 Owner）", "decided_at": "2026-11-08T07:11:04Z", "reason": "用户回复「确认」，批准首页分类目录配置范围、拒列表留详情语义、默认配置口径与 19 条验收标准，并核对来源基线。", "evidence": ["approvals/2026-11-08-requirements-design.md", "01-clarification.md", "02-requirements.md", "03-acceptance-criteria.md"] },
+    "design": { "status": "passed", "approver": "用户（项目 Owner）", "decided_at": "2026-11-08T07:11:04Z", "reason": "用户批准后台「系统配置」分组新增独立配置模块（方案 B）、复用 SystemConfig 零迁移、公开/管理端接口契约、服务端过滤与并发条件更新方案。", "evidence": ["approvals/2026-11-08-requirements-design.md", "04-impact-analysis.md", "05-design.md", "contracts/openapi.yaml"] },
+    "implementation": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "verification": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "security": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "uat": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "operations": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "release": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "completion": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] }
+  }
+}

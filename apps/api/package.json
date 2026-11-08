@@ -22,6 +22,8 @@
     "migrate:route-covers": "tsx scripts/migrate-route-covers.ts",
     "migrate:clear-description-placeholder": "tsx scripts/migrate-clear-description-placeholder.ts",
     "backfill:fuel-prices": "tsx scripts/backfill-fuel-price-history.ts",
+    "backfill:scene-play": "tsx src/scripts/backfill-scene-play.ts",
+    "backfill:scene-play:apply": "tsx src/scripts/backfill-scene-play.ts --apply",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "preadmin:bootstrap": "prisma generate",

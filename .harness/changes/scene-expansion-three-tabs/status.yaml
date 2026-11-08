@@ -1,0 +1,48 @@
+id: "CHG-SCENE-EXPANSION-001"
+name: "scene-expansion-three-tabs"
+change_type: "feature"
+state: "implementing"
+risk_level: "high"
+owner: "用户（产品、架构与 UX Owner；发布负责人口径）"
+created_at: "2026-11-08"
+updated_at: "2026-11-08"
+
+scope:
+  frontend: true
+  backend: true
+  api: true
+  database: true
+  redis: false
+  messaging: false
+  security: true
+  deployment: true
+  ux: true
+  performance: true
+  operations: true
+  compliance: false
+
+gates:
+  requirements: "passed"
+  design: "passed"
+  implementation: "pending"
+  verification: "pending"
+  security: "pending"
+  uat: "pending"
+  operations: "pending"
+  release: "pending"
+  completion: "pending"
+
+approvals:
+  product_owner: "用户"
+  architecture_owner: "用户"
+  ux_owner: "用户"
+  security_owner: "pending"
+  operations_owner: "pending"
+  product_acceptance_owner: "pending"
+  reviewer: "pending"
+  release_owner: "pending"
+
+blocking_risks:
+  - "Q-E04：授权人、目标环境、动作范围已由用户 2026-11-08 部署指令明确（approvals/2026-11-08-production-deploy.md），发布前备份点已由流水线生成；恢复演练、维护窗口与发布后观察仍 not-run"
+  - "生产 ENUM 变更与数据回填需要明确授权、备份点与恢复演练"
+  - "微信小程序体验版/真机验收与独立 Reviewer 尚未执行"

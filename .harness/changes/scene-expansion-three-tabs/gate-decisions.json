@@ -1,0 +1,26 @@
+{
+  "change_id": "CHG-SCENE-EXPANSION-001",
+  "decisions": {
+    "requirements": {
+      "status": "passed",
+      "approver": "用户（项目 Owner，兼产品 Owner 与架构 Owner）",
+      "decided_at": "2026-11-08",
+      "reason": "用户逐条裁决 Q-E01 ~ Q-E03 与四条已批准 Change 冲突，并书面批准需求范围、两层默认、详情语义与发布归属；见批准记录。",
+      "evidence": ["approvals/2026-11-08-requirements-design.md", "01-clarification.md", "02-requirements.md"]
+    },
+    "design": {
+      "status": "passed",
+      "approver": "用户（项目 Owner，兼产品 Owner 与架构 Owner）",
+      "decided_at": "2026-11-08",
+      "reason": "用户批准 Expand → Migrate → Contract 迁移方案、common/scenes.ts 白名单收敛、两层默认、契约增量与滚动发布设计；见批准记录。",
+      "evidence": ["approvals/2026-11-08-requirements-design.md", "05-design.md", "backend/migration-plan.md"]
+    },
+    "implementation": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "verification": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "security": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "uat": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "operations": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "release": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] },
+    "completion": { "status": "pending", "approver": null, "decided_at": null, "reason": null, "evidence": [] }
+  }
+}

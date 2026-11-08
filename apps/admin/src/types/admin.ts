@@ -1,9 +1,15 @@
 export type RouteStatus = 'online' | 'pending' | 'offline'
-export type Scene = 'drive' | 'fish'
+
+/** 3 个顶层业务分类；写入接口只接受这 3 值（CHG-SCENE-EXPANSION-001 裁决 1） */
+export type BusinessScene = 'drive' | 'play' | 'wash'
+/** fish 仅在兼容期作为读值保留，后台不可新写入 */
+export type Scene = BusinessScene | 'fish'
+/** 粗门玩玩的子类型，仅 scene=play 时有效 */
+export type PlayType = 'fishing' | 'camping' | 'checkin'
 
 export interface RouteItem {
   id: string; listRank: number; title: string; cityName: string; cityCode: string; difficulty: string
-  status: RouteStatus; scene: Scene; rankWeight: number; rankTag: string; tags: string[]
+  status: RouteStatus; scene: Scene; subType: PlayType | null; rankWeight: number; rankTag: string; tags: string[]
   impressions: number; clicks: number; favoriteCount: number; coverImageUrl: string
   createdAt: string; boundRankings: number
   bestTime: string; durationLabel: string; description: string
@@ -44,6 +50,14 @@ export interface UserDetail extends UserItem {
   feeds: Array<{ id: string; type: 'text' | 'video'; content: string; status: 'pending' | 'published' | 'offline'; reportCount: number; createdAt: string }>
 }
 
+/** 首页分类目录：scene 受 3 值白名单约束，后台不能新增业务场景 */
+export interface SceneTabItem {
+  scene: BusinessScene; label: string; enabled: boolean; sort: number
+}
+export interface SceneTabsConfig {
+  revision: number; updatedAt: string | null; items: SceneTabItem[]
+}
+
 export interface UserItem {
   id: string; nickname: string; avatarUrl: string; phone: string; cityName: string
   status: 'normal' | 'banned'; favoriteCount: number; postCount: number; createdAt: string; lastActiveAt: string
@@ -73,4 +87,3 @@ export interface FuelData {
     openingHours: string; enabled: boolean; distanceKm: number; city: { name: string }
   }>
 }
-
