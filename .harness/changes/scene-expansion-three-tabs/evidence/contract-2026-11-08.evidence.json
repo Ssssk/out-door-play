@@ -1,0 +1,17 @@
+{
+  "changeId": "CHG-SCENE-EXPANSION-001",
+  "type": "contract",
+  "status": "passed",
+  "commit": "813a61884ea48f5faa74d399bf2fea9e9b685164",
+  "environment": "local/Darwin arm64/Node v24.16.0/pnpm 11.19.0；DATABASE_URL 为构建用哑值，未连接数据库",
+  "startedAt": "2026-11-08T12:42:00Z",
+  "finishedAt": "2026-11-08T12:42:00Z",
+  "timeNote": "单条命令精确起止时间未采集；此处为 date -u 采集的证据落盘时刻",
+  "command": "prisma generate && pnpm test:contract",
+  "exitCode": 0,
+  "summary": "OpenAPI contract passed for 26 operation(s) across 6 contract(s)；本 Change 的 contracts/openapi.yaml 已登记进 verify-openapi-contract.ts 的 contractPaths，覆盖 BusinessScene / SceneQuery / PlayType 与新增 subType 参数。首次并行执行因两个 prisma generate 并发写坏生成目录失败，串行重跑通过。",
+  "runner": "AI 实现者（本地命令，非流水线）",
+  "requirementIds": ["FR-EXP-007", "FR-EXP-009", "FR-EXP-012"],
+  "acceptanceIds": ["AC-EXP-013"],
+  "report": "evidence/2026-11-08-implementation-phase2.md"
+}
