@@ -11,6 +11,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AdSlot: typeof import('./../components/AdSlot.vue')['default']
     AppShell: typeof import('./../components/AppShell.vue')['default']
     BrandHeader: typeof import('./../components/BrandHeader.vue')['default']
     DetailActionBar: typeof import('./../components/DetailActionBar.vue')['default']

@@ -44,17 +44,21 @@
       </view>
 
       <view v-else-if="stationState === 'ready'" class="station-list">
-        <view v-for="station in stations" :key="station.id" class="station-card card-surface">
-          <view class="station-info">
-            <text class="station-name">{{ station.name }}<text v-if="station.kind === 'ev'" class="ev-badge">⚡ 充电</text></text>
-            <!-- 城市兜底时无真实「距你」距离：改展示地址，避免出现「距你 -km」 -->
-          <text v-if="stationFallback !== 'city'" class="station-meta">距你 {{ formatDistanceKm(station.distanceKm) }}km{{ station.openingHours ? ` · ${station.openingHours}` : '' }}</text>
-          <text v-else class="station-meta">{{ station.address }}</text>
-           <!-- 产品决策：站点卡片不展示油价（省级指导价同省同价，参考意义有限），只保留距离/地址；需要恢复时把 v-if 条件改回 station.price92 > 0 -->
-            <text v-if="false" class="station-prices">92# <text class="price-strong">{{ station.price92.toFixed(2) }}</text> · 95# {{ station.price95.toFixed(2) }} 元/升</text>
+        <template v-for="(station, index) in stations" :key="station.id">
+          <view class="station-card card-surface">
+            <view class="station-info">
+              <text class="station-name">{{ station.name }}<text v-if="station.kind === 'ev'" class="ev-badge">⚡ 充电</text></text>
+              <!-- 城市兜底时无真实「距你」距离：改展示地址，避免出现「距你 -km」 -->
+              <text v-if="stationFallback !== 'city'" class="station-meta">距你 {{ formatDistanceKm(station.distanceKm) }}km{{ station.openingHours ? ` · ${station.openingHours}` : '' }}</text>
+              <text v-else class="station-meta">{{ station.address }}</text>
+              <!-- 产品决策：站点卡片不展示油价（省级指导价同省同价，参考意义有限），只保留距离/地址；需要恢复时把 v-if 条件改回 station.price92 > 0 -->
+              <text v-if="false" class="station-prices">92# <text class="price-strong">{{ station.price92.toFixed(2) }}</text> · 95# {{ station.price95.toFixed(2) }} 元/升</text>
+            </view>
+            <button class="navigate-button" @click="navigateToStation(station)">导航</button>
           </view>
-          <button class="navigate-button" @click="navigateToStation(station)">导航</button>
-        </view>
+          <!-- 原生模板广告：信息流中插在第 2 条站点卡片后；加油站/充电站共用同一列表，两个 tab 都生效 -->
+          <AdSlot v-if="index === 1" />
+        </template>
       </view>
 
       <!-- 分页状态：触底自动加载下一页 -->
@@ -69,6 +73,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import AdSlot from '@/components/AdSlot.vue'
 import AppShell from '@/components/AppShell.vue'
 import BrandHeader from '@/components/BrandHeader.vue'
 import { formatDistanceKm } from '@/common/location'

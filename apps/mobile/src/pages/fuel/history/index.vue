@@ -77,6 +77,9 @@
           <text v-if="items.length === 1" class="chart-note">历史调价逐期记录，下次调价后即可看到走势连线</text>
         </view>
 
+        <!-- 原生模板广告：价格走势卡片下方、「近半年油价」列表上方；用后台「油价详情页面」广告位 -->
+        <AdSlot unitId="adunit-4ecdb4a1e8fa02ab" spacing="top" />
+
         <view class="section-head list-head"><text class="section-title">近半年油价</text></view>
         <view v-if="items.length === 0" class="state" role="status">
           <text>暂无历史调价记录</text>
@@ -100,6 +103,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import AdSlot from '@/components/AdSlot.vue'
 import AppShell from '@/components/AppShell.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { outdoorApi } from '@/api/outdoor'
