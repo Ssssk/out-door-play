@@ -5,7 +5,7 @@ state: "implementing"
 risk_level: "high"
 owner: "用户（产品、架构与 UX Owner；发布负责人口径）"
 created_at: "2026-11-08"
-updated_at: "2026-11-08"
+updated_at: "2026-11-12"
 
 scope:
   frontend: true
@@ -46,3 +46,4 @@ blocking_risks:
   - "Q-E04：正式环境部署已于 2026-11-08 执行成功（run 42483370291，evidence/2026-11-08-production-deploy.md），发布前备份步骤 success；恢复演练、微信端 UAT、独立 Reviewer、既有安全门禁失败与发布/完成 Gate 仍 not-run，Q-E04 不视为已关闭"
   - "生产 ENUM 变更与数据回填需要明确授权、备份点与恢复演练"
   - "微信小程序体验版/真机验收与独立 Reviewer 尚未执行"
+  - "2026-11-12 露营目的地型字段修订（TASK-E19，FR-EXP-013/AC-EXP-017）已实现并通过三端 type-check、单测与生产构建；验证 Gate（真实 MySQL 集成/E2E/UAT）、安全 Gate（既有供应链门禁失败）、Operations Gate 与完成 Gate 仍 not-run"

@@ -64,7 +64,8 @@ export class CreateRouteDto {
   @IsString() @Length(6, 6) cityCode!: string
   @IsIn([...BUSINESS_SCENES]) scene!: BusinessScene
   @IsOptional() @IsIn([...PLAY_TYPES]) subType?: PlayType
-  @IsString() @MinLength(1) @MaxLength(32) difficulty!: string
+  /** 露营（目的地型）不展示难度字段，允许省略；其它场景由后台表单继续提交 */
+  @IsOptional() @IsString() @MinLength(1) @MaxLength(32) difficulty?: string
   @IsOptional() @IsString() @MaxLength(64) rankTag?: string
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100) rankWeight?: number
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) rank?: number

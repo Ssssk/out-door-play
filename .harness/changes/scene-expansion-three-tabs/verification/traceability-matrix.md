@@ -18,6 +18,7 @@
 | FR-EXP-010 | AC-EXP-012 | `04-impact-analysis.md` | TASK-E07 | TEST-E-001、TEST-E-017 | 尚无 | `not-run` |
 | FR-EXP-011 | AC-EXP-010、AC-EXP-016 | `05-design.md` | TASK-E11 | TEST-E-007、TEST-E-016 | 尚无 | `not-run` |
 | FR-EXP-012 | AC-EXP-009、AC-EXP-014 | `05-design.md`、`release/release-plan.md` | TASK-E06、TASK-E14、TASK-E16 | TEST-E-006、TEST-E-013 | 尚无 | `not-run` |
+| FR-EXP-013 | AC-EXP-017 | `frontend/component-design.md`、`05-design.md` | TASK-E19 | TEST-E-018 | 尚无 | `not-run` |
 | NFR-MIG-001 | AC-EXP-005、AC-EXP-006、AC-EXP-015 | `backend/migration-plan.md`、`operations/disaster-recovery.md` | TASK-E02、TASK-E03、TASK-E15 | TEST-E-009、TEST-E-010 | 尚无 | `not-run` |
 | NFR-COMPAT-001 | AC-EXP-009、AC-EXP-014 | `05-design.md`、`release/release-plan.md` | TASK-E14、TASK-E16 | TEST-E-006、TEST-E-013 | 尚无 | `not-run` |
 | NFR-SEC-001 | AC-EXP-003、AC-EXP-012、AC-EXP-016 | `05-design.md`、`verification/security-review.md` | TASK-E06、TASK-E11 | TEST-E-004、TEST-E-016 | 尚无 | `not-run` |
@@ -46,6 +47,7 @@
 | AC-EXP-014 | TEST-E-013、TEST-E-012 | 四组合目标端矩阵 | 人工 + E2E | `not-run` |
 | AC-EXP-015 | TEST-E-010 | 演练 MySQL | 压测/DDL 评估报告 | `not-run` |
 | AC-EXP-016 | TEST-E-007、TEST-E-014、TEST-E-016 | 后台 Chrome + 微信真机 | 集成 + 日志断言 + 人工 | `not-run` |
+| AC-EXP-017 | TEST-E-018 | 本地工作树 | 单元/组件测试（routeFormPolicy、admin.service.destination、DiscoveryCard、scenes） | `not-run` |
 
 ## 产品 UAT 覆盖
 

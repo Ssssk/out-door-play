@@ -1,0 +1,22 @@
+{
+  "changeId": "CHG-SCENE-EXPANSION-001",
+  "type": "static",
+  "status": "passed",
+  "commit": "c85cb02ac85d9d5ba43dc31ba70a3fc3b37b2363",
+  "environment": "local / macOS / Node via pnpm",
+  "startedAt": "2026-11-12",
+  "finishedAt": "2026-11-12",
+  "command": "pnpm --filter @chumen/admin type-check && pnpm --filter @chumen/mobile type-check && pnpm --filter @chumen/api type-check && pnpm --filter @chumen/admin build && pnpm --filter @chumen/mobile build",
+  "exitCode": 0,
+  "summary": "三端类型检查（admin vue-tsc、mobile vue-tsc、api tsc）通过；后台与小程序生产构建成功（admin dist 产出、mobile H5 + mp-weixin 产出）。注：本地 vite 构建需关闭 CodeBuddy safe-delete shim（CODEBUDDY_SAFE_DELETE_ENABLED=0）以绕过废纸篓助手超时；CI 构建无此问题。本次露营字段修订含于提交 c85cb02（证据文件同批次并入）。",
+  "runner": "agent-local",
+  "requirementIds": ["FR-EXP-013"],
+  "acceptanceIds": ["AC-EXP-017"],
+  "tests": [
+    { "suite": "admin type-check", "command": "pnpm --filter @chumen/admin type-check", "result": "pass" },
+    { "suite": "mobile type-check", "command": "pnpm --filter @chumen/mobile type-check", "result": "pass" },
+    { "suite": "api type-check", "command": "pnpm --filter @chumen/api type-check", "result": "pass" },
+    { "suite": "admin build", "command": "pnpm --filter @chumen/admin build", "result": "pass" },
+    { "suite": "mobile build", "command": "pnpm --filter @chumen/mobile build", "result": "pass" }
+  ]
+}

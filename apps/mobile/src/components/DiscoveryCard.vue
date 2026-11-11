@@ -8,7 +8,7 @@
     </view>
     <view class="card-bottom">
       <text class="card-title">{{ item.title }}</text>
-      <view class="metrics">
+      <view v-if="!destinationOnly" class="metrics">
         <view><text class="metric-value">{{ item.lengthKm.toFixed(1) }}KM</text><text class="metric-label">{{ fishing ? '环湖岸线' : '路线长度' }}</text></view>
         <view><text class="metric-value">{{ verticalMetric }}</text><text class="metric-label">{{ fishing ? '平均水深' : '路线落差' }}</text></view>
         <view><text class="metric-value">{{ item.difficulty }}</text><text class="metric-label">{{ fishing ? '鱼获难度' : '难度等级' }}</text></view>
@@ -21,11 +21,12 @@
 import { computed } from 'vue'
 import { resolveAssetUrl } from '@/common/assetUrl'
 import { formatDistanceKm } from '@/common/location'
-import { isFishingRecord } from '@/common/scenes'
+import { isDestinationOnlyRecord, isFishingRecord } from '@/common/scenes'
 import type { RouteCard } from '@/types/domain'
 const props = defineProps<{ item: RouteCard }>()
 const emit = defineEmits<{ click: [item: RouteCard] }>()
 const fishing = computed(() => isFishingRecord(props.item.scene, props.item.subType))
+const destinationOnly = computed(() => isDestinationOnlyRecord(props.item.scene, props.item.subType))
 const verticalMetric = computed(() => {
   const value = fishing.value ? props.item.depthM : props.item.elevationM
   return value === null ? '--' : `${value}M`

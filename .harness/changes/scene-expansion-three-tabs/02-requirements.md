@@ -105,6 +105,18 @@
 - 业务规则：`fish` 只作读取兼容，不作为可写入值；响应中 `scene` 字段返回真实存储值（play），旧包按 `scene !== 'fish'` 走路线详情页仍能渲染。
 - 失败行为：兼容映射失败时返回空列表而非 500，并记录日志。
 
+### FR-EXP-013 露营目的地型字段口径
+
+- 描述：露营（`play` + `subType=camping`）是目的地型内容，不是路线；后台新建/编辑表单与小程序展示只保留终点及终点坐标，不展示也不写入驾驶类字段。
+- 来源：用户 2026-11-12 后台截图与明确要求（露营去掉难度、难度等级、建议时段、耗时、路线长、落差、车型、起点、起点坐标，只有终点）。
+- 业务规则：
+  - 后台表单（`RoutesView.vue`）对 `play+camping` 隐藏：难度、难度等级、建议时段、耗时、路线长、落差、车型、起点、起点坐标。
+  - 提交 payload（`routeFormPolicy.buildRoutePayload`）对目的地型记录只含 `endPoint` 与 `endLongitude/endLatitude`（终点坐标同时作为导航与「距你」距离基准）；终点坐标缺失时不提交坐标键，避免服务端收到 0/0 而导航到错误位置。
+  - 服务端（`AdminService.createRoute/updateRoute`）对目的地型记录强制不写入 `difficulty`/`level`/`bestTime`/`durationLabel`/`lengthKm`/`elevationM`/`carType`/`startPoint` 的占位值（`difficulty` 置空串、`level` 置 null、其余清零/置空）；DTO `difficulty` 改为可选以允许露营表单不提交。
+  - 小程序端（`DiscoveryCard` / `DetailHero` / `route-detail`）对目的地型记录隐藏难度、耗时、路线长、落差、车型、出发地与「查看完整路线」入口。
+- 权限：沿用 `route:edit` 与服务端 Guard。
+- 失败行为：违反目的地型口径的隐藏字段在服务端被清空，不产生「入门级」「待补充」等假数据。
+
 ## 非功能需求
 
 ### NFR-MIG-001 迁移安全
@@ -169,6 +181,7 @@
 | FR-EXP-010 | SRC-E04 | `CitiesView.vue`、`RankingsView.vue`、`prisma/seed.ts` |
 | FR-EXP-011 | SRC-E03 | `admin-auth` Guard、配置乐观锁 |
 | FR-EXP-012 | DEC-E02、SRC-E04 | `AGENTS.md` §9 / 旧小程序包白名单 |
+| FR-EXP-013 | 2026-11-12 截图与明确要求 | 用户截图 / `RoutesView.vue`、`routeFormPolicy.ts`、`admin.service.ts` |
 | NFR-MIG-001 | AGENTS.md §9、§13 | 迁移与破坏性操作约束 |
 | NFR-COMPAT-001 | DEC-E02、DEC-E12 | 滚动共存窗口 |
 | NFR-SEC-001 | AGENTS.md §8 | 运行时 DTO 校验与服务端授权 |

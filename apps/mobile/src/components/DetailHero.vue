@@ -5,7 +5,7 @@
     <view class="hero-top"><view v-if="item.rankTag && item.rank > 0" class="rank"><image src="/static/icons/bolt.svg" mode="aspectFit" /><text>{{ item.rankTag }} Top {{ item.rank }}</text></view><view class="distance"><image src="/static/icons/pin-light.svg" mode="aspectFit" /><text>距你 {{ formatDistanceKm(item.distanceKm) }}km</text></view></view>
     <view class="hero-content">
       <text class="title">{{ item.title }}</text>
-      <view class="hero-metrics">
+      <view v-if="!destinationOnly" class="hero-metrics">
         <view><text>{{ item.lengthKm.toFixed(1) }}KM</text><text>{{ fishing ? '环湖岸线' : '路线长度' }}</text></view>
         <view><text>{{ verticalMetric }}</text><text>{{ fishing ? '平均水深' : '路线落差' }}</text></view>
         <view><text>{{ item.difficulty }}</text><text>{{ fishing ? '鱼获难度' : '难度等级' }}</text></view>
@@ -17,10 +17,11 @@
 import { computed } from 'vue'
 import { resolveAssetUrl } from '@/common/assetUrl'
 import { formatDistanceKm } from '@/common/location'
-import { isFishingRecord } from '@/common/scenes'
+import { isDestinationOnlyRecord, isFishingRecord } from '@/common/scenes'
 import type { RouteCard } from '@/types/domain'
 const props = defineProps<{ item: RouteCard }>()
 const fishing = computed(() => isFishingRecord(props.item.scene, props.item.subType))
+const destinationOnly = computed(() => isDestinationOnlyRecord(props.item.scene, props.item.subType))
 const verticalMetric = computed(() => {
   const value = fishing.value ? props.item.depthM : props.item.elevationM
   return value === null ? '--' : `${value}M`

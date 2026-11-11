@@ -5,15 +5,20 @@
       <DetailHero :item="detail" />
       <view class="detail-body">
         <view v-if="loadState === 'fallback'" class="detail-notice" role="status"><text>网络不太稳定，当前显示本地路线资料</text><button @click="loadDetail">重试</button></view>
-        <view class="summary-card">
+        <view v-if="!destinationOnly" class="summary-card">
           <view><text>{{ detail.durationLabel }}</text><text>预计耗时</text></view><view><text>{{ detail.bestTime }}</text><text>推荐时段</text></view><view><text>{{ detail.carType || '--' }}</text><text>车型建议</text></view>
         </view>
         <view class="section-head">
-          <text class="section-title">路线信息</text>
-          <text class="route-map-link" @click="openRouteMap">查看完整路线 ›</text>
+          <text class="section-title">{{ destinationOnly ? '地点信息' : '路线信息' }}</text>
+          <text v-if="!destinationOnly" class="route-map-link" @click="openRouteMap">查看完整路线 ›</text>
         </view>
         <view class="info-list">
-          <view><text>出发地</text><text>{{ detail.startPoint || '--' }}</text></view><view><text>目的地</text><text>{{ detail.endPoint || '--' }}</text></view><view><text>最佳时段</text><text>{{ detail.bestTime }}</text></view><view><text>车型建议</text><text>{{ detail.carType || '--' }}</text></view>
+          <view v-if="!destinationOnly"><text>出发地</text><text>{{ detail.startPoint || '--' }}</text></view>
+          <view><text>目的地</text><text>{{ detail.endPoint || '--' }}</text></view>
+          <template v-if="!destinationOnly">
+            <view><text>最佳时段</text><text>{{ detail.bestTime }}</text></view>
+            <view><text>车型建议</text><text>{{ detail.carType || '--' }}</text></view>
+          </template>
         </view>
         <template v-if="detail.description"><text class="section-title">路线介绍</text><text class="description">{{ detail.description }}</text></template>
       </view>
@@ -25,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import AppShell from '@/components/AppShell.vue'
 import DetailActionBar from '@/components/DetailActionBar.vue'
@@ -34,6 +39,7 @@ import DetailSkeleton from '@/components/DetailSkeleton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { outdoorApi } from '@/api/outdoor'
 import { userFacingError } from '@/common/apiErrors'
+import { isDestinationOnlyRecord } from '@/common/scenes'
 import { launchLock } from '@/common/launchLock'
 import { openNavigation } from '@/common/mapNavigation'
 import { withRealDistance } from '@/common/location'
@@ -45,6 +51,7 @@ import { useAuthStore } from '@/stores/auth'
 import type { RouteDetail } from '@/types/domain'
 
 const detail = ref<RouteDetail>()
+const destinationOnly = computed(() => detail.value ? isDestinationOnlyRecord(detail.value.scene, detail.value.subType) : false)
 const loadState = ref<'loading' | 'ready' | 'fallback' | 'error'>('loading')
 const loadError = ref('路线加载失败，请重试')
 let requestedId = 'bafen-shanlu'

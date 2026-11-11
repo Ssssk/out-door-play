@@ -5,6 +5,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { apiDelete, apiGet, apiPatch, apiPost, apiUpload } from '../api/client'
 import PageHeader from '../components/PageHeader.vue'
 import type { CityItem, Paginated, PlayType, RouteItem, Scene } from '../types/admin'
+import type { RouteFormValues } from './routeFormPolicy'
+import { buildRoutePayload, createEmptyRouteForm, isDestinationOnlyForm as isCampingRecord, isFishingForm as isFishingRecord } from './routeFormPolicy'
 import { useAuthStore } from '../stores/auth'
 import routeCover1 from '../../../mobile/src/static/routes/card-route-1.jpg'
 import routeCover2 from '../../../mobile/src/static/routes/card-route-2.jpg'
@@ -67,24 +69,11 @@ const dialogVisible = ref(false)
 const saving = ref(false)
 const editingId = ref<string | null>(null)
 const lockedScene = ref<Scene>('drive')
-interface RouteForm {
-  title: string; scene: Scene; subType: PlayType | ''; cityCode: string; difficulty: string; level: string
-  bestTime: string; durationLabel: string; description: string
-  startLng: number | null; startLat: number | null
-  lengthKm: number | null; elevationM: number | null; carType: string; startPoint: string; endPoint: string
-  endLng: number | null; endLat: number | null
-  shoreKm: number | null; depthM: number | null; entryPoint: string; mainArea: string; gear: string
-}
-const emptyForm = (scene: Scene): RouteForm => ({
-  title: '', scene, subType: scene === 'play' ? 'fishing' : '', cityCode: '', difficulty: '入门级', level: 'easy',
-  bestTime: '', durationLabel: '', description: '',
-  startLng: null, startLat: null,
-  lengthKm: null, elevationM: null, carType: '', startPoint: '', endPoint: '', endLng: null, endLat: null,
-  shoreKm: null, depthM: null, entryPoint: '', mainArea: '', gear: '',
-})
-const form = ref<RouteForm>(emptyForm('drive'))
-const isFishingForm = computed(() =>
-  (form.value.scene === 'play' && form.value.subType === 'fishing') || form.value.scene === 'fish')
+const emptyForm = createEmptyRouteForm
+const form = ref<RouteFormValues>(emptyForm('drive'))
+const isFishingForm = computed(() => isFishingRecord(form.value.scene, form.value.subType))
+/** 露营是目的地型内容：只有终点，没有起点，也不展示难度/耗时/路线/车型字段 */
+const isCampingForm = computed(() => isCampingRecord(form.value.scene, form.value.subType))
 
 const coverFile = ref<File | undefined>()
 const coverPreviewUrl = ref('')
@@ -200,31 +189,9 @@ function openEdit(tableRow: unknown) {
   dialogVisible.value = true
 }
 
+/** 隐藏字段不进入 payload：露营只提交终点与终点坐标，避免出现运营没填过的占位数据 */
 function collectPayload() {
-  const base = {
-    title: form.value.title.trim(),
-    scene: form.value.scene,
-    subType: form.value.scene === 'play' ? form.value.subType : undefined,
-    cityCode: form.value.cityCode,
-    difficulty: form.value.difficulty || '入门级',
-    level: (form.value.level || undefined) as 'easy' | 'normal' | 'hard' | undefined,
-    bestTime: form.value.bestTime,
-    durationLabel: form.value.durationLabel.trim(),
-    description: form.value.description.trim(),
-    latitude: form.value.startLat ?? undefined,
-    longitude: form.value.startLng ?? undefined,
-  }
-  const sceneFields = isFishingForm.value
-    ? {
-      shoreKm: form.value.shoreKm ?? undefined, depthM: form.value.depthM ?? undefined,
-      entryPoint: form.value.entryPoint.trim(), mainArea: form.value.mainArea.trim(), gear: form.value.gear.trim(),
-    }
-    : {
-      lengthKm: form.value.lengthKm ?? undefined, elevationM: form.value.elevationM ?? undefined,
-      carType: form.value.carType.trim(), startPoint: form.value.startPoint.trim(), endPoint: form.value.endPoint.trim(),
-      endLongitude: form.value.endLng ?? undefined, endLatitude: form.value.endLat ?? undefined,
-    }
-  return { ...base, ...sceneFields }
+  return buildRoutePayload(form.value)
 }
 
 async function save() {
@@ -374,7 +341,7 @@ onBeforeUnmount(() => { window.clearTimeout(keywordTimer); clearCoverSelection()
           <el-select v-model="form.subType" style="width: 100%">
             <el-option v-for="option in PLAY_SUBTYPE_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
           </el-select>
-          <div class="field-hint">钓鱼 / 露营 / 打卡；选择「钓鱼」时展示钓点专属字段</div>
+          <div class="field-hint">钓鱼 / 露营 / 打卡；「钓鱼」展示钓点专属字段，「露营」只保留终点与终点坐标</div>
         </el-form-item>
         <el-form-item label="城市" required>
           <el-select v-model="form.cityCode" filterable placeholder="请选择城市" style="width: 100%">
@@ -382,23 +349,25 @@ onBeforeUnmount(() => { window.clearTimeout(keywordTimer); clearCoverSelection()
           </el-select>
           <div class="field-hint">未开通城市不可选</div>
         </el-form-item>
-        <el-form-item label="难度">
-          <el-select v-model="form.difficulty" style="width: 100%"><el-option v-for="opt in LEVEL_OPTIONS" :key="opt" :label="opt" :value="opt" /></el-select>
-        </el-form-item>
-        <el-form-item label="难度等级">
-          <el-select v-model="form.level" style="width: 100%">
-            <el-option label="入门（easy）" value="easy" />
-            <el-option label="一般（normal）" value="normal" />
-            <el-option label="困难（hard）" value="hard" />
-          </el-select>
-          <div class="field-hint">字段同 mobile-home.route.level（小程序端用于路线卡片徽章）</div>
-        </el-form-item>
-        <el-form-item label="建议时段">
-          <el-select v-model="form.bestTime" filterable allow-create default-first-option style="width: 100%">
-            <el-option v-for="option in BESTTIME_OPTIONS" :key="option" :label="option" :value="option" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="耗时"><el-input v-model="form.durationLabel" placeholder="约 1.5 小时" /></el-form-item>
+        <template v-if="!isCampingForm">
+          <el-form-item label="难度">
+            <el-select v-model="form.difficulty" style="width: 100%"><el-option v-for="opt in LEVEL_OPTIONS" :key="opt" :label="opt" :value="opt" /></el-select>
+          </el-form-item>
+          <el-form-item label="难度等级">
+            <el-select v-model="form.level" style="width: 100%">
+              <el-option label="入门（easy）" value="easy" />
+              <el-option label="一般（normal）" value="normal" />
+              <el-option label="困难（hard）" value="hard" />
+            </el-select>
+            <div class="field-hint">字段同 mobile-home.route.level（小程序端用于路线卡片徽章）</div>
+          </el-form-item>
+          <el-form-item label="建议时段">
+            <el-select v-model="form.bestTime" filterable allow-create default-first-option style="width: 100%">
+              <el-option v-for="option in BESTTIME_OPTIONS" :key="option" :label="option" :value="option" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="耗时"><el-input v-model="form.durationLabel" placeholder="约 1.5 小时" /></el-form-item>
+        </template>
       </div>
 
       <div v-if="isFishingForm" class="route-form-grid">
@@ -414,6 +383,16 @@ onBeforeUnmount(() => { window.clearTimeout(keywordTimer); clearCoverSelection()
         </el-form-item>
         <el-form-item label="主钓区"><el-input v-model="form.mainArea" placeholder="例：北岸深水区" /></el-form-item>
         <el-form-item label="装备建议" class="grid-span-2"><el-input v-model="form.gear" placeholder="例：路亚竿·手竿 2.7m / 4 号主线" /></el-form-item>
+      </div>
+      <div v-else-if="isCampingForm" class="route-form-grid">
+        <el-form-item label="终点" class="grid-span-2"><el-input v-model="form.endPoint" placeholder="例：木兰草原露营区" /></el-form-item>
+        <el-form-item label="终点坐标" class="grid-span-2">
+          <div class="coord-row">
+            <el-input-number v-model="form.endLng" :min="-180" :max="180" :precision="6" placeholder="经度 lng" controls-position="right" />
+            <el-input-number v-model="form.endLat" :min="-90" :max="90" :precision="6" placeholder="纬度 lat" controls-position="right" />
+          </div>
+          <div class="field-hint">露营是目的地型内容：只有终点，没有起点。该坐标同时用于小程序「立即出发」导航与「距你」距离计算（GCJ-02 火星坐标）</div>
+        </el-form-item>
       </div>
       <div v-else class="route-form-grid">
         <el-form-item label="路线长 (km)"><el-input-number v-model="form.lengthKm" :min="0" :precision="1" style="width: 100%" /></el-form-item>

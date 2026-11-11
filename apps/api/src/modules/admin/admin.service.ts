@@ -7,7 +7,7 @@ import { PrismaService } from '../../database/prisma.service'
 import { SceneTabsConfigService } from '../config/scene-tabs-config.service'
 import {
   BUSINESS_SCENES, LEGACY_SCENES, SCENE_LABELS, SCENE_SUBTYPE_INVALID, SceneSubTypeInvalidError,
-  isBusinessScene, isFishingRecord, normalizeScene, writableSceneSubType,
+  isBusinessScene, isDestinationOnlyRecord, isFishingRecord, normalizeScene, writableSceneSubType,
 } from '../../common/scenes'
 import type { PlayType, SceneQuery } from '../../common/scenes'
 import type { UpdateSceneTabsDto } from './admin.dto'
@@ -43,6 +43,11 @@ const ROUTE_COVER_MIME_EXTENSIONS: Record<string, string> = {
   'image/webp': 'webp',
 }
 const MAX_ROUTE_COVER_BYTES = 5 * 1024 * 1024
+
+/** 露营（目的地型）不适用的字段：保存时一律清空，避免历史占位值残留 */
+const DESTINATION_ONLY_HIDDEN_FIELDS = [
+  'difficulty', 'level', 'bestTime', 'durationLabel', 'lengthKm', 'elevationM', 'carType', 'startPoint',
+] as const
 
 @Injectable()
 export class AdminService {
@@ -170,6 +175,8 @@ export class AdminService {
       throw error
     }
     const defaultCoverImageUrl = isFishingRecord(scene, subType) ? '/static/fishing/card-fishing-1.jpg' : '/static/routes/card-route-1.jpg'
+    // 目的地型内容不写入运营没填过的占位值：隐藏字段一律留空/归零，避免小程序显示假的「入门级」「待补充」
+    const destinationOnly = isDestinationOnlyRecord(scene, subType)
     return this.prisma.discovery.create({
       data: {
         id: `route-${randomUUID()}`,
@@ -180,15 +187,15 @@ export class AdminService {
         rank: input.rank ?? 0,
         rankTag: input.rankTag?.trim() || '',
         distanceKm: input.distanceKm ?? 0,
-        lengthKm: input.lengthKm ?? input.distanceKm ?? 0,
-        elevationM: input.elevationM ?? 0,
-        difficulty: input.difficulty.trim(),
-        level: input.level ?? null,
+        lengthKm: destinationOnly ? 0 : input.lengthKm ?? input.distanceKm ?? 0,
+        elevationM: destinationOnly ? 0 : input.elevationM ?? 0,
+        difficulty: destinationOnly ? '' : input.difficulty?.trim() ?? '',
+        level: destinationOnly ? null : input.level ?? null,
         coverImageUrl: input.coverImageUrl?.trim() || defaultCoverImageUrl,
-        durationLabel: input.durationLabel?.trim() || '待补充',
-        bestTime: input.bestTime?.trim() || '待补充',
-        carType: input.carType?.trim() || null,
-        startPoint: input.startPoint?.trim() || null,
+        durationLabel: destinationOnly ? '' : input.durationLabel?.trim() || '待补充',
+        bestTime: destinationOnly ? '' : input.bestTime?.trim() || '待补充',
+        carType: destinationOnly ? null : input.carType?.trim() || null,
+        startPoint: destinationOnly ? null : input.startPoint?.trim() || null,
         endPoint: input.endPoint?.trim() || null,
         entryPoint: input.entryPoint?.trim() || null,
         mainArea: input.mainArea?.trim() || null,
@@ -212,7 +219,7 @@ export class AdminService {
   }
 
   async updateRoute(id: string, input: UpdateRouteDto) {
-    await this.requireRoute(id)
+    const existing = await this.requireRoute(id)
     if (input.cityCode) {
       const city = await this.prisma.city.findUnique({ where: { code: input.cityCode } })
       if (!city) throw new NotFoundException('关联城市不存在，请先在城市与位置中维护该城市')
@@ -220,10 +227,9 @@ export class AdminService {
     const { scene, subType, ...rest } = input
     const data: Prisma.DiscoveryUpdateInput = { ...rest }
     if (isBusinessScene(scene)) {
-      const current = await this.prisma.discovery.findUnique({ where: { id }, select: { subType: true } })
       try {
         data.scene = scene
-        data.subType = writableSceneSubType(scene, subType ?? current?.subType ?? null)
+        data.subType = writableSceneSubType(scene, subType ?? existing.subType ?? null)
       } catch (error) {
         if (error instanceof SceneSubTypeInvalidError) {
           throw new UnprocessableEntityException({ code: SCENE_SUBTYPE_INVALID, message: error.message })
@@ -232,6 +238,18 @@ export class AdminService {
       }
     } else if (subType !== undefined) {
       data.subType = subType
+    }
+    const effectiveScene: SceneQuery = isBusinessScene(scene) ? scene : existing.scene as SceneQuery
+    const effectiveSubType: PlayType | null = 'subType' in data
+      ? (data.subType as PlayType | null)
+      : existing.subType ?? null
+    if (isDestinationOnlyRecord(effectiveScene, effectiveSubType)) {
+      const mutable = data as Record<string, unknown>
+      for (const field of DESTINATION_ONLY_HIDDEN_FIELDS) delete mutable[field]
+      Object.assign(mutable, {
+        difficulty: '', level: null, bestTime: '', durationLabel: '',
+        lengthKm: 0, elevationM: 0, carType: null, startPoint: null,
+      })
     }
     // fish 是兼容读值：编辑历史记录时不把 scene 写成新值，避免绕过写入白名单
     return this.prisma.discovery.update({ where: { id }, data })

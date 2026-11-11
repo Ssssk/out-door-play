@@ -1,0 +1,20 @@
+{
+  "changeId": "CHG-SCENE-EXPANSION-001",
+  "type": "unit",
+  "status": "passed",
+  "commit": "c85cb02ac85d9d5ba43dc31ba70a3fc3b37b2363",
+  "environment": "local / macOS / Node via pnpm / vitest",
+  "startedAt": "2026-11-12",
+  "finishedAt": "2026-11-12",
+  "command": "pnpm --filter @chumen/api test && pnpm --filter @chumen/admin test && pnpm --filter @chumen/mobile test",
+  "exitCode": 0,
+  "summary": "单元与组件测试全绿：API 151 passed（含新增 src/common/scenes.spec.ts 露营判定、src/modules/admin/admin.service.destination.spec.ts 目的地型字段策略）、admin 9 passed（含新增 src/views/routeFormPolicy.test.ts 露营 payload 策略）、mobile 80 passed（含新增 src/common/scenes.spec.ts、DiscoveryCard 露营隐藏指标用例）。本次露营字段修订含于提交 c85cb02（证据文件同批次并入）。",
+  "runner": "agent-local",
+  "requirementIds": ["FR-EXP-013"],
+  "acceptanceIds": ["AC-EXP-017"],
+  "tests": [
+    { "suite": "api", "command": "pnpm --filter @chumen/api test", "result": "151 passed" },
+    { "suite": "admin", "command": "pnpm --filter @chumen/admin test", "result": "9 passed" },
+    { "suite": "mobile", "command": "pnpm --filter @chumen/mobile test", "result": "80 passed" }
+  ]
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   BUSINESS_SCENES, DEFAULT_SCENE_TABS, PLAY_TYPES, SCENE_SUBTYPE_INVALID,
-  SceneSubTypeInvalidError, isFishingRecord, normalizeScene, writableSceneSubType,
+  SceneSubTypeInvalidError, isDestinationOnlyRecord, isFishingRecord, normalizeScene, writableSceneSubType,
 } from './scenes'
 
 describe('业务场景单一事实来源（CHG-SCENE-EXPANSION-001）', () => {
@@ -50,5 +50,15 @@ describe('业务场景单一事实来源（CHG-SCENE-EXPANSION-001）', () => {
     expect(isFishingRecord('play', 'camping')).toBe(false)
     expect(isFishingRecord('drive', null)).toBe(false)
     expect(isFishingRecord('wash', null)).toBe(false)
+  })
+
+  it('目的地型（露营）只命中 play+camping，且与钓点型互斥', () => {
+    expect(isDestinationOnlyRecord('play', 'camping')).toBe(true)
+    expect(isDestinationOnlyRecord('play', 'fishing')).toBe(false)
+    expect(isDestinationOnlyRecord('play', 'checkin')).toBe(false)
+    expect(isDestinationOnlyRecord('play', null)).toBe(false)
+    expect(isDestinationOnlyRecord('drive', null)).toBe(false)
+    expect(isDestinationOnlyRecord('wash', null)).toBe(false)
+    expect(isDestinationOnlyRecord('fish', null)).toBe(false)
   })
 })

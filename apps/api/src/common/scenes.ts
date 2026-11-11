@@ -103,3 +103,12 @@ export function writableSceneSubType(scene: unknown, subType?: unknown): PlayTyp
 export function isFishingRecord(scene: SceneQuery, subType: PlayType | null): boolean {
   return scene === 'fish' || (scene === 'play' && subType === 'fishing')
 }
+
+/**
+ * 目的地型内容（2026-11-12 字段口径修订）：仅 `play + camping`。
+ * 露营是目的地不是路线，只有终点；难度 / 难度等级 / 建议时段 / 耗时 /
+ * 路线长 / 落差 / 车型 / 起点 / 起点坐标均不适用，服务端不写入占位值。
+ */
+export function isDestinationOnlyRecord(scene: SceneQuery, subType: PlayType | null): boolean {
+  return scene === 'play' && subType === 'camping'
+}

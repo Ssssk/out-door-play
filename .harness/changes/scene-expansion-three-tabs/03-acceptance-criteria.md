@@ -142,6 +142,16 @@
 - **AND** 3 个 tab 与二级筛选保留 a11y 属性、可键盘操作，触控区域不低于现状
 - **验证方式**：集成测试 + 浏览器/目标端人工检查 + 日志断言
 
+## AC-EXP-017 露营目的地型字段口径
+
+- 关联需求：FR-EXP-013
+- **GIVEN** 运营打开「新建粗门玩玩路线」并选择子类型「露营」
+- **WHEN** 填写并保存（仅终点与终点坐标）
+- **THEN** 后台表单不出现难度 / 难度等级 / 建议时段 / 耗时 / 路线长 / 落差 / 车型 / 起点 / 起点坐标；提交 payload 仅含 `endPoint`、`endLongitude`、`endLatitude`（终点坐标同时作为导航坐标）
+- **AND** 服务端落库该记录 `difficulty=''`、`level=null`、`bestTime=''`、`durationLabel=''`、`lengthKm=0`、`elevationM=0`、`carType=null`、`startPoint=null`，不出现「入门级」「待补充」等占位值
+- **AND** 小程序端该露营卡片与详情不展示难度、耗时、路线长、落差、车型、出发地与「查看完整路线」
+- **验证方式**：后台字段策略单测（`routeFormPolicy.test.ts`）、服务端字段策略单测（`admin.service.destination.spec.ts`）、小程序判定单测（`mobile/src/common/scenes.spec.ts`、`DiscoveryCard.component.spec.ts`）；目标端人工复核见 TASK-E19
+
 ## 冲突裁决后的验收口径修订（2026-11-08）
 
 以下修订优先于上文对应条目，裁决全文见 `01-clarification.md` 与 `02-requirements.md`。

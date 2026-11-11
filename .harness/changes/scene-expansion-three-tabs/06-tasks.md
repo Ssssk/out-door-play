@@ -20,6 +20,7 @@
 - [ ] TASK-E16 `[DEC-E12]` **API + 后台已于 2026-11-08 发布到 `https://www.chumenliuliu.cloud/admin/routes`**；小程序体验版上传、真机 UAT、微信审核与正式发布 `not-run`
 - [ ] TASK-E17 `[07-knowledge.md]` `knowledge-retrieval` 复核、迁移经验沉淀与 Wiki 同步待 Change 完成后执行
 - [ ] TASK-E18 `[completion.md]` 独立 Reviewer 评审、Gate 一致性检查与完成报告 `not-run`
+- [x] TASK-E19 `[FR-EXP-013][AC-EXP-017]` 2026-11-12 完成：露营（`play`+`camping`）目的地型字段口径——后台 `RoutesView.vue` 仅保留终点与终点坐标、新增 `routeFormPolicy.ts` 字段策略、DTO `difficulty` 改为可选、`AdminService.createRoute/updateRoute` 对目的地型强制清空占位值、小程序 `DiscoveryCard`/`DetailHero`/`route-detail` 隐藏不适配指标；新增 `routeFormPolicy.test.ts`、`admin.service.destination.spec.ts`、两端 `scenes.spec.ts` 与 `DiscoveryCard.component.spec.ts` 用例；三端 `type-check` 与单测（API 151 / admin 9 / mobile 80）及生产构建（admin / mobile）均通过
 
 ## 依赖顺序
 
