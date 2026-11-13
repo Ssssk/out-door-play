@@ -15,6 +15,7 @@ export interface RouteItem {
   bestTime: string; durationLabel: string; description: string
   level: string | null; longitude: number; latitude: number; endLongitude: number | null; endLatitude: number | null
   lengthKm: number; elevationM: number; carType: string | null; startPoint: string | null; endPoint: string | null
+  priceLabel: string | null
   shoreKm: number | null; depthM: number | null; entryPoint: string | null; mainArea: string | null; gear: string | null
 }
 

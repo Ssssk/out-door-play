@@ -41,6 +41,7 @@ export class UpdateRouteDto {
   @IsOptional() @IsIn(['easy', 'normal', 'hard']) level?: 'easy' | 'normal' | 'hard'
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100) rankWeight?: number
   @IsOptional() @IsString() @MaxLength(64) bestTime?: string
+  @IsOptional() @IsString() @MaxLength(64) priceLabel?: string
   @IsOptional() @IsString() @MaxLength(32) durationLabel?: string
   @IsOptional() @IsString() @MaxLength(5000) description?: string
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(1000) lengthKm?: number
@@ -76,6 +77,7 @@ export class CreateRouteDto {
   @IsOptional() @IsIn(['easy', 'normal', 'hard']) level?: 'easy' | 'normal' | 'hard'
   @IsOptional() @IsString() @MaxLength(32) durationLabel?: string
   @IsOptional() @IsString() @MaxLength(64) bestTime?: string
+  @IsOptional() @IsString() @MaxLength(64) priceLabel?: string
   @IsOptional() @IsString() @MaxLength(64) carType?: string
   @IsOptional() @IsString() @MaxLength(128) startPoint?: string
   @IsOptional() @IsString() @MaxLength(128) endPoint?: string

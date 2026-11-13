@@ -121,6 +121,8 @@ model Discovery {
   carType         String?     @map("car_type") @db.VarChar(64)
   startPoint      String?     @map("start_point") @db.VarChar(128)
   endPoint        String?     @map("end_point") @db.VarChar(128)
+  /// 目的地型（露营/打卡/洗车）门票/费用文案，如「免费」「成人 60 元 / 车位 30 元」；可空
+  priceLabel      String?     @map("price_label") @db.VarChar(64)
   /// 终点坐标（GCJ-02）：小程序「立即出发」优先终点导航，缺失回落起点
   endLongitude    Float?      @map("end_longitude")
   endLatitude     Float?      @map("end_latitude")

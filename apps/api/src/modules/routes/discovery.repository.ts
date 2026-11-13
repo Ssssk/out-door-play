@@ -27,6 +27,7 @@ export interface PublicDiscoveryRecord {
   carType: string | null
   startPoint: string | null
   endPoint: string | null
+  priceLabel: string | null
   entryPoint: string | null
   mainArea: string | null
   gear: string | null

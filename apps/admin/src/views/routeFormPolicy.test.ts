@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { buildRoutePayload, createEmptyRouteForm, isDestinationOnlyForm, isFishingForm } from './routeFormPolicy'
 
-/** 目的地型表单（露营 / 打卡）隐藏的字段，一个都不能出现在提交 payload 里 */
+/** 目的地型表单（洗车 / 露营 / 打卡）隐藏的字段，一个都不能出现在提交 payload 里。
+ * 注意：bestTime / durationLabel / priceLabel / carType（仅洗车）是目的地型卡片指标，允许提交，故不在本清单 */
 const DESTINATION_HIDDEN_FIELDS = [
-  'difficulty', 'level', 'bestTime', 'durationLabel', 'lengthKm', 'elevationM',
-  'carType', 'startPoint', 'shoreKm', 'depthM', 'entryPoint', 'mainArea', 'gear',
+  'difficulty', 'level', 'lengthKm', 'elevationM',
+  'startPoint', 'shoreKm', 'depthM', 'entryPoint', 'mainArea', 'gear',
 ] as const
 
 function campingForm() {
@@ -78,6 +79,22 @@ describe('routeFormPolicy（露营字段口径修订 2026-11-12）', () => {
     for (const field of DESTINATION_HIDDEN_FIELDS) expect(payload).not.toHaveProperty(field)
   })
 
+  it('GIVEN 露营提交开放时间/建议停留/门票 WHEN 构造 payload THEN 三项卡片指标进入 payload', () => {
+    const form = {
+      ...createEmptyRouteForm('play'),
+      subType: 'camping' as const,
+      title: '木兰草原露营区', cityCode: '420100',
+      endPoint: '木兰草原 A 区', endLng: 114.12, endLat: 30.65,
+      bestTime: '3–11 月', durationLabel: '过夜', priceLabel: '成人 60 元',
+    }
+    const payload = buildRoutePayload(form)
+
+    expect(payload).toMatchObject({
+      scene: 'play', subType: 'camping',
+      bestTime: '3–11 月', durationLabel: '过夜', priceLabel: '成人 60 元',
+    })
+  })
+
   it('GIVEN 洗车 WHEN 构造 payload THEN 同目的地型隐藏驾驶字段，但保留可洗车型', () => {
     const form = {
       ...createEmptyRouteForm('wash'),
@@ -92,8 +109,8 @@ describe('routeFormPolicy（露营字段口径修订 2026-11-12）', () => {
       endLongitude: 114.4, endLatitude: 30.47, longitude: 114.4, latitude: 30.47,
       carType: 'SUV/轿车/房车',
     })
-    // 驾驶类字段（不含 carType）一律不提交
-    for (const field of DESTINATION_HIDDEN_FIELDS.filter((f) => f !== 'carType')) {
+    // 驾驶类字段一律不提交（carType 对洗车允许保留，已前置断言）
+    for (const field of DESTINATION_HIDDEN_FIELDS) {
       expect(payload).not.toHaveProperty(field)
     }
   })

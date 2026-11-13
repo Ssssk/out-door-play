@@ -19,6 +19,11 @@
             <view><text>最佳时段</text><text>{{ detail.bestTime }}</text></view>
             <view><text>车型建议</text><text>{{ detail.carType || '--' }}</text></view>
           </template>
+          <template v-if="detail.scene === 'play' && (detail.subType === 'camping' || detail.subType === 'checkin')">
+            <view><text>门票</text><text>{{ detail.priceLabel || '免费' }}</text></view>
+            <view><text>开放时间</text><text>{{ detail.bestTime || '全天' }}</text></view>
+            <view><text>建议停留</text><text>{{ detail.durationLabel || '--' }}</text></view>
+          </template>
           <template v-if="detail.scene === 'wash'">
             <view><text>可洗车型</text><text>{{ detail.carType || '--' }}</text></view>
             <view><text>营业时间</text><text>{{ detail.bestTime || '全天自助' }}</text></view>

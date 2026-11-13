@@ -44,19 +44,31 @@ describe('目的地型（洗车 / 露营 / 打卡）字段策略', () => {
     })
   })
 
-  it('GIVEN 调用方仍传入隐藏字段 WHEN 新建露营 THEN 服务端强制清空', async () => {
+  it('GIVEN 调用方仍传入隐藏字段 WHEN 新建露营 THEN 驾驶类被清空，但卡片指标（开放时间/建议停留/门票）保留', async () => {
     const prisma = fakePrisma()
     await new AdminService(prisma, {} as never).createRoute({
       ...campingCreate,
-      difficulty: '挑战级', level: 'hard', bestTime: '全天', durationLabel: '约 2 小时',
+      difficulty: '挑战级', level: 'hard', bestTime: '全天', durationLabel: '约 2 小时', priceLabel: '成人 60 元',
       lengthKm: 99, elevationM: 300, carType: 'SUV', startPoint: '某停车场',
     } as CreateRouteDto)
 
     const data = vi.mocked(prisma.discovery.create).mock.calls[0]![0]!.data as Record<string, unknown>
     expect(data).toMatchObject({
-      difficulty: '', level: null, bestTime: '', durationLabel: '',
+      difficulty: '', level: null,
+      bestTime: '全天', durationLabel: '约 2 小时', priceLabel: '成人 60 元',
       lengthKm: 0, elevationM: 0, carType: null, startPoint: null,
     })
+  })
+
+  it('GIVEN 新建露营带开放时间/建议停留/门票 WHEN 创建 THEN 三项卡片指标照单保留', async () => {
+    const prisma = fakePrisma()
+    await new AdminService(prisma, {} as never).createRoute({
+      ...campingCreate,
+      bestTime: '3–11 月', durationLabel: '过夜', priceLabel: '免费',
+    } as CreateRouteDto)
+
+    const data = vi.mocked(prisma.discovery.create).mock.calls[0]![0]!.data as Record<string, unknown>
+    expect(data).toMatchObject({ bestTime: '3–11 月', durationLabel: '过夜', priceLabel: '免费' })
   })
 
   it('GIVEN 新建打卡 WHEN 创建 THEN 与露营同口径：不写入路线类占位值', async () => {
@@ -122,7 +134,7 @@ describe('目的地型（洗车 / 露营 / 打卡）字段策略', () => {
     })
   })
 
-  it('GIVEN 编辑露营 WHEN 提交隐藏字段 THEN 被剥离并清空，终点仍可更新', async () => {
+  it('GIVEN 编辑露营 WHEN 提交隐藏字段 THEN 驾驶类被剥离清空，终点仍可更新，卡片指标不动', async () => {
     const prisma = fakePrisma()
     await new AdminService(prisma, {} as never).updateRoute('route-1', {
       difficulty: '挑战级', carType: 'SUV', startPoint: '某停车场', endPoint: '木兰草原 B 区',
@@ -131,9 +143,11 @@ describe('目的地型（洗车 / 露营 / 打卡）字段策略', () => {
     const data = vi.mocked(prisma.discovery.update).mock.calls[0]![0]!.data as Record<string, unknown>
     expect(data).toMatchObject({
       endPoint: '木兰草原 B 区',
-      difficulty: '', level: null, bestTime: '', durationLabel: '',
+      difficulty: '', level: null,
       lengthKm: 0, elevationM: 0, carType: null, startPoint: null,
     })
+    expect(data).not.toHaveProperty('bestTime')
+    expect(data).not.toHaveProperty('durationLabel')
   })
 
   it('GIVEN 编辑溜车 WHEN 提交难度 THEN 正常保留', async () => {

@@ -23,6 +23,7 @@ const publicDiscoverySelect = {
   carType: true,
   startPoint: true,
   endPoint: true,
+  priceLabel: true,
   entryPoint: true,
   mainArea: true,
   gear: true,

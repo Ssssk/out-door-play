@@ -43,6 +43,12 @@ export interface RouteCard {
   depthM: number | null
   difficulty: Difficulty
   coverImageUrl: string
+  /** 目的地型卡片指标：开放时间 / 最佳时段（复用 bestTime 列） */
+  bestTime?: string
+  /** 目的地型卡片指标：建议停留（复用 durationLabel 列） */
+  durationLabel?: string
+  /** 目的地型卡片指标：门票 / 费用文案 */
+  priceLabel?: string | null
   /** 目的地坐标，用于按设备定位实算「距你」距离 */
   latitude?: number | null
   longitude?: number | null
@@ -51,6 +57,7 @@ export interface RouteCard {
 export interface RouteDetail extends RouteCard {
   durationLabel: string
   bestTime: string
+  priceLabel: string | null
   carType: string | null
   startPoint: string | null
   endPoint: string | null

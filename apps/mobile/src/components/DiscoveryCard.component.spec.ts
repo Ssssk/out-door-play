@@ -48,33 +48,38 @@ describe('DiscoveryCard', () => {
     expect(wrapper.text()).toContain('路线长度')
   })
 
-  it('hides route/difficulty metrics for checkin (destination-only records)', async () => {
-    const item = { ...base, scene: 'play' as const, subType: 'checkin' as const, elevationM: 220, depthM: null }
+  it('shows destination metrics (门票/开放时间/建议停留) for checkin, not route metrics', async () => {
+    const item = { ...base, scene: 'play' as const, subType: 'checkin' as const, elevationM: 220, depthM: null, priceLabel: '免费', bestTime: '全天', durationLabel: '1–2 小时' }
     const wrapper = mount(DiscoveryCard, { props: { item } })
 
-    expect(wrapper.find('.metrics').exists()).toBe(false)
+    expect(wrapper.find('.metrics').exists()).toBe(true)
+    expect(wrapper.text()).toContain('门票')
+    expect(wrapper.text()).toContain('开放时间')
+    expect(wrapper.text()).toContain('建议停留')
     expect(wrapper.text()).not.toContain('路线长度')
     expect(wrapper.text()).not.toContain('难度等级')
     await wrapper.get('[role="button"]').trigger('keyup', { key: 'Enter' })
     expect(wrapper.emitted('click')).toEqual([[item]])
   })
 
-  it('hides route/difficulty metrics for wash (destination-only records)', async () => {
+  it('shows destination metrics for wash (门票/开放时间/建议停留); 可洗车型仅在详情不在卡片', async () => {
     const item = { ...base, scene: 'wash' as const, subType: null, elevationM: 220, carType: 'SUV/轿车', depthM: null }
     const wrapper = mount(DiscoveryCard, { props: { item } })
 
-    expect(wrapper.find('.metrics').exists()).toBe(false)
+    expect(wrapper.find('.metrics').exists()).toBe(true)
+    expect(wrapper.text()).toContain('门票')
     expect(wrapper.text()).not.toContain('路线长度')
     expect(wrapper.text()).not.toContain('难度等级')
     expect(wrapper.text()).not.toContain('可洗车型')
   })
 
-  it('hides route/difficulty metrics for camping (destination-only records)', async () => {
-    const item = { ...base, scene: 'play' as const, subType: 'camping' as const, elevationM: 220, depthM: null }
+  it('shows destination metrics for camping, not route metrics', async () => {
+    const item = { ...base, scene: 'play' as const, subType: 'camping' as const, elevationM: 220, depthM: null, priceLabel: '成人 60 元', bestTime: '3–11 月', durationLabel: '过夜' }
     const wrapper = mount(DiscoveryCard, { props: { item } })
 
-    expect(wrapper.find('.metrics').exists()).toBe(false)
+    expect(wrapper.find('.metrics').exists()).toBe(true)
     expect(wrapper.text()).toContain('梁子湖钓点')
+    expect(wrapper.text()).toContain('门票')
     expect(wrapper.text()).not.toContain('路线长度')
     expect(wrapper.text()).not.toContain('难度等级')
     await wrapper.get('[role="button"]').trigger('keyup', { key: 'Enter' })

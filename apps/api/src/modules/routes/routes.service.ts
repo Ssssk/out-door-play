@@ -58,6 +58,7 @@ export class RoutesService {
       ...this.toCard(item),
       durationLabel: item.durationLabel,
       bestTime: item.bestTime,
+      priceLabel: item.priceLabel,
       carType: item.carType,
       startPoint: item.startPoint,
       endPoint: item.endPoint,
@@ -88,6 +89,10 @@ export class RoutesService {
       depthM: fishing ? item.depthM : null,
       difficulty: item.difficulty,
       coverImageUrl: item.coverImageUrl,
+      // 目的地型卡片指标（门票/开放时间/建议停留）由客户端按 destinationOnly 展示
+      bestTime: item.bestTime,
+      durationLabel: item.durationLabel,
+      priceLabel: item.priceLabel,
       // 客户端据此按设备定位实算「距你」距离
       latitude: item.latitude,
       longitude: item.longitude,

@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { PrismaService } from '../../database/prisma.service'
 import { SceneTabsConfigService } from '../config/scene-tabs-config.service'
-import { normalizeScene, isFishingRecord, SCENE_SUBTYPE_INVALID, SceneSubTypeInvalidError } from '../../common/scenes'
+import { normalizeScene, isFishingRecord, isDestinationOnlyRecord, SCENE_SUBTYPE_INVALID, SceneSubTypeInvalidError } from '../../common/scenes'
 import type { PlayType, SceneQuery } from '../../common/scenes'
 import type { Prisma } from '../../generated/prisma/client'
 import type { UpdateUserDto, UploadedImage } from './user.dto'
@@ -97,6 +97,7 @@ export class UserService {
     })
     return records.map(({ discovery: item }) => {
       const fishing = isFishingRecord(item.scene, item.subType)
+      const destination = isDestinationOnlyRecord(item.scene, item.subType)
       const tags = Array.isArray(item.tags) ? item.tags : []
       return {
         id: item.id,
@@ -106,7 +107,9 @@ export class UserService {
         title: item.title,
         subtitle: fishing
           ? `${String(tags[0] || '')} · ${item.bestTime}`
-          : `${item.lengthKm.toFixed(1)}km · 落差 ${item.elevationM}m · ${item.difficulty}`,
+          : destination
+            ? `门票 ${item.priceLabel || '免费'} · ${item.bestTime || '全天'}`
+            : `${item.lengthKm.toFixed(1)}km · 落差 ${item.elevationM}m · ${item.difficulty}`,
         thumbUrl: item.coverImageUrl,
       }
     })

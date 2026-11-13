@@ -14,6 +14,7 @@ export interface RouteFormValues {
   lengthKm: number | null; elevationM: number | null; carType: string; startPoint: string; endPoint: string
   endLng: number | null; endLat: number | null
   shoreKm: number | null; depthM: number | null; entryPoint: string; mainArea: string; gear: string
+  priceLabel: string
 }
 
 export type RoutePayload = Record<string, unknown>
@@ -34,7 +35,7 @@ export function createEmptyRouteForm(scene: Scene): RouteFormValues {
     difficulty: '入门级', level: 'easy', bestTime: '', durationLabel: '', description: '',
     startLng: null, startLat: null,
     lengthKm: null, elevationM: null, carType: '', startPoint: '', endPoint: '', endLng: null, endLat: null,
-    shoreKm: null, depthM: null, entryPoint: '', mainArea: '', gear: '',
+    shoreKm: null, depthM: null, entryPoint: '', mainArea: '', gear: '', priceLabel: '',
   }
 }
 
@@ -72,6 +73,10 @@ export function buildRoutePayload(form: RouteFormValues): RoutePayload {
     const payload: RoutePayload = { ...common, endPoint: form.endPoint.trim() }
     // 洗车保留「可洗车型」，其余目的地型（露营/打卡）不提交车型
     if (form.scene === 'wash' && form.carType.trim()) payload.carType = form.carType.trim()
+    // 目的地型卡片指标：门票 / 开放时间 / 建议停留（缺失则不提交，服务端保持空）
+    if (form.priceLabel.trim()) payload.priceLabel = form.priceLabel.trim()
+    if (form.bestTime.trim()) payload.bestTime = form.bestTime.trim()
+    if (form.durationLabel.trim()) payload.durationLabel = form.durationLabel.trim()
     // 未填坐标时不提交任何坐标键，避免服务端收到 0/0 而导航到错误位置
     if (form.endLng !== null && form.endLat !== null) {
       payload.endLongitude = form.endLng

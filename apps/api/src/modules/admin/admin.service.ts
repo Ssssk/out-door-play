@@ -46,11 +46,12 @@ const MAX_ROUTE_COVER_BYTES = 5 * 1024 * 1024
 
 /**
  * 目的地型（洗车 / 露营 / 打卡）不适用的字段：保存时一律清空，避免历史占位值残留。
- * 注意：`carType` 与 `bestTime` 不在本清单内——洗车保留「可洗车型」与「营业时间」，
- * 仅在非洗车的目的地型记录上由下方分支显式清空；露营 / 打卡本就不提交这两个字段。
+ * 注意：`carType` / `bestTime` / `durationLabel` / `priceLabel` 不在本清单内——
+ * 洗车保留「可洗车型」与「营业时间」，露营 / 打卡保留「开放时间」「建议停留」「门票」，
+ * 这些目的地型卡片指标由后台表单录入、服务端照单保留（空则留空，不写「待补充」占位）。
  */
 const DESTINATION_ONLY_HIDDEN_FIELDS = [
-  'difficulty', 'level', 'durationLabel', 'lengthKm', 'elevationM', 'startPoint',
+  'difficulty', 'level', 'lengthKm', 'elevationM', 'startPoint',
 ] as const
 
 @Injectable()
@@ -198,8 +199,9 @@ export class AdminService {
         difficulty: destinationOnly ? '' : input.difficulty?.trim() ?? '',
         level: destinationOnly ? null : input.level ?? null,
         coverImageUrl: input.coverImageUrl?.trim() || defaultCoverImageUrl,
-        durationLabel: destinationOnly ? '' : input.durationLabel?.trim() || '待补充',
-        bestTime: isWashScene ? (input.bestTime?.trim() || '') : (destinationOnly ? '' : input.bestTime?.trim() || '待补充'),
+        durationLabel: input.durationLabel?.trim() || (destinationOnly ? '' : '待补充'),
+        bestTime: input.bestTime?.trim() || (destinationOnly ? '' : '待补充'),
+        priceLabel: input.priceLabel?.trim() || null,
         carType: isWashScene ? (input.carType?.trim() || null) : (destinationOnly ? null : input.carType?.trim() || null),
         startPoint: destinationOnly ? null : input.startPoint?.trim() || null,
         endPoint: input.endPoint?.trim() || null,
@@ -253,12 +255,11 @@ export class AdminService {
       const mutable = data as Record<string, unknown>
       for (const field of DESTINATION_ONLY_HIDDEN_FIELDS) delete mutable[field]
       Object.assign(mutable, {
-        difficulty: '', level: null, durationLabel: '',
+        difficulty: '', level: null,
         lengthKm: 0, elevationM: 0, startPoint: null,
       })
-      // 洗车保留「可洗车型」与「营业时间」，其余目的地型（露营/打卡）清空
+      // 洗车保留「可洗车型」，其余目的地型（露营/打卡）清空；carType/bestTime/durationLabel/priceLabel 均保留
       if (effectiveScene !== 'wash') {
-        mutable.bestTime = ''
         mutable.carType = null
       }
     }

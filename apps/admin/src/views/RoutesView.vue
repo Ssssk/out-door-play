@@ -184,7 +184,7 @@ function openEdit(tableRow: unknown) {
     carType: item.carType || '', startPoint: item.startPoint || '', endPoint: item.endPoint || '',
     endLng: item.endLongitude ?? null, endLat: item.endLatitude ?? null,
     shoreKm: item.shoreKm ?? null, depthM: item.depthM ?? null,
-    entryPoint: item.entryPoint || '', mainArea: item.mainArea || '', gear: item.gear || '',
+    entryPoint: item.entryPoint || '', mainArea: item.mainArea || '', gear: item.gear || '', priceLabel: item.priceLabel || '',
   }
   dialogVisible.value = true
 }
@@ -387,6 +387,9 @@ onBeforeUnmount(() => { window.clearTimeout(keywordTimer); clearCoverSelection()
       <div v-else-if="isDestinationForm" class="route-form-grid">
         <el-form-item label="终点" class="grid-span-2"><el-input v-model="form.endPoint" :placeholder="form.scene === 'wash' ? '例：光谷自助洗车（光谷大道店）' : '例：木兰草原露营区'" /></el-form-item>
         <el-form-item v-if="form.scene === 'wash'" label="可洗车型"><el-input v-model="form.carType" placeholder="SUV/轿车/房车/皮卡" /></el-form-item>
+        <el-form-item label="门票/费用"><el-input v-model="form.priceLabel" placeholder="免费 / 成人 60 元 / 车位 30 元" /></el-form-item>
+        <el-form-item label="开放时间"><el-input v-model="form.bestTime" placeholder="全年 / 3–11 月 / 8:00–22:00" /></el-form-item>
+        <el-form-item label="建议停留"><el-input v-model="form.durationLabel" placeholder="半日 / 过夜 / 1–2 小时" /></el-form-item>
         <el-form-item label="终点坐标" class="grid-span-2">
           <div class="coord-row">
             <el-input-number v-model="form.endLng" :min="-180" :max="180" :precision="6" placeholder="经度 lng" controls-position="right" />

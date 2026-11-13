@@ -5,10 +5,8 @@
     <view class="hero-top"><view v-if="item.rankTag && item.rank > 0" class="rank"><image src="/static/icons/bolt.svg" mode="aspectFit" /><text>{{ item.rankTag }} Top {{ item.rank }}</text></view><view class="distance"><image src="/static/icons/pin-light.svg" mode="aspectFit" /><text>距你 {{ formatDistanceKm(item.distanceKm) }}km</text></view></view>
     <view class="hero-content">
       <text class="title">{{ item.title }}</text>
-      <view v-if="!destinationOnly" class="hero-metrics">
-        <view><text>{{ item.lengthKm.toFixed(1) }}KM</text><text>{{ fishing ? '环湖岸线' : '路线长度' }}</text></view>
-        <view><text>{{ verticalMetric }}</text><text>{{ fishing ? '平均水深' : '路线落差' }}</text></view>
-        <view><text>{{ item.difficulty }}</text><text>{{ fishing ? '鱼获难度' : '难度等级' }}</text></view>
+      <view class="hero-metrics">
+        <view v-for="m in metrics" :key="m.label"><text>{{ m.value }}</text><text>{{ m.label }}</text></view>
       </view>
     </view>
   </view>
@@ -25,6 +23,27 @@ const destinationOnly = computed(() => isDestinationOnlyRecord(props.item.scene,
 const verticalMetric = computed(() => {
   const value = fishing.value ? props.item.depthM : props.item.elevationM
   return value === null ? '--' : `${value}M`
+})
+const metrics = computed(() => {
+  if (destinationOnly.value) {
+    return [
+      { value: props.item.priceLabel || '--', label: '门票' },
+      { value: props.item.bestTime || '--', label: '开放时间' },
+      { value: props.item.durationLabel || '--', label: '建议停留' },
+    ]
+  }
+  if (fishing.value) {
+    return [
+      { value: `${props.item.lengthKm.toFixed(1)}KM`, label: '环湖岸线' },
+      { value: verticalMetric.value, label: '平均水深' },
+      { value: props.item.difficulty, label: '鱼获难度' },
+    ]
+  }
+  return [
+    { value: `${props.item.lengthKm.toFixed(1)}KM`, label: '路线长度' },
+    { value: verticalMetric.value, label: '路线落差' },
+    { value: props.item.difficulty, label: '难度等级' },
+  ]
 })
 </script>
 <style scoped lang="scss">

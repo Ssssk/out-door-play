@@ -8,10 +8,8 @@
     </view>
     <view class="card-bottom">
       <text class="card-title">{{ item.title }}</text>
-      <view v-if="!destinationOnly" class="metrics">
-        <view><text class="metric-value">{{ item.lengthKm.toFixed(1) }}KM</text><text class="metric-label">{{ fishing ? '环湖岸线' : '路线长度' }}</text></view>
-        <view><text class="metric-value">{{ verticalMetric }}</text><text class="metric-label">{{ fishing ? '平均水深' : '路线落差' }}</text></view>
-        <view><text class="metric-value">{{ item.difficulty }}</text><text class="metric-label">{{ fishing ? '鱼获难度' : '难度等级' }}</text></view>
+      <view class="metrics">
+        <view v-for="m in metrics" :key="m.label"><text class="metric-value">{{ m.value }}</text><text class="metric-label">{{ m.label }}</text></view>
       </view>
     </view>
   </view>
@@ -30,6 +28,28 @@ const destinationOnly = computed(() => isDestinationOnlyRecord(props.item.scene,
 const verticalMetric = computed(() => {
   const value = fishing.value ? props.item.depthM : props.item.elevationM
   return value === null ? '--' : `${value}M`
+})
+// 卡片三指标：钓鱼/路线展示里程·落差·难度；目的地型（洗车/露营/打卡）展示门票·开放时间·建议停留，与钓鱼卡片视觉对称
+const metrics = computed(() => {
+  if (destinationOnly.value) {
+    return [
+      { value: props.item.priceLabel || '--', label: '门票' },
+      { value: props.item.bestTime || '--', label: '开放时间' },
+      { value: props.item.durationLabel || '--', label: '建议停留' },
+    ]
+  }
+  if (fishing.value) {
+    return [
+      { value: `${props.item.lengthKm.toFixed(1)}KM`, label: '环湖岸线' },
+      { value: verticalMetric.value, label: '平均水深' },
+      { value: props.item.difficulty, label: '鱼获难度' },
+    ]
+  }
+  return [
+    { value: `${props.item.lengthKm.toFixed(1)}KM`, label: '路线长度' },
+    { value: verticalMetric.value, label: '路线落差' },
+    { value: props.item.difficulty, label: '难度等级' },
+  ]
 })
 function activate() { emit('click', props.item) }
 </script>

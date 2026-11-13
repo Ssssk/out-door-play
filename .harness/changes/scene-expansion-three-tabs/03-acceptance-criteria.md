@@ -152,6 +152,16 @@
 - **AND** 小程序端该卡片与详情不展示难度、耗时、路线长、落差、出发地与「查看完整路线」；洗车详情额外展示「可洗车型」与「营业时间」
 - **验证方式**：后台字段策略单测（`routeFormPolicy.test.ts`）、服务端字段策略单测（`admin.service.destination.spec.ts`）、小程序判定单测（`mobile/src/common/scenes.spec.ts`、`DiscoveryCard.component.spec.ts`）；目标端人工复核见 TASK-E19、TASK-E20
 
+## AC-EXP-018 目的地型卡片三指标（门票 / 开放时间 / 建议停留）
+
+- 关联需求：FR-EXP-014
+- **GIVEN** 露营 / 打卡 / 洗车内容（目的地型）在小程序列表卡片
+- **WHEN** 渲染卡片底部指标区
+- **THEN** 展示与钓鱼卡片对称的三指标：**门票**（`priceLabel`，缺省 `--`）、**开放时间**（`bestTime`）、**建议停留**（`durationLabel`）；不展示路线长 / 落差 / 难度等级等驾驶类指标
+- **AND** 后台表单对目的地型提供「门票/费用」「开放时间」「建议停留」输入框；服务端对目的地型保留这三个字段（空则留空，不写「待补充」）
+- **AND** `Discovery` 表新增可空列 `price_label`；`Discovery` 卡片与 `user` 收藏副标题对目的地型展示「门票 免费 / 全天」式信息
+- **验证方式**：后台字段策略单测（`routeFormPolicy.test.ts` 露营提交三指标）、服务端字段策略单测（`admin.service.destination.spec.ts` 露营保留 bestTime/durationLabel/priceLabel）、小程序组件单测（`DiscoveryCard.component.spec.ts` 三场景展示门票指标）；目标端人工复核见 TASK-E23
+
 ## 冲突裁决后的验收口径修订（2026-11-08）
 
 以下修订优先于上文对应条目，裁决全文见 `01-clarification.md` 与 `02-requirements.md`。

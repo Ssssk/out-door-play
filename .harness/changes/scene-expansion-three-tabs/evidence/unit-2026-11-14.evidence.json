@@ -1,0 +1,20 @@
+{
+  "changeId": "CHG-SCENE-EXPANSION-001",
+  "type": "unit",
+  "status": "passed",
+  "commit": "working-tree-2026-11-14-card-metrics",
+  "environment": "local / macOS / Node via pnpm / vitest",
+  "startedAt": "2026-11-14",
+  "finishedAt": "2026-11-14",
+  "command": "pnpm --filter @chumen/api test && pnpm --filter @chumen/admin test && pnpm --filter @chumen/mobile test",
+  "exitCode": 0,
+  "summary": "单元与组件测试全绿：API 155 passed（含 routes.service.spec 夹具补 priceLabel、admin.service.destination.spec 露营保留 bestTime/durationLabel/priceLabel 与编辑不强制清空卡片指标用例）、admin 12 passed（含 routeFormPolicy.test 露营提交三指标用例）、mobile 82 passed（含 DiscoveryCard 三场景展示门票指标用例）。本次目的地型卡片三指标（门票/开放时间/建议停留）已实现：Discovery 新增 price_label 列、后台表单目的地型三项输入、服务端保留两项复用列、小程序卡片/详情头部三指标位；三端 type-check 全过。迁移 SQL 落盘 20261114000000_add_price_label（生产执行需授权）。",
+  "runner": "agent-local",
+  "requirementIds": ["FR-EXP-014"],
+  "acceptanceIds": ["AC-EXP-018"],
+  "tests": [
+    { "suite": "api", "command": "pnpm --filter @chumen/api test", "result": "155 passed" },
+    { "suite": "admin", "command": "pnpm --filter @chumen/admin test", "result": "12 passed" },
+    { "suite": "mobile", "command": "pnpm --filter @chumen/mobile test", "result": "82 passed" }
+  ]
+}

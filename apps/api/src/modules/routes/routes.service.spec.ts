@@ -21,6 +21,7 @@ const base: PublicDiscoveryRecord = {
   carType: '轿车/SUV',
   startPoint: '八分山北门',
   endPoint: '八分山观景台',
+  priceLabel: null,
   entryPoint: null,
   mainArea: null,
   gear: null,
