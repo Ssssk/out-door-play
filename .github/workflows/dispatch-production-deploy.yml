@@ -1,5 +1,6 @@
 name: Dispatch production deploy
 
+# 2026-11-13：随打卡口径扩展再次派发部署
 on:
   push:
     branches: [main]
