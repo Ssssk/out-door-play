@@ -6,7 +6,7 @@ import { apiDelete, apiGet, apiPatch, apiPost, apiUpload } from '../api/client'
 import PageHeader from '../components/PageHeader.vue'
 import type { CityItem, Paginated, PlayType, RouteItem, Scene } from '../types/admin'
 import type { RouteFormValues } from './routeFormPolicy'
-import { buildRoutePayload, createEmptyRouteForm, isDestinationOnlyForm as isCampingRecord, isFishingForm as isFishingRecord } from './routeFormPolicy'
+import { buildRoutePayload, createEmptyRouteForm, isDestinationOnlyForm as isDestinationRecord, isFishingForm as isFishingRecord } from './routeFormPolicy'
 import { useAuthStore } from '../stores/auth'
 import routeCover1 from '../../../mobile/src/static/routes/card-route-1.jpg'
 import routeCover2 from '../../../mobile/src/static/routes/card-route-2.jpg'
@@ -72,8 +72,8 @@ const lockedScene = ref<Scene>('drive')
 const emptyForm = createEmptyRouteForm
 const form = ref<RouteFormValues>(emptyForm('drive'))
 const isFishingForm = computed(() => isFishingRecord(form.value.scene, form.value.subType))
-/** 露营是目的地型内容：只有终点，没有起点，也不展示难度/耗时/路线/车型字段 */
-const isCampingForm = computed(() => isCampingRecord(form.value.scene, form.value.subType))
+/** 露营 / 打卡是目的地型内容：只有终点，没有起点，也不展示难度/耗时/路线/车型字段 */
+const isDestinationForm = computed(() => isDestinationRecord(form.value.scene, form.value.subType))
 
 const coverFile = ref<File | undefined>()
 const coverPreviewUrl = ref('')
@@ -189,7 +189,7 @@ function openEdit(tableRow: unknown) {
   dialogVisible.value = true
 }
 
-/** 隐藏字段不进入 payload：露营只提交终点与终点坐标，避免出现运营没填过的占位数据 */
+/** 隐藏字段不进入 payload：露营 / 打卡只提交终点与终点坐标，避免出现运营没填过的占位数据 */
 function collectPayload() {
   return buildRoutePayload(form.value)
 }
@@ -341,7 +341,7 @@ onBeforeUnmount(() => { window.clearTimeout(keywordTimer); clearCoverSelection()
           <el-select v-model="form.subType" style="width: 100%">
             <el-option v-for="option in PLAY_SUBTYPE_OPTIONS" :key="option.value" :label="option.label" :value="option.value" />
           </el-select>
-          <div class="field-hint">钓鱼 / 露营 / 打卡；「钓鱼」展示钓点专属字段，「露营」只保留终点与终点坐标</div>
+          <div class="field-hint">钓鱼 / 露营 / 打卡；「钓鱼」展示钓点专属字段，「露营 / 打卡」只保留终点与终点坐标</div>
         </el-form-item>
         <el-form-item label="城市" required>
           <el-select v-model="form.cityCode" filterable placeholder="请选择城市" style="width: 100%">
@@ -349,7 +349,7 @@ onBeforeUnmount(() => { window.clearTimeout(keywordTimer); clearCoverSelection()
           </el-select>
           <div class="field-hint">未开通城市不可选</div>
         </el-form-item>
-        <template v-if="!isCampingForm">
+        <template v-if="!isDestinationForm">
           <el-form-item label="难度">
             <el-select v-model="form.difficulty" style="width: 100%"><el-option v-for="opt in LEVEL_OPTIONS" :key="opt" :label="opt" :value="opt" /></el-select>
           </el-form-item>
@@ -384,14 +384,14 @@ onBeforeUnmount(() => { window.clearTimeout(keywordTimer); clearCoverSelection()
         <el-form-item label="主钓区"><el-input v-model="form.mainArea" placeholder="例：北岸深水区" /></el-form-item>
         <el-form-item label="装备建议" class="grid-span-2"><el-input v-model="form.gear" placeholder="例：路亚竿·手竿 2.7m / 4 号主线" /></el-form-item>
       </div>
-      <div v-else-if="isCampingForm" class="route-form-grid">
+      <div v-else-if="isDestinationForm" class="route-form-grid">
         <el-form-item label="终点" class="grid-span-2"><el-input v-model="form.endPoint" placeholder="例：木兰草原露营区" /></el-form-item>
         <el-form-item label="终点坐标" class="grid-span-2">
           <div class="coord-row">
             <el-input-number v-model="form.endLng" :min="-180" :max="180" :precision="6" placeholder="经度 lng" controls-position="right" />
             <el-input-number v-model="form.endLat" :min="-90" :max="90" :precision="6" placeholder="纬度 lat" controls-position="right" />
           </div>
-          <div class="field-hint">露营是目的地型内容：只有终点，没有起点。该坐标同时用于小程序「立即出发」导航与「距你」距离计算（GCJ-02 火星坐标）</div>
+          <div class="field-hint">露营 / 打卡是目的地型内容：只有终点，没有起点。该坐标同时用于小程序「立即出发」导航与「距你」距离计算（GCJ-02 火星坐标）</div>
         </el-form-item>
       </div>
       <div v-else class="route-form-grid">

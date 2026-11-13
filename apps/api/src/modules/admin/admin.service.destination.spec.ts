@@ -28,7 +28,7 @@ const campingCreate: CreateRouteDto = {
   latitude: 30.654321,
 }
 
-describe('目的地型（露营）字段策略', () => {
+describe('目的地型（露营 / 打卡）字段策略', () => {
   it('GIVEN 新建露营且不带 difficulty WHEN 创建 THEN 不写入占位值，终点坐标保留', async () => {
     const prisma = fakePrisma()
     await new AdminService(prisma, {} as never).createRoute(campingCreate)
@@ -54,6 +54,22 @@ describe('目的地型（露营）字段策略', () => {
 
     const data = vi.mocked(prisma.discovery.create).mock.calls[0]![0]!.data as Record<string, unknown>
     expect(data).toMatchObject({
+      difficulty: '', level: null, bestTime: '', durationLabel: '',
+      lengthKm: 0, elevationM: 0, carType: null, startPoint: null,
+    })
+  })
+
+  it('GIVEN 新建打卡 WHEN 创建 THEN 与露营同口径：不写入路线类占位值', async () => {
+    const prisma = fakePrisma()
+    await new AdminService(prisma, {} as never).createRoute({
+      ...campingCreate,
+      title: '八分山山顶观景台', subType: 'checkin', endPoint: '八分山山顶观景台',
+      difficulty: '挑战级', lengthKm: 5, startPoint: '某停车场',
+    } as CreateRouteDto)
+
+    const data = vi.mocked(prisma.discovery.create).mock.calls[0]![0]!.data as Record<string, unknown>
+    expect(data).toMatchObject({
+      scene: 'play', subType: 'checkin', endPoint: '八分山山顶观景台',
       difficulty: '', level: null, bestTime: '', durationLabel: '',
       lengthKm: 0, elevationM: 0, carType: null, startPoint: null,
     })

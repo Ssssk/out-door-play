@@ -39,13 +39,24 @@ describe('DiscoveryCard', () => {
     expect(wrapper.text()).toContain('鱼获难度')
   })
 
-  it('uses route metrics for play/checkin records', () => {
-    const item = { ...base, scene: 'play' as const, subType: 'checkin' as const, elevationM: 220, depthM: null }
+  it('uses route metrics for drive records', () => {
+    const item = { ...base, scene: 'drive' as const, subType: null, elevationM: 220, depthM: null }
     const wrapper = mount(DiscoveryCard, { props: { item } })
 
     expect(wrapper.text()).toContain('220M')
     expect(wrapper.text()).toContain('路线落差')
     expect(wrapper.text()).toContain('路线长度')
+  })
+
+  it('hides route/difficulty metrics for checkin (destination-only records)', async () => {
+    const item = { ...base, scene: 'play' as const, subType: 'checkin' as const, elevationM: 220, depthM: null }
+    const wrapper = mount(DiscoveryCard, { props: { item } })
+
+    expect(wrapper.find('.metrics').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('路线长度')
+    expect(wrapper.text()).not.toContain('难度等级')
+    await wrapper.get('[role="button"]').trigger('keyup', { key: 'Enter' })
+    expect(wrapper.emitted('click')).toEqual([[item]])
   })
 
   it('hides route/difficulty metrics for camping (destination-only records)', async () => {

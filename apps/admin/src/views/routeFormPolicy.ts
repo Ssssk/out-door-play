@@ -3,7 +3,7 @@ import type { PlayType, Scene } from '../types/admin'
 /**
  * 后台路线表单与提交 payload 的字段策略（CHG-SCENE-EXPANSION-001，2026-11-12 修订）。
  *
- * 露营是「目的地型」内容：只有终点，没有起点，也不记录难度 / 耗时 / 路线长 / 落差 / 车型。
+ * 露营 / 打卡是「目的地型」内容：只有终点，没有起点，也不记录难度 / 耗时 / 路线长 / 落差 / 车型。
  * 隐藏的字段不进入 payload，服务端也不写入占位值，避免运营没填过却在小程序端显示
  * 「入门级」「待补充」这类假数据。
  */
@@ -23,9 +23,9 @@ export function isFishingForm(scene: Scene, subType: PlayType | ''): boolean {
   return (scene === 'play' && subType === 'fishing') || scene === 'fish'
 }
 
-/** 目的地型：仅 `play + camping`；打卡与其它场景保持原有路线字段 */
+/** 目的地型：`play + camping`、`play + checkin`；钓鱼与其它场景保持原有路线字段 */
 export function isDestinationOnlyForm(scene: Scene, subType: PlayType | ''): boolean {
-  return scene === 'play' && subType === 'camping'
+  return scene === 'play' && (subType === 'camping' || subType === 'checkin')
 }
 
 export function createEmptyRouteForm(scene: Scene): RouteFormValues {

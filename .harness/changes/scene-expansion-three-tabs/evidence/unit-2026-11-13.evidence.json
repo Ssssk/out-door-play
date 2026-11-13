@@ -1,0 +1,23 @@
+{
+  "changeId": "CHG-SCENE-EXPANSION-001",
+  "type": "unit",
+  "status": "passed",
+  "commit": "pre-commit working tree (2026-11-13)",
+  "environment": "local / macOS / Node via pnpm / vitest / vue-tsc / tsc",
+  "startedAt": "2026-11-13",
+  "finishedAt": "2026-11-13",
+  "command": "pnpm --filter @chumen/admin type-check && pnpm --filter @chumen/admin test && pnpm --filter @chumen/mobile type-check && pnpm --filter @chumen/mobile test && pnpm --filter @chumen/api type-check && pnpm --filter @chumen/api test",
+  "exitCode": 0,
+  "summary": "打卡（play+checkin）与露营同口径扩展验证全绿：三端 type-check 通过；API 152 passed（新增 admin.service.destination.spec 打卡创建用例、scenes.spec 打卡判定用例）、admin 10 passed（routeFormPolicy 打卡 payload 同口径用例）、mobile 81 passed（DiscoveryCard 打卡隐藏指标用例、scenes.spec 打卡判定）。",
+  "runner": "agent-local",
+  "requirementIds": ["FR-EXP-013"],
+  "acceptanceIds": ["AC-EXP-017"],
+  "tests": [
+    { "suite": "admin type-check", "command": "pnpm --filter @chumen/admin type-check", "result": "passed" },
+    { "suite": "admin", "command": "pnpm --filter @chumen/admin test", "result": "10 passed" },
+    { "suite": "mobile type-check", "command": "pnpm --filter @chumen/mobile type-check", "result": "passed" },
+    { "suite": "mobile", "command": "pnpm --filter @chumen/mobile test", "result": "81 passed" },
+    { "suite": "api type-check", "command": "pnpm --filter @chumen/api type-check", "result": "passed" },
+    { "suite": "api", "command": "pnpm --filter @chumen/api test", "result": "152 passed" }
+  ]
+}

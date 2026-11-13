@@ -21,6 +21,7 @@
 - [ ] TASK-E17 `[07-knowledge.md]` `knowledge-retrieval` 复核、迁移经验沉淀与 Wiki 同步待 Change 完成后执行
 - [ ] TASK-E18 `[completion.md]` 独立 Reviewer 评审、Gate 一致性检查与完成报告 `not-run`
 - [x] TASK-E19 `[FR-EXP-013][AC-EXP-017]` 2026-11-12 完成：露营（`play`+`camping`）目的地型字段口径——后台 `RoutesView.vue` 仅保留终点与终点坐标、新增 `routeFormPolicy.ts` 字段策略、DTO `difficulty` 改为可选、`AdminService.createRoute/updateRoute` 对目的地型强制清空占位值、小程序 `DiscoveryCard`/`DetailHero`/`route-detail` 隐藏不适配指标；新增 `routeFormPolicy.test.ts`、`admin.service.destination.spec.ts`、两端 `scenes.spec.ts` 与 `DiscoveryCard.component.spec.ts` 用例；三端 `type-check` 与单测（API 151 / admin 9 / mobile 80）及生产构建（admin / mobile）均通过
+- [x] TASK-E20 `[FR-EXP-013][AC-EXP-017]` 2026-11-13 完成：打卡（`play`+`checkin`）与露营同口径——三端 `isDestinationOnlyRecord/isDestinationOnlyForm` 判定扩展到打卡，`RoutesView.vue` 表单/提示与计算属性改名 `isDestinationForm`，服务端 `DESTINATION_ONLY_HIDDEN_FIELDS` 清空逻辑自动覆盖打卡并新增创建用例；小程序 `DiscoveryCard` 打卡隐藏指标用例、判定与 payload 用例同步；三端 `type-check` 与单测（API 152 / admin 10 / mobile 81）全绿
 
 ## 依赖顺序
 

@@ -44,7 +44,7 @@ const ROUTE_COVER_MIME_EXTENSIONS: Record<string, string> = {
 }
 const MAX_ROUTE_COVER_BYTES = 5 * 1024 * 1024
 
-/** 露营（目的地型）不适用的字段：保存时一律清空，避免历史占位值残留 */
+/** 露营 / 打卡（目的地型）不适用的字段：保存时一律清空，避免历史占位值残留 */
 const DESTINATION_ONLY_HIDDEN_FIELDS = [
   'difficulty', 'level', 'bestTime', 'durationLabel', 'lengthKm', 'elevationM', 'carType', 'startPoint',
 ] as const
