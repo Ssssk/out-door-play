@@ -18,7 +18,8 @@
 | FR-EXP-010 | AC-EXP-012 | `04-impact-analysis.md` | TASK-E07 | TEST-E-001、TEST-E-017 | 尚无 | `not-run` |
 | FR-EXP-011 | AC-EXP-010、AC-EXP-016 | `05-design.md` | TASK-E11 | TEST-E-007、TEST-E-016 | 尚无 | `not-run` |
 | FR-EXP-012 | AC-EXP-009、AC-EXP-014 | `05-design.md`、`release/release-plan.md` | TASK-E06、TASK-E14、TASK-E16 | TEST-E-006、TEST-E-013 | 尚无 | `not-run` |
-| FR-EXP-013 | AC-EXP-017 | `frontend/component-design.md`、`05-design.md` | TASK-E19 | TEST-E-018 | 尚无 | `not-run` |
+| FR-EXP-013 | AC-EXP-017 | `frontend/component-design.md`、`05-design.md` | TASK-E19、TASK-E20、TASK-E21 | TEST-E-018 | 尚无 | `not-run` |
+| FR-EXP-014 | — | `02-requirements.md` | TASK-E22 | 尚无 | 尚无 | `not-run` |
 | NFR-MIG-001 | AC-EXP-005、AC-EXP-006、AC-EXP-015 | `backend/migration-plan.md`、`operations/disaster-recovery.md` | TASK-E02、TASK-E03、TASK-E15 | TEST-E-009、TEST-E-010 | 尚无 | `not-run` |
 | NFR-COMPAT-001 | AC-EXP-009、AC-EXP-014 | `05-design.md`、`release/release-plan.md` | TASK-E14、TASK-E16 | TEST-E-006、TEST-E-013 | 尚无 | `not-run` |
 | NFR-SEC-001 | AC-EXP-003、AC-EXP-012、AC-EXP-016 | `05-design.md`、`verification/security-review.md` | TASK-E06、TASK-E11 | TEST-E-004、TEST-E-016 | 尚无 | `not-run` |

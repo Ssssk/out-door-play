@@ -51,12 +51,12 @@ describe('routeFormPolicy（露营字段口径修订 2026-11-12）', () => {
     expect(payload).not.toHaveProperty('endLatitude')
   })
 
-  it('GIVEN 场景与子类型 WHEN 判定字段形态 THEN play+camping 与 play+checkin 都是目的地型', () => {
+  it('GIVEN 场景与子类型 WHEN 判定字段形态 THEN wash / play+camping / play+checkin 都是目的地型', () => {
+    expect(isDestinationOnlyForm('wash', '')).toBe(true)
     expect(isDestinationOnlyForm('play', 'camping')).toBe(true)
     expect(isDestinationOnlyForm('play', 'checkin')).toBe(true)
     expect(isDestinationOnlyForm('play', 'fishing')).toBe(false)
     expect(isDestinationOnlyForm('drive', '')).toBe(false)
-    expect(isDestinationOnlyForm('wash', '')).toBe(false)
     expect(isFishingForm('play', 'fishing')).toBe(true)
     expect(isFishingForm('fish', '')).toBe(true)
   })
@@ -76,6 +76,26 @@ describe('routeFormPolicy（露营字段口径修订 2026-11-12）', () => {
       endLongitude: 114.35, endLatitude: 30.42, longitude: 114.35, latitude: 30.42,
     })
     for (const field of DESTINATION_HIDDEN_FIELDS) expect(payload).not.toHaveProperty(field)
+  })
+
+  it('GIVEN 洗车 WHEN 构造 payload THEN 同目的地型隐藏驾驶字段，但保留可洗车型', () => {
+    const form = {
+      ...createEmptyRouteForm('wash'),
+      title: '光谷自助洗车', cityCode: '420100',
+      endPoint: '光谷自助洗车（光谷大道店）', endLng: 114.4, endLat: 30.47,
+      carType: 'SUV/轿车/房车', startPoint: '不应出现的起点', difficulty: '挑战级', lengthKm: 9,
+    }
+    const payload = buildRoutePayload(form)
+
+    expect(payload).toMatchObject({
+      scene: 'wash', endPoint: '光谷自助洗车（光谷大道店）',
+      endLongitude: 114.4, endLatitude: 30.47, longitude: 114.4, latitude: 30.47,
+      carType: 'SUV/轿车/房车',
+    })
+    // 驾驶类字段（不含 carType）一律不提交
+    for (const field of DESTINATION_HIDDEN_FIELDS.filter((f) => f !== 'carType')) {
+      expect(payload).not.toHaveProperty(field)
+    }
   })
 
   it('GIVEN 钓鱼 WHEN 构造 payload THEN 保留钓点专属字段与难度/耗时', () => {

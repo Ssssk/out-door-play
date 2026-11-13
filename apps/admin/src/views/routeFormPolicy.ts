@@ -23,9 +23,9 @@ export function isFishingForm(scene: Scene, subType: PlayType | ''): boolean {
   return (scene === 'play' && subType === 'fishing') || scene === 'fish'
 }
 
-/** 目的地型：`play + camping`、`play + checkin`；钓鱼与其它场景保持原有路线字段 */
+/** 目的地型：`wash`、`play + camping`、`play + checkin`；钓鱼与其它场景保持原有路线字段 */
 export function isDestinationOnlyForm(scene: Scene, subType: PlayType | ''): boolean {
-  return scene === 'play' && (subType === 'camping' || subType === 'checkin')
+  return scene === 'wash' || (scene === 'play' && (subType === 'camping' || subType === 'checkin'))
 }
 
 export function createEmptyRouteForm(scene: Scene): RouteFormValues {
@@ -70,6 +70,8 @@ export function buildRoutePayload(form: RouteFormValues): RoutePayload {
 
   if (isDestinationOnlyForm(form.scene, form.subType)) {
     const payload: RoutePayload = { ...common, endPoint: form.endPoint.trim() }
+    // 洗车保留「可洗车型」，其余目的地型（露营/打卡）不提交车型
+    if (form.scene === 'wash' && form.carType.trim()) payload.carType = form.carType.trim()
     // 未填坐标时不提交任何坐标键，避免服务端收到 0/0 而导航到错误位置
     if (form.endLng !== null && form.endLat !== null) {
       payload.endLongitude = form.endLng

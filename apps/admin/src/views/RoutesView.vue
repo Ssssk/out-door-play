@@ -385,13 +385,14 @@ onBeforeUnmount(() => { window.clearTimeout(keywordTimer); clearCoverSelection()
         <el-form-item label="装备建议" class="grid-span-2"><el-input v-model="form.gear" placeholder="例：路亚竿·手竿 2.7m / 4 号主线" /></el-form-item>
       </div>
       <div v-else-if="isDestinationForm" class="route-form-grid">
-        <el-form-item label="终点" class="grid-span-2"><el-input v-model="form.endPoint" placeholder="例：木兰草原露营区" /></el-form-item>
+        <el-form-item label="终点" class="grid-span-2"><el-input v-model="form.endPoint" :placeholder="form.scene === 'wash' ? '例：光谷自助洗车（光谷大道店）' : '例：木兰草原露营区'" /></el-form-item>
+        <el-form-item v-if="form.scene === 'wash'" label="可洗车型"><el-input v-model="form.carType" placeholder="SUV/轿车/房车/皮卡" /></el-form-item>
         <el-form-item label="终点坐标" class="grid-span-2">
           <div class="coord-row">
             <el-input-number v-model="form.endLng" :min="-180" :max="180" :precision="6" placeholder="经度 lng" controls-position="right" />
             <el-input-number v-model="form.endLat" :min="-90" :max="90" :precision="6" placeholder="纬度 lat" controls-position="right" />
           </div>
-          <div class="field-hint">露营 / 打卡是目的地型内容：只有终点，没有起点。该坐标同时用于小程序「立即出发」导航与「距你」距离计算（GCJ-02 火星坐标）</div>
+          <div class="field-hint">洗车 / 露营 / 打卡是目的地型内容：只有终点，没有起点。该坐标同时用于小程序「立即出发」导航与「距你」距离计算（GCJ-02 火星坐标）</div>
         </el-form-item>
       </div>
       <div v-else class="route-form-grid">

@@ -44,9 +44,13 @@ const ROUTE_COVER_MIME_EXTENSIONS: Record<string, string> = {
 }
 const MAX_ROUTE_COVER_BYTES = 5 * 1024 * 1024
 
-/** 露营 / 打卡（目的地型）不适用的字段：保存时一律清空，避免历史占位值残留 */
+/**
+ * 目的地型（洗车 / 露营 / 打卡）不适用的字段：保存时一律清空，避免历史占位值残留。
+ * 注意：`carType` 与 `bestTime` 不在本清单内——洗车保留「可洗车型」与「营业时间」，
+ * 仅在非洗车的目的地型记录上由下方分支显式清空；露营 / 打卡本就不提交这两个字段。
+ */
 const DESTINATION_ONLY_HIDDEN_FIELDS = [
-  'difficulty', 'level', 'bestTime', 'durationLabel', 'lengthKm', 'elevationM', 'carType', 'startPoint',
+  'difficulty', 'level', 'durationLabel', 'lengthKm', 'elevationM', 'startPoint',
 ] as const
 
 @Injectable()
@@ -176,7 +180,9 @@ export class AdminService {
     }
     const defaultCoverImageUrl = isFishingRecord(scene, subType) ? '/static/fishing/card-fishing-1.jpg' : '/static/routes/card-route-1.jpg'
     // 目的地型内容不写入运营没填过的占位值：隐藏字段一律留空/归零，避免小程序显示假的「入门级」「待补充」
+    // 差异点：洗车保留「可洗车型」(carType) 与「营业时间」(bestTime)，不在此处清空
     const destinationOnly = isDestinationOnlyRecord(scene, subType)
+    const isWashScene = scene === 'wash'
     return this.prisma.discovery.create({
       data: {
         id: `route-${randomUUID()}`,
@@ -193,8 +199,8 @@ export class AdminService {
         level: destinationOnly ? null : input.level ?? null,
         coverImageUrl: input.coverImageUrl?.trim() || defaultCoverImageUrl,
         durationLabel: destinationOnly ? '' : input.durationLabel?.trim() || '待补充',
-        bestTime: destinationOnly ? '' : input.bestTime?.trim() || '待补充',
-        carType: destinationOnly ? null : input.carType?.trim() || null,
+        bestTime: isWashScene ? (input.bestTime?.trim() || '') : (destinationOnly ? '' : input.bestTime?.trim() || '待补充'),
+        carType: isWashScene ? (input.carType?.trim() || null) : (destinationOnly ? null : input.carType?.trim() || null),
         startPoint: destinationOnly ? null : input.startPoint?.trim() || null,
         endPoint: input.endPoint?.trim() || null,
         entryPoint: input.entryPoint?.trim() || null,
@@ -247,9 +253,14 @@ export class AdminService {
       const mutable = data as Record<string, unknown>
       for (const field of DESTINATION_ONLY_HIDDEN_FIELDS) delete mutable[field]
       Object.assign(mutable, {
-        difficulty: '', level: null, bestTime: '', durationLabel: '',
-        lengthKm: 0, elevationM: 0, carType: null, startPoint: null,
+        difficulty: '', level: null, durationLabel: '',
+        lengthKm: 0, elevationM: 0, startPoint: null,
       })
+      // 洗车保留「可洗车型」与「营业时间」，其余目的地型（露营/打卡）清空
+      if (effectiveScene !== 'wash') {
+        mutable.bestTime = ''
+        mutable.carType = null
+      }
     }
     // fish 是兼容读值：编辑历史记录时不把 scene 写成新值，避免绕过写入白名单
     return this.prisma.discovery.update({ where: { id }, data })

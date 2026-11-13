@@ -28,7 +28,7 @@ const campingCreate: CreateRouteDto = {
   latitude: 30.654321,
 }
 
-describe('目的地型（露营 / 打卡）字段策略', () => {
+describe('目的地型（洗车 / 露营 / 打卡）字段策略', () => {
   it('GIVEN 新建露营且不带 difficulty WHEN 创建 THEN 不写入占位值，终点坐标保留', async () => {
     const prisma = fakePrisma()
     await new AdminService(prisma, {} as never).createRoute(campingCreate)
@@ -73,6 +73,38 @@ describe('目的地型（露营 / 打卡）字段策略', () => {
       difficulty: '', level: null, bestTime: '', durationLabel: '',
       lengthKm: 0, elevationM: 0, carType: null, startPoint: null,
     })
+  })
+
+  it('GIVEN 新建洗车 WHEN 创建 THEN 隐藏驾驶类占位值，但保留可洗车型与营业时间', async () => {
+    const prisma = fakePrisma()
+    await new AdminService(prisma, {} as never).createRoute({
+      title: '光谷自助洗车', cityCode: '420100', scene: 'wash',
+      endPoint: '光谷自助洗车（光谷大道店）', endLongitude: 114.4, endLatitude: 30.47,
+      carType: 'SUV/轿车/房车', bestTime: '全天自助',
+      difficulty: '挑战级', lengthKm: 9, startPoint: '某停车场',
+    } as CreateRouteDto)
+
+    const data = vi.mocked(prisma.discovery.create).mock.calls[0]![0]!.data as Record<string, unknown>
+    expect(data).toMatchObject({
+      scene: 'wash', endPoint: '光谷自助洗车（光谷大道店）',
+      carType: 'SUV/轿车/房车', bestTime: '全天自助',
+      difficulty: '', level: null, durationLabel: '',
+      lengthKm: 0, elevationM: 0, startPoint: null,
+    })
+  })
+
+  it('GIVEN 编辑洗车 WHEN 提交隐藏字段 THEN 驾驶类被清空，但车型与营业时间保留', async () => {
+    const prisma = fakePrisma({ id: 'wash-1', scene: 'wash', subType: null, carType: 'SUV', bestTime: '全天自助' })
+    await new AdminService(prisma, {} as never).updateRoute('wash-1', {
+      difficulty: '挑战级', lengthKm: 9, startPoint: '某停车场',
+    } as UpdateRouteDto)
+
+    const data = vi.mocked(prisma.discovery.update).mock.calls[0]![0]!.data as Record<string, unknown>
+    expect(data).toMatchObject({
+      difficulty: '', level: null, lengthKm: 0, elevationM: 0, startPoint: null,
+    })
+    expect(data).not.toHaveProperty('carType')
+    expect(data).not.toHaveProperty('bestTime')
   })
 
   it('GIVEN 新建溜车 WHEN 创建 THEN 原有难度与占位文案行为不变', async () => {

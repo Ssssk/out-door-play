@@ -59,6 +59,16 @@ describe('DiscoveryCard', () => {
     expect(wrapper.emitted('click')).toEqual([[item]])
   })
 
+  it('hides route/difficulty metrics for wash (destination-only records)', async () => {
+    const item = { ...base, scene: 'wash' as const, subType: null, elevationM: 220, carType: 'SUV/轿车', depthM: null }
+    const wrapper = mount(DiscoveryCard, { props: { item } })
+
+    expect(wrapper.find('.metrics').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('路线长度')
+    expect(wrapper.text()).not.toContain('难度等级')
+    expect(wrapper.text()).not.toContain('可洗车型')
+  })
+
   it('hides route/difficulty metrics for camping (destination-only records)', async () => {
     const item = { ...base, scene: 'play' as const, subType: 'camping' as const, elevationM: 220, depthM: null }
     const wrapper = mount(DiscoveryCard, { props: { item } })

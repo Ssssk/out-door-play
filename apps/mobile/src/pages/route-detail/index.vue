@@ -19,6 +19,10 @@
             <view><text>最佳时段</text><text>{{ detail.bestTime }}</text></view>
             <view><text>车型建议</text><text>{{ detail.carType || '--' }}</text></view>
           </template>
+          <template v-if="detail.scene === 'wash'">
+            <view><text>可洗车型</text><text>{{ detail.carType || '--' }}</text></view>
+            <view><text>营业时间</text><text>{{ detail.bestTime || '全天自助' }}</text></view>
+          </template>
         </view>
         <template v-if="detail.description"><text class="section-title">路线介绍</text><text class="description">{{ detail.description }}</text></template>
       </view>

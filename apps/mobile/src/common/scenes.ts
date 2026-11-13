@@ -33,7 +33,7 @@ export function isFishingRecord(scene: Scene, subType?: PlayType | null): boolea
   return scene === 'fish' || (scene === 'play' && subType === 'fishing')
 }
 
-/** 露营 / 打卡是目的地不是路线：只有终点，不展示难度/耗时/路线长/落差/车型/起点等指标 */
+/** 洗车 / 露营 / 打卡是目的地不是路线：只有终点，不展示难度/耗时/路线长/落差/出发地等指标；洗车保留可洗车型与营业时间 */
 export function isDestinationOnlyRecord(scene: Scene, subType?: PlayType | null): boolean {
-  return scene === 'play' && (subType === 'camping' || subType === 'checkin')
+  return scene === 'wash' || (scene === 'play' && (subType === 'camping' || subType === 'checkin'))
 }

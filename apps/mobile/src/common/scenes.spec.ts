@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { BUSINESS_SCENES, PLAY_TYPES, isDestinationOnlyRecord, isFishingRecord } from './scenes'
 
 describe('小程序场景字段口径', () => {
-  it('GIVEN play+camping / play+checkin WHEN 判定字段形态 THEN 为目的地型', () => {
+  it('GIVEN wash / play+camping / play+checkin WHEN 判定字段形态 THEN 为目的地型', () => {
+    expect(isDestinationOnlyRecord('wash', null)).toBe(true)
     expect(isDestinationOnlyRecord('play', 'camping')).toBe(true)
     expect(isDestinationOnlyRecord('play', 'checkin')).toBe(true)
   })
@@ -11,7 +12,6 @@ describe('小程序场景字段口径', () => {
     expect(isDestinationOnlyRecord('play', 'fishing')).toBe(false)
     expect(isDestinationOnlyRecord('play', null)).toBe(false)
     expect(isDestinationOnlyRecord('drive', null)).toBe(false)
-    expect(isDestinationOnlyRecord('wash', null)).toBe(false)
     expect(isDestinationOnlyRecord('fish', null)).toBe(false)
   })
 

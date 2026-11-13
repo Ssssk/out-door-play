@@ -2,22 +2,19 @@
   "changeId": "CHG-SCENE-EXPANSION-001",
   "type": "unit",
   "status": "passed",
-  "commit": "pre-commit working tree (2026-11-13)",
-  "environment": "local / macOS / Node via pnpm / vitest / vue-tsc / tsc",
+  "commit": "working-tree-2026-11-13-wash",
+  "environment": "local / macOS / Node via pnpm / vitest",
   "startedAt": "2026-11-13",
   "finishedAt": "2026-11-13",
-  "command": "pnpm --filter @chumen/admin type-check && pnpm --filter @chumen/admin test && pnpm --filter @chumen/mobile type-check && pnpm --filter @chumen/mobile test && pnpm --filter @chumen/api type-check && pnpm --filter @chumen/api test",
+  "command": "pnpm --filter @chumen/api test && pnpm --filter @chumen/admin test && pnpm --filter @chumen/mobile test",
   "exitCode": 0,
-  "summary": "打卡（play+checkin）与露营同口径扩展验证全绿：三端 type-check 通过；API 152 passed（新增 admin.service.destination.spec 打卡创建用例、scenes.spec 打卡判定用例）、admin 10 passed（routeFormPolicy 打卡 payload 同口径用例）、mobile 81 passed（DiscoveryCard 打卡隐藏指标用例、scenes.spec 打卡判定）。",
+  "summary": "单元与组件测试全绿：API 154 passed（含 scenes.spec 洗车/露营/打卡判定、admin.service.destination.spec 洗车保留 carType/bestTime 创建与编辑用例）、admin 11 passed（含 routeFormPolicy.test 洗车 payload 同口径用例）、mobile 82 passed（含 scenes.spec 洗车判定、DiscoveryCard 洗车隐藏路线指标用例）。本次洗车目的地型字段修订（TASK-E21，FR-EXP-013/AC-EXP-017）已实现并通过三端 type-check 与单测；生产构建沿用 2026-11-12 已验证结果。",
   "runner": "agent-local",
-  "requirementIds": ["FR-EXP-013"],
+  "requirementIds": ["FR-EXP-013", "FR-EXP-014"],
   "acceptanceIds": ["AC-EXP-017"],
   "tests": [
-    { "suite": "admin type-check", "command": "pnpm --filter @chumen/admin type-check", "result": "passed" },
-    { "suite": "admin", "command": "pnpm --filter @chumen/admin test", "result": "10 passed" },
-    { "suite": "mobile type-check", "command": "pnpm --filter @chumen/mobile type-check", "result": "passed" },
-    { "suite": "mobile", "command": "pnpm --filter @chumen/mobile test", "result": "81 passed" },
-    { "suite": "api type-check", "command": "pnpm --filter @chumen/api type-check", "result": "passed" },
-    { "suite": "api", "command": "pnpm --filter @chumen/api test", "result": "152 passed" }
+    { "suite": "api", "command": "pnpm --filter @chumen/api test", "result": "154 passed" },
+    { "suite": "admin", "command": "pnpm --filter @chumen/admin test", "result": "11 passed" },
+    { "suite": "mobile", "command": "pnpm --filter @chumen/mobile test", "result": "82 passed" }
   ]
 }

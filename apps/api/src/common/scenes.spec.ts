@@ -52,13 +52,13 @@ describe('业务场景单一事实来源（CHG-SCENE-EXPANSION-001）', () => {
     expect(isFishingRecord('wash', null)).toBe(false)
   })
 
-  it('目的地型（露营 / 打卡）只命中 play+camping 与 play+checkin，且与钓点型互斥', () => {
+  it('目的地型（洗车 / 露营 / 打卡）只命中 wash、play+camping 与 play+checkin，且与钓点型互斥', () => {
+    expect(isDestinationOnlyRecord('wash', null)).toBe(true)
     expect(isDestinationOnlyRecord('play', 'camping')).toBe(true)
     expect(isDestinationOnlyRecord('play', 'checkin')).toBe(true)
     expect(isDestinationOnlyRecord('play', 'fishing')).toBe(false)
     expect(isDestinationOnlyRecord('play', null)).toBe(false)
     expect(isDestinationOnlyRecord('drive', null)).toBe(false)
-    expect(isDestinationOnlyRecord('wash', null)).toBe(false)
     expect(isDestinationOnlyRecord('fish', null)).toBe(false)
   })
 })
