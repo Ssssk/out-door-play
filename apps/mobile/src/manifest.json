@@ -2,8 +2,8 @@
   "name": "粗门溜溜",
   "appid": "__UNI__CHUMENLIULIU",
   "description": "户外自驾路线、钓点与加油服务发现应用",
-  "versionName": "1.0.0",
-  "versionCode": "100",
+  "versionName": "1.1.0",
+  "versionCode": "101",
   "transformPx": false,
   "vueVersion": "3",
   "app-plus": {
