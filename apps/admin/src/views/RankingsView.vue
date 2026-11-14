@@ -5,6 +5,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { apiDelete, apiGet, apiPatch, apiPost } from '../api/client'
 import PageHeader from '../components/PageHeader.vue'
 import type { CityItem, Paginated, RankingItem, RouteItem, Scene } from '../types/admin'
+import { BUSINESS_SCENES, sceneLabel as sceneLabelOf } from '../common/scenes'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()
@@ -27,7 +28,7 @@ const picked = ref<string[]>([]) // 已选封面路线（顺序即展示顺序�
 const poolKeyword = ref('')
 const dragIndex = ref(-1)
 
-const sceneLabel = (value: string) => (value === 'fish' ? '钓鱼' : value === 'drive' ? '溜车' : value)
+const sceneLabel = sceneLabelOf
 const filtered = computed(() => rankings.value.filter((item) => {
   const hitScene = !sceneFilter.value || item.scene === sceneFilter.value
   const hitKeyword = !keyword.value.trim() || (item.name || '').includes(keyword.value.trim())
@@ -141,9 +142,9 @@ onMounted(load)
     <div class="panel__toolbar">
       <div class="panel__filters">
         <div class="scene-tabs">
-          <button v-for="tab in [{ value: '', label: '全部' }, { value: 'drive', label: '溜车' }, { value: 'fish', label: '钓鱼' }]" :key="tab.value"
-            class="scene-tab" :class="{ active: sceneFilter === tab.value }" role="tab" :aria-selected="sceneFilter === tab.value"
-            @click="sceneFilter = tab.value as Scene | ''">{{ tab.label }}</button>
+        <button v-for="tab in [{ value: '', label: '全部' }, ...BUSINESS_SCENES.map((s) => ({ value: s, label: sceneLabel(s) }))]" :key="tab.value"
+          class="scene-tab" :class="{ active: sceneFilter === tab.value }" role="tab" :aria-selected="sceneFilter === tab.value"
+          @click="sceneFilter = tab.value as Scene | ''">{{ tab.label }}</button>
         </div>
         <el-input v-model="keyword" clearable placeholder="搜索榜单名…" style="width: 240px" />
       </div>
@@ -177,9 +178,9 @@ onMounted(load)
           </el-form-item>
           <el-form-item label="场景" required>
             <el-select v-model="form.scene" style="width: 220px">
-              <el-option label="溜车" value="drive" />
-              <el-option label="钓鱼" value="fish" />
+              <el-option v-for="s in BUSINESS_SCENES" :key="s" :label="sceneLabel(s)" :value="s" />
             </el-select>
+            <div class="field-hint">粗门玩玩（play）榜单不区分子类型，钓点 / 露营 / 打卡路线可在同一榜单内混选</div>
           </el-form-item>
           <el-form-item label="城市">
             <el-select v-model="form.cityCode" style="width: 220px">

@@ -153,10 +153,11 @@ export class CreateReportDto {
   @IsString() @MaxLength(32) dimension!: string
 }
 
-/** 新建/编辑榜单：封面路线至少 1 条（web-rankings.md RULE-RANK-004） */
+/** 新建/编辑榜单：封面路线至少 1 条（web-rankings.md RULE-RANK-004）。
+ *  榜单场景只接受 3 个业务场景，legacy fish 不再允许写入（CHG-RANKING-SCENES） */
 export class UpsertRankingDto {
   @IsString() @MinLength(1) @MaxLength(128) name!: string
-  @IsIn(SCENE_QUERY_VALUES) scene!: SceneQuery
+  @IsIn([...BUSINESS_SCENES]) scene!: BusinessScene
   @IsOptional() @IsString() @MinLength(6) @MaxLength(6) cityCode?: string
   @IsArray() @ArrayMinSize(1) @IsString({ each: true }) coverRouteIds!: string[]
 }

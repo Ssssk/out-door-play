@@ -7,9 +7,9 @@ import { PrismaService } from '../../database/prisma.service'
 import { SceneTabsConfigService } from '../config/scene-tabs-config.service'
 import {
   BUSINESS_SCENES, LEGACY_SCENES, SCENE_LABELS, SCENE_SUBTYPE_INVALID, SceneSubTypeInvalidError,
-  isBusinessScene, isDestinationOnlyRecord, isFishingRecord, normalizeScene, writableSceneSubType,
+  isBusinessScene, isDestinationOnlyRecord, isFishingRecord, writableSceneSubType,
 } from '../../common/scenes'
-import type { PlayType, SceneQuery } from '../../common/scenes'
+import type { BusinessScene, PlayType, SceneQuery } from '../../common/scenes'
 import type { UpdateSceneTabsDto } from './admin.dto'
 import type { Prisma } from '../../generated/prisma/client'
 import type {
@@ -341,7 +341,7 @@ export class AdminService {
   }
 
   /** 新建/编辑榜单共用校验：封面路线必须存在且同场景（指定城市时还要同城市，RULE-RANK-004） */
-  private async validateCoverRoutes(scene: SceneQuery, cityCode: string | undefined, coverRouteIds: string[]) {
+  private async validateCoverRoutes(scene: BusinessScene, cityCode: string | undefined, coverRouteIds: string[]) {
     const routes = await this.prisma.discovery.findMany({
       where: { id: { in: coverRouteIds } },
       select: { id: true, scene: true, subType: true, cityCode: true, status: true, title: true },
@@ -349,12 +349,8 @@ export class AdminService {
     if (routes.length !== coverRouteIds.length) throw new BadRequestException('封面路线中存在不存在的路线，请刷新后重试')
     const offline = routes.filter((route) => route.status === 'offline')
     if (offline.length) throw new BadRequestException(`以下路线已下架，不能作为封面：${offline.map((route) => route.title).join('、')}`)
-    const target = normalizeScene(scene)
-    const wrongScene = routes.filter((route) => {
-      if (target.legacy) return !isFishingRecord(route.scene, route.subType)
-      return route.scene !== scene || (route.scene === 'play' && target.subType !== null && route.subType !== target.subType)
-    })
-    const label = scene === 'fish' ? '钓鱼（粗门玩玩）' : SCENE_LABELS[scene]
+    const wrongScene = routes.filter((route) => route.scene !== scene)
+    const label = SCENE_LABELS[scene] ?? scene
     if (wrongScene.length) throw new BadRequestException(`封面路线场景须与榜单一致（${label}）：${wrongScene.map((route) => route.title).join('、')}`)
     if (cityCode) {
       const wrongCity = routes.filter((route) => route.cityCode !== cityCode)
